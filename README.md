@@ -4,6 +4,14 @@
 
 ---
 
+支持中文联想补全EDA的函数和方法
+![alt text](images/效果图1.png)
+支持配置类似CC的AI智能补全和注释(需自己配置后端)
+![alt text](images/效果图2.png)
+支持AI分析报错原因并给出解决方案(需自己配置后端)
+![alt text](images/效果图3.png)
+![alt text](images/效果图4.png)
+
 ## ✨ 特性
 
 - ✅ **Monokai 主题**：护眼暗色风格，与开发者习惯一致
