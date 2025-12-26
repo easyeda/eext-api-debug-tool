@@ -1,0 +1,96 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+html,
+body {
+	height: 100%;
+	overflow: hidden;
+	background: #272822;
+	/* 与编辑器背景一致 */
+}
+
+#app {
+	display: flex;
+	height: 100vh;
+}
+
+/* 左侧可滚动侧边栏 */
+#sidebar {
+	width: 120px;
+	background: #272822;
+	/* Monokai 背景色 */
+	color: white;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding-top: 16px;
+	border-right: 1px solid #444;
+	overflow-y: auto;
+	/* 允许垂直滚动 */
+	scrollbar-width: thin;
+	/* Firefox */
+	scrollbar-color: #555 #272822;
+}
+
+/* 隐藏默认滚动条（可选美化） */
+#sidebar::-webkit-scrollbar {
+	width: 6px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+	background: #272822;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+	background: #555;
+	border-radius: 3px;
+}
+
+/* 列表项样式 */
+#sidebar ul {
+	list-style: none;
+	width: 100%;
+	padding: 0;
+}
+
+#sidebar li {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	padding: 8px 0;
+}
+
+#sidebar button {
+	width: 80px;
+	height: 36px;
+	background: #272822;
+	/* 与背景融合 */
+	color: white;
+	/* 文字白色 */
+	border: 1px solid #666;
+	border-radius: 4px;
+	font-size: 14px;
+	cursor: pointer;
+	transition:
+		background 0.2s,
+		border-color 0.2s;
+}
+
+#sidebar button:hover {
+	background: #333430;
+	border-color: #888;
+}
+
+/* 右侧编辑器区域 */
+#editor-container {
+	flex: 1;
+	height: 100%;
+}
+
+#editor {
+	height: 100%;
+	width: 100%;
+}

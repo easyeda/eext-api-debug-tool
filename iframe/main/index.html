@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Ace Editor - EDA</title>
+		<link rel="stylesheet" href="/iframe/style/body.css" />
+	</head>
+	<body>
+		<div id="app">
+			<!-- 左侧可滚动侧边栏 -->
+			<div id="sidebar">
+				<ul>
+					<li><button id="run-btn">运行</button></li>
+					<li><button id="ai-btn">AI辅助</button></li>
+				</ul>
+			</div>
+
+			<!-- 右侧编辑器 -->
+			<div id="editor-container">
+				<div id="editor"></div>
+			</div>
+		</div>
+
+		<!-- Ace 资源（全静态加载） -->
+		<script src="/iframe/script/Ace_Editor/ace.js"></script>
+		<script src="/iframe/script/Ace_Editor/ext-language_tools.js"></script>
+		<script src="/iframe/script/Ace_Editor/mode-javascript.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
+
+		<!-- EDA配置以及一些支持 -->
+		<script src="/iframe/script/User_config/message.js"></script>
+		<!-- 消息触发 -->
+		<script src="/iframe/script/eda_coder/allmethod.js"></script>
+		<!-- EDA补全 -->
+		<!--  <script src="/iframe/script/User_config/aicode.js"></script>	 -->
+
+		<script>
+			// 初始化 Ace 编辑器
+			const editor = ace.edit('editor');
+			editor.session.setMode('ace/mode/javascript');
+			editor.setTheme('ace/theme/monokai');
+			editor.setValue('', -1);
+			editor.setOptions({
+				enableBasicAutocompletion: true,
+				enableLiveAutocompletion: true,
+				fontSize: 14,
+				useWorker: false,
+				highlightActiveLine: true,
+				showPrintMargin: false,
+			});
+
+			let currentFontSize = 14;
+			editor.container.addEventListener(
+				'wheel',
+				(e) => {
+					if (!e.ctrlKey) return;
+					e.preventDefault();
+					const delta = e.deltaY;
+					if (delta < 0) {
+						currentFontSize = Math.min(currentFontSize + 7, 140);
+						showToast(currentFontSize + 'px:' + (currentFontSize / 14) * 100 + '%');
+					} else if (delta > 0) {
+						currentFontSize = Math.max(currentFontSize - 7, 7);
+						showToast(currentFontSize + 'px:' + (currentFontSize / 14) * 100 + '%');
+					}
+					editor.setFontSize(currentFontSize);
+				},
+				{ passive: false },
+			);
+
+			// 确保 completers 数组存在
+			if (!editor.completers) {
+				editor.completers = [];
+			}
+
+			// ========== 自动注册 EDA 智能补全 ==========
+			const edcode = window.edcode;
+			const completers = [];
+
+			for (const e of edcode) {
+				completers.push(
+					{
+						caption: e.methodPath,
+						value: e.methodPath + '()',
+						score: 1000,
+						meta: 'method',
+						docText: e.description,
+					},
+					{
+						caption: e.description,
+						value: e.methodPath + '()',
+						score: 999,
+						meta: 'desc',
+						docText: e.methodPath,
+					},
+				);
+			}
+
+			// 清除旧的自定义补全（防重复）
+			editor.completers = editor.completers.filter((c) => !c.getCompletions || (c.meta !== 'method' && c.meta !== 'desc'));
+
+			// 注册带上下文感知的 completer
+			editor.completers.push({
+				identifierRegexps: [/[\w\$\u00A2-\uFFFF]/], // 支持中文
+				getCompletions: function (editor, session, pos, prefix, callback) {
+					const { row, column } = pos;
+					const tokens = session.getTokens(row);
+					let tokenStart = 0;
+					let currentToken = null;
+
+					// 定位当前列所在的 token
+					for (let i = 0; i < tokens.length; i++) {
+						const token = tokens[i];
+						const tokenEnd = tokenStart + token.value.length;
+						if (column <= tokenEnd) {
+							currentToken = token;
+							break;
+						}
+						tokenStart = tokenEnd;
+					}
+
+					const tokenType = currentToken?.type || '';
+
+					// 跳过字符串、注释、正则等上下文
+					if (tokenType.includes('string') || tokenType.includes('comment') || tokenType.includes('regexp')) {
+						return callback(null, []);
+					}
+
+					// 跳过包含非法字符的前缀（避免在参数、操作符后触发）
+					if (/[\s"'\(\)\[\]\{\}\+\-\*\/\=\!\&\|\<\>]/.test(prefix)) {
+						return callback(null, []);
+					}
+
+					// 空前缀不自动弹出（需手动 Ctrl+Space）
+					if (prefix === '') {
+						return callback(null, []);
+					}
+					const matches = completers.filter((item) => item.caption.toLowerCase().includes(prefix.toLowerCase()));
+					callback(null, matches);
+				},
+			});
+
+			// 绑定“运行”按钮
+			document.getElementById('run-btn').addEventListener('click', () => {
+				const code = editor.getValue().trim();
+				if (!code) {
+					console.log('编辑器为空，未执行任何代码。');
+					return;
+				}
+				try {
+					eval(code);
+				} catch (error) {
+					console.error('❌ 执行出错:', error);
+				}
+			});
+
+			document.getElementById('ai-btn').addEventListener('click', () => {
+				activateECTAI();
+				showToast('AI辅助已激活', { type: 'success' });
+			});
+		</script>
+	</body>
+</html>
