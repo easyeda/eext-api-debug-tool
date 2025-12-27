@@ -11,7 +11,8 @@
 		"prettier:all": "prettier --write .",
 		"eslint:all": "eslint --ext .ts --fix .",
 		"fix": "npm run prettier:all && npm run eslint:all",
-		"build": "npm run compile && ts-node ./build/packaged.ts"
+		"build": "npm run compile && ts-node ./build/packaged.ts",
+		"dev": "node build.cjs && npm run build"
 	},
 	"devDependencies": {
 		"@jlceda/pro-api-types": "^0.1.175",

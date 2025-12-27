@@ -43,29 +43,6 @@
 
 ---
 
-## 🚀 快速开始
-
-1. **部署资源**  
-   将 `Ace_Editor` 文件夹（包含至少 `ace.js`, `ext-language_tools.js`, `mode-javascript.js`, `theme-monokai.js`）上传到：
-
-    ```
-    https://eda.huborui.cn/iframe/script/Ace_Editor/
-    ```
-
-2. **访问编辑器**  
-   打开：
-
-    ```
-    https://eda.huborui.cn/iframe/main/index.html
-    ```
-
-3. **编写并运行代码**
-    - 在右侧编辑器输入 JavaScript 代码
-    - 点击左侧 **“运行”** 按钮执行
-    - 结果输出到浏览器控制台（Console）
-
----
-
 ## 🔧 自定义词库（API 智能提示）
 
 在 `index.html` 的初始化脚本中添加自定义补全规则：

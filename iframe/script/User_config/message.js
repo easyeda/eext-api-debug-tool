@@ -319,8 +319,6 @@ function activateECTAI() {
 			if (timeoutId) clearTimeout(timeoutId);
 		};
 	}
-
-	// ✅ 修正：直接处理纯文本流（不再解析 SSE）
 	async function callAI(prompt, mode = 'comment') {
 		const backendUrl = 'http://localhost:5000/chat';
 
