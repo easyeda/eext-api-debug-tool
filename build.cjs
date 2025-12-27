@@ -32,7 +32,7 @@ let pendingDescription = null;
 for (let i = 0; i < lines.length; i++) {
   const line = lines[i].trim();
 
-  // ✅ 改进：只要 declare class XXX 出现，且该行有 {，就捕获
+ 
   if (line.startsWith('declare class ')) {
     const match = line.match(/declare\s+class\s+(\w+)/);
     if (match && line.includes('{')) {
@@ -101,4 +101,4 @@ outputStr += ']\n';
 
 fs.writeFileSync(outputPath, outputStr, 'utf8');
 
-console.log(`✅ 成功生成 ${results.length} 个方法条目`);
+console.log(`成功生成 ${results.length} 个方法条目`);
