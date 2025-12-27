@@ -66,7 +66,7 @@ function ACE_CodingForEDA(editor, edcode) {
 
 
 // 滚动+Ctrl放大或缩小代码
-function ACE_ChangeCodeSize(editor,currentFontSize,showToast) {
+function ACE_ChangeCodeSize(editor, currentFontSize, showToast) {
 	editor.container.addEventListener(
 		'wheel',
 		(e) => {
@@ -83,4 +83,20 @@ function ACE_ChangeCodeSize(editor,currentFontSize,showToast) {
 			editor.setFontSize(currentFontSize);
 		}, { passive: false },
 	);
+}
+
+// 执行编辑框中的代码
+function ACE_RunCode(editor) {
+
+	const code = editor.getValue().trim();
+	if (!code) {
+		console.log('编辑器为空，未执行任何代码。');
+		return;
+	}
+	try {
+		eval(code);
+	} catch (error) {
+		console.error('❌ 执行出错:', error);
+	}
+
 }

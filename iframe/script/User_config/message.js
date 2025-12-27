@@ -127,12 +127,12 @@ function activateECTAI() {
 
 	// ========== 原生 Toast（用于注释、加载等简单提示）==========
 	const safeShowToast =
-		typeof window.showToast === 'function'
-			? (msg) => {
-					console.log('[TOAST]', msg);
-					window.showToast(msg);
-				}
-			: (msg) => console.warn('[FALLBACK TOAST]', msg);
+		typeof window.showToast === 'function' ?
+		(msg) => {
+			console.log('[TOAST]', msg);
+			window.showToast(msg);
+		} :
+		(msg) => console.warn('[FALLBACK TOAST]', msg);
 
 	// ========== 自定义 ECT 错误分析提示（暗色 + 进度条 + 精确重置倒计时）==========
 	function showECTMessage(message, isPersistent = false) {
@@ -446,4 +446,5 @@ function activateECTAI() {
 	});
 
 	console.log('[AI Assist] ECT AI 已激活 ✅');
+	showToast('AI辅助已激活', { type: 'success' });
 }
