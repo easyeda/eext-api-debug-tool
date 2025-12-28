@@ -24,59 +24,32 @@
 	"entry": "./dist/index",
 	"dependentExtensions": {},
 	"headerMenus": {
-		"home": [
-			{
-				"id": "API SDK",
-				"title": "代码编辑器",
-				"menuItems": [
-					{
-						"id": "Open Script Tool",
-						"title": "打开编辑器...",
-						"registerFn": "openScriptTool"
-					},
-					{
-						"id": "About",
-						"title": "About...",
-						"registerFn": "about"
-					}
-				]
-			}
-		],
-		"sch": [
-			{
-				"id": "API SDK",
-				"title": "代码编辑器",
-				"menuItems": [
-					{
-						"id": "Open Script Tool",
-						"title": "打开编辑器...",
-						"registerFn": "openScriptTool"
-					},
-					{
-						"id": "About",
-						"title": "About...",
-						"registerFn": "about"
-					}
-				]
-			}
-		],
-		"pcb": [
-			{
-				"id": "API SDK",
-				"title": "代码编辑器",
-				"menuItems": [
-					{
-						"id": "Open Script Tool",
-						"title": "打开编辑器...",
-						"registerFn": "openScriptTool"
-					},
-					{
-						"id": "About",
-						"title": "About...",
-						"registerFn": "about"
-					}
-				]
-			}
-		]
+		"home": [{
+			"id": "API SDK",
+			"title": "代码编辑器",
+			"menuItems": [{
+				"id": "Open Script Tool",
+				"title": "打开编辑器...",
+				"registerFn": "openScriptTool"
+			}]
+		}],
+		"sch": [{
+			"id": "API SDK",
+			"title": "代码编辑器",
+			"menuItems": [{
+				"id": "Open Script Tool",
+				"title": "打开编辑器...",
+				"registerFn": "openScriptTool"
+			}]
+		}],
+		"pcb": [{
+			"id": "API SDK",
+			"title": "代码编辑器",
+			"menuItems": [{
+				"id": "Open Script Tool",
+				"title": "打开编辑器...",
+				"registerFn": "openScriptTool"
+			}]
+		}]
 	}
 }

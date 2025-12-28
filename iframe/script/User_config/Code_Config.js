@@ -109,7 +109,7 @@ function CodeStore_UpdateCode(db, name, newCode) {
 		const transaction = db.transaction(['CodeList'], 'readwrite');
 		const store = transaction.objectStore('CodeList');
 		const index = store.index('name'); //告诉数据库要查询的字段是name
-		const getRequest = index.get(name); //z这里的name不是字段而是值，数据库根据这个值在字段name中找符合条件的 前面已经设置过name的唯一性 所以这里只会找到一条
+		const getRequest = index.get(name); //这里的name不是字段而是值，数据库根据这个值在字段name中找符合条件的 前面已经设置过name的唯一性 所以这里只会找到一条
 		getRequest.onsuccess = (e) => {
 			const record = e.target.result; //这里是返回的完整对象
 			if (!record) { //一般不会发生这种情况 除非有神人手动修改了indexDB的数据库

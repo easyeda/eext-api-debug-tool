@@ -446,5 +446,5 @@ function activateECTAI() {
 	});
 
 	console.log('[AI Assist] ECT AI 已激活 ✅');
-	showToast('AI辅助已激活', { type: 'success' });
+	eda.sys_Message.showToastMessage('AI辅助已激活，请确保后端连接正常');
 }

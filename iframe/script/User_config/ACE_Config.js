@@ -13,6 +13,44 @@ function ACE_Init(editor) {
 	});
 }
 
+// 获取编辑器主题
+async function GetTheme(editor, light_theme, dark_theme) {
+	const theme = eda.sys_Storage.getExtensionUserConfig('theme');
+	if (theme == undefined) {
+		const result = await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+		console.log(result);
+	} else if (theme == 'light') {
+		light_theme.disabled = false;
+		dark_theme.disabled = true;
+		editor.setTheme('ace/theme/github');
+	} else {
+		light_theme.disabled = true;
+		dark_theme.disabled = false;
+		editor.setTheme('ace/theme/monokai');
+	}
+	console.log('当前主题', theme);
+}
+
+//修改
+async function SetTheme(editor, light_theme, dark_theme) {
+	let theme = eda.sys_Storage.getExtensionUserConfig('theme');
+	if (theme == 'light') {
+		light_theme.disabled = true;
+		dark_theme.disabled = false;
+		editor.setTheme('ace/theme/monokai');
+		const result = await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+		theme = 'dark';
+	} else {
+		light_theme.disabled = false;
+		dark_theme.disabled = true;
+		editor.setTheme('ace/theme/github');
+		const result = await eda.sys_Storage.setExtensionUserConfig('theme', 'light');
+		theme = 'light';
+	}
+	await eda.sys_Message.showToastMessage('当前主题已切换为' + theme, 'info', 1);
+}
+
+
 // 注册EDA的自动补全
 function ACE_CodingForEDA(editor, edcode) {
 	const completers = [];
