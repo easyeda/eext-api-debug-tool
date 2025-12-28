@@ -33,7 +33,7 @@ function CodeStore_Init() {
  * @param {string} code - 代码内容字符串
  * @returns {Promise<number>} 返回新记录的自增 ID
  */
-async function CodeStore_SaveCode( name, code) {
+async function CodeStore_SaveCode(name, code) {
 	const db = await CodeStore_Init();
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction(['CodeList'], 'readwrite'); //创建一个事务 这里指的是操作表CodeList 模式为读写 只读模式为readwrite
@@ -168,5 +168,432 @@ function CodeStore_Get_CodeList(db) {
 			console.error('未知错误：', e.target.error);
 			reject(e.target.error);
 		};
+	});
+}
+
+/**
+ * 弹出对话框让用户输入代码名称，并将 ACE 编辑器中的当前代码内容保存到 IndexedDB。
+ * 若名称已存在，则自动更新对应代码；否则新增记录。
+ * @param {Object} editor - ACE 编辑器实例（需支持 getValue() 方法）
+ * @returns {void}
+ */
+async function Code_SaveCode(editor) {
+	const currentCode = editor.getValue();
+	if (!currentCode.trim()) {
+		eda.sys_Message.showToastMessage('当前没有可保存的代码内容。', 'info', 1);
+		return;
+	}
+
+	eda.sys_Dialog.showInputDialog(
+		'请输入代码名称：',
+		'若名称已存在，将自动覆盖更新其代码内容。',
+		'保存/更新代码',
+		'text',
+		'', {
+			placeholder: '例如：快速排序算法',
+			minlength: 1,
+			maxlength: 100
+		},
+		async (inputValue) => {
+			if (inputValue == null || inputValue.trim() === '') {
+				eda.sys_Message.showToastMessage('用户取消或未输入名称', 'info', 1);
+				return;
+			}
+
+			const name = inputValue.trim();
+
+			try {
+				const db = await CodeStore_Init();
+
+				// 检查是否存在同名记录
+				const transaction = db.transaction(['CodeList'], 'readonly');
+				const store = transaction.objectStore('CodeList');
+				const index = store.index('name');
+				const getRequest = index.get(name);
+
+				const recordExists = await new Promise((resolve) => {
+					getRequest.onsuccess = () => resolve(getRequest.result !== undefined);
+					getRequest.onerror = () => resolve(false);
+				});
+
+				if (recordExists) {
+					const updated = await CodeStore_UpdateCode(db, name, currentCode);
+					if (updated) {
+						eda.sys_Message.showToastMessage(`代码 "${name}" 已成功更新`, 'info', 1);
+					} else {
+						eda.sys_Message.showToastMessage(`更新失败："${name}" 未找到（理论上不应发生）`, 'info', 1);
+					}
+				} else {
+					const newId = await CodeStore_SaveCode(name, currentCode);
+					eda.sys_Message.showToastMessage(`代码 "${name}" 已保存，ID: ${newId}`, 'info', 1);
+				}
+			} catch (error) {
+				eda.sys_Message.showToastMessage(`保存/更新代码时出错: ${error.message || error}`, 'info', 1);
+			}
+		}
+	);
+}
+
+
+/**
+ * 动态创建并显示一个 500x350 的代码加载窗口，带搜索功能
+ * @param {Object} editor - ACE 编辑器实例（用于加载选中的代码）
+ */
+async function Code_OpenLoadWindow(editor) {
+	// 防止重复打开多个窗口
+	if (document.getElementById('code-load-modal')) {
+		return;
+	}
+
+	// 创建遮罩层（modal backdrop）
+	const backdrop = document.createElement('div');
+	backdrop.id = 'code-load-backdrop';
+	Object.assign(backdrop.style, {
+		position: 'fixed',
+		top: '0',
+		left: '0',
+		width: '100vw',
+		height: '100vh',
+		backgroundColor: 'rgba(0,0,0,0.5)',
+		zIndex: '10000',
+		display: 'flex',
+		justifyContent: 'center',
+		alignItems: 'center'
+	});
+
+	// 创建窗口容器
+	const modal = document.createElement('div');
+	modal.id = 'code-load-modal';
+	Object.assign(modal.style, {
+		width: '500px',
+		height: '350px',
+		background: '#fff',
+		borderRadius: '8px',
+		boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+		display: 'flex',
+		flexDirection: 'column',
+		overflow: 'hidden'
+	});
+
+	// 标题栏
+	const header = document.createElement('div');
+	header.textContent = '加载代码片段';
+	Object.assign(header.style, {
+		padding: '12px 16px',
+		background: '#f5f5f5',
+		fontWeight: 'bold',
+		fontSize: '16px',
+		borderBottom: '1px solid #ddd',
+		display: 'flex',
+		justifyContent: 'space-between',
+		alignItems: 'center'
+	});
+
+	// 关闭按钮
+	const closeBtn = document.createElement('button');
+	closeBtn.textContent = '×';
+	closeBtn.title = '关闭';
+	Object.assign(closeBtn.style, {
+		background: 'none',
+		border: 'none',
+		fontSize: '20px',
+		cursor: 'pointer',
+		color: '#999',
+		width: '24px',
+		height: '24px',
+		textAlign: 'center'
+	});
+	closeBtn.onclick = () => {
+		document.body.removeChild(backdrop);
+	};
+
+	header.appendChild(closeBtn);
+	modal.appendChild(header);
+
+	// 搜索框
+	const searchBox = document.createElement('input');
+	searchBox.type = 'text';
+	searchBox.placeholder = '搜索代码名称...';
+	Object.assign(searchBox.style, {
+		width: '100%',
+		padding: '8px 12px',
+		border: '1px solid #ccc',
+		borderBottom: 'none',
+		fontSize: '14px',
+		boxSizing: 'border-box'
+	});
+	modal.appendChild(searchBox);
+
+	// 列表容器
+	const listContainer = document.createElement('div');
+	Object.assign(listContainer.style, {
+		flex: '1',
+		overflowY: 'auto',
+		padding: '8px',
+		background: '#fafafa'
+	});
+	modal.appendChild(listContainer);
+
+	// 添加到页面
+	backdrop.appendChild(modal);
+	document.body.appendChild(backdrop);
+
+	// 加载数据
+	let allItems = [];
+	try {
+		const db = await CodeStore_Init();
+		allItems = await CodeStore_Get_CodeList(db);
+		renderList(allItems);
+	} catch (err) {
+		eda.sys_Message.showToastMessage('加载代码列表失败', 'info', 1);
+		listContainer.innerHTML = '<div style="color:red;padding:10px;">加载失败</div>';
+	}
+
+	// 渲染列表
+	function renderList(items) {
+		listContainer.innerHTML = '';
+		if (items.length === 0) {
+			listContainer.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">暂无代码片段</div>';
+			return;
+		}
+
+		items.forEach(item => {
+			const itemEl = document.createElement('div');
+			itemEl.textContent = `${item.name} • ${new Date(item.createdAt).toLocaleString()}`;
+			Object.assign(itemEl.style, {
+				padding: '8px 12px',
+				margin: '4px 0',
+				background: '#fff',
+				border: '1px solid #eee',
+				borderRadius: '4px',
+				cursor: 'pointer',
+				fontSize: '14px',
+				overflow: 'hidden',
+				textOverflow: 'ellipsis',
+				whiteSpace: 'nowrap'
+			});
+
+			itemEl.title = item.name;
+			itemEl.onclick = async () => {
+				// 加载完整代码
+				try {
+					const db2 = await CodeStore_Init();
+					const tx = db2.transaction(['CodeList'], 'readonly');
+					const store = tx.objectStore('CodeList');
+					const index = store.index('name');
+					const record = await new Promise((resolve, reject) => {
+						const req = index.get(item.name);
+						req.onsuccess = () => resolve(req.result);
+						req.onerror = () => reject(req.error);
+					});
+
+					if (record && record.code) {
+						editor.setValue(record.code, -1);
+						editor.clearSelection();
+						eda.sys_Message.showToastMessage(`已加载代码：${item.name}`, 'info', 1);
+					}
+				} catch (e) {
+					eda.sys_Message.showToastMessage(`加载代码内容失败: ${e.message || e}`, 'info', 1);
+				}
+				// 关闭窗口
+				document.body.removeChild(backdrop);
+			};
+
+			listContainer.appendChild(itemEl);
+		});
+	}
+
+	// 搜索过滤
+	searchBox.addEventListener('input', (e) => {
+		const keyword = e.target.value.trim().toLowerCase();
+		if (!keyword) {
+			renderList(allItems);
+		} else {
+			const filtered = allItems.filter(item =>
+				item.name.toLowerCase().includes(keyword)
+			);
+			renderList(filtered);
+		}
+	});
+}
+
+/**
+ * 动态创建并显示一个 500x350 的代码删除窗口，带搜索功能
+ * @param {Object} editor - ACE 编辑器实例（此处仅用于保持 API 一致，实际未使用）
+ */
+async function Code_OpenDeleteWindow(editor) {
+	// 防止重复打开多个窗口
+	if (document.getElementById('code-delete-modal')) {
+		return;
+	}
+
+	// 创建遮罩层（modal backdrop）
+	const backdrop = document.createElement('div');
+	backdrop.id = 'code-delete-backdrop';
+	Object.assign(backdrop.style, {
+		position: 'fixed',
+		top: '0',
+		left: '0',
+		width: '100vw',
+		height: '100vh',
+		backgroundColor: 'rgba(0,0,0,0.5)',
+		zIndex: '10000',
+		display: 'flex',
+		justifyContent: 'center',
+		alignItems: 'center'
+	});
+
+	// 创建窗口容器
+	const modal = document.createElement('div');
+	modal.id = 'code-delete-modal';
+	Object.assign(modal.style, {
+		width: '500px',
+		height: '350px',
+		background: '#fff',
+		borderRadius: '8px',
+		boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+		display: 'flex',
+		flexDirection: 'column',
+		overflow: 'hidden'
+	});
+
+	// 标题栏
+	const header = document.createElement('div');
+	header.textContent = '删除代码片段';
+	Object.assign(header.style, {
+		padding: '12px 16px',
+		background: '#f5f5f5',
+		fontWeight: 'bold',
+		fontSize: '16px',
+		borderBottom: '1px solid #ddd',
+		display: 'flex',
+		justifyContent: 'space-between',
+		alignItems: 'center'
+	});
+
+	// 关闭按钮
+	const closeBtn = document.createElement('button');
+	closeBtn.textContent = '×';
+	closeBtn.title = '关闭';
+	Object.assign(closeBtn.style, {
+		background: 'none',
+		border: 'none',
+		fontSize: '20px',
+		cursor: 'pointer',
+		color: '#999',
+		width: '24px',
+		height: '24px',
+		textAlign: 'center'
+	});
+	closeBtn.onclick = () => {
+		document.body.removeChild(backdrop);
+	};
+
+	header.appendChild(closeBtn);
+	modal.appendChild(header);
+
+	// 搜索框
+	const searchBox = document.createElement('input');
+	searchBox.type = 'text';
+	searchBox.placeholder = '搜索代码名称...';
+	Object.assign(searchBox.style, {
+		width: '100%',
+		padding: '8px 12px',
+		border: '1px solid #ccc',
+		borderBottom: 'none',
+		fontSize: '14px',
+		boxSizing: 'border-box'
+	});
+	modal.appendChild(searchBox);
+
+	// 列表容器
+	const listContainer = document.createElement('div');
+	Object.assign(listContainer.style, {
+		flex: '1',
+		overflowY: 'auto',
+		padding: '8px',
+		background: '#fafafa'
+	});
+	modal.appendChild(listContainer);
+
+	// 添加到页面
+	backdrop.appendChild(modal);
+	document.body.appendChild(backdrop);
+
+	// 加载数据并渲染
+	let allItems = [];
+	let dbInstance = null;
+
+	try {
+		dbInstance = await CodeStore_Init();
+		allItems = await CodeStore_Get_CodeList(dbInstance);
+		renderList(allItems);
+	} catch (err) {
+		eda.sys_Message.showToastMessage('加载代码列表失败', 'info', 1);
+		listContainer.innerHTML = '<div style="color:red;padding:10px;">加载失败</div>';
+	}
+
+	// 渲染列表
+	function renderList(items) {
+		listContainer.innerHTML = '';
+		if (items.length === 0) {
+			listContainer.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">暂无代码片段</div>';
+			return;
+		}
+
+		items.forEach(item => {
+			const itemEl = document.createElement('div');
+			itemEl.textContent = `${item.name} • ${new Date(item.createdAt).toLocaleString()}`;
+			Object.assign(itemEl.style, {
+				padding: '8px 12px',
+				margin: '4px 0',
+				background: '#fff',
+				border: '1px solid #eee',
+				borderRadius: '4px',
+				cursor: 'pointer',
+				fontSize: '14px',
+				overflow: 'hidden',
+				textOverflow: 'ellipsis',
+				whiteSpace: 'nowrap',
+				color: '#d32f2f' // 可选：用红色提示这是删除操作
+			});
+
+			itemEl.title = `点击删除：${item.name}`;
+			itemEl.onclick = async () => {
+				if (!dbInstance) {
+					eda.sys_Message.showToastMessage('数据库连接已断开，无法删除', 'info', 1);
+					return;
+				}
+
+				try {
+					const deleted = await CodeStore_DeleteCode(dbInstance, item.name);
+					if (deleted) {
+						// 从列表中移除该项
+						allItems = allItems.filter(i => i.name !== item.name);
+						renderList(allItems);
+						eda.sys_Message.showToastMessage(`代码 "${item.name}" 已删除`, 'info', 1);
+					} else {
+						eda.sys_Message.showToastMessage(`未找到代码 "${item.name}"`, 'info', 1);
+					}
+				} catch (e) {
+					eda.sys_Message.showToastMessage(`删除失败: ${e.message || e}`, 'info', 1);
+				}
+			};
+
+			listContainer.appendChild(itemEl);
+		});
+	}
+
+	// 搜索过滤
+	searchBox.addEventListener('input', (e) => {
+		const keyword = e.target.value.trim().toLowerCase();
+		if (!keyword) {
+			renderList(allItems);
+		} else {
+			const filtered = allItems.filter(item =>
+				item.name.toLowerCase().includes(keyword)
+			);
+			renderList(filtered);
+		}
 	});
 }

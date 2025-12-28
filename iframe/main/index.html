@@ -13,6 +13,7 @@
 					<li><button id="run-btn">运行</button></li>
 					<li><button id="load-btn">加载</button></li>
 					<li><button id="save-btn">保存</button></li>
+					<li><button id="delete-btn">删除</button></li>
 					<li><button id="example-btn">案例</button></li>
 					<li><button id="ai-btn">AI辅助</button></li>
 					<li><button id="setting-btn">切换主题</button></li>
@@ -65,11 +66,13 @@
 			});
 			// 保存代码
 			document.getElementById('save-btn').addEventListener('click', async () => {
-				await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
+				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
+				Code_SaveCode(editor);
 			});
 			//加载代码
 			document.getElementById('load-btn').addEventListener('click', async () => {
-				await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
+				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
+				Code_OpenLoadWindow(editor);
 			});
 			//编辑器设置
 			document.getElementById('setting-btn').addEventListener('click', async () => {
@@ -80,7 +83,12 @@
 			document.getElementById('example-btn').addEventListener('click', async () => {
 				eda.sys_Window.open('https://ext.lceda.cn/', "_blank");
 			});
-			//加载代码
+			//保存代码
+			document.getElementById('delete-btn').addEventListener('click', async () => {
+				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
+				Code_OpenDeleteWindow(editor);
+			});
+			//关于编辑器
 			document.getElementById('about-btn').addEventListener('click', async () => {
 				await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
 			});
