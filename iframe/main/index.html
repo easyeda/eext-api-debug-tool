@@ -10,7 +10,7 @@
 			<div id="sidebar">
 				<ul>
 					<li><button id="run-btn">运行</button></li>
-					<li><button id="run-btn">加载</button></li>
+					<li><button id="load-btn">加载</button></li>
 					<li><button id="save-btn">保存</button></li>
 					<li><button id="example-btn">案例</button></li>
 					<li><button id="setting-btn">设置</button></li>
@@ -31,24 +31,38 @@
 
 		<!-- 一些编辑器支持 不想每个都写注释了 自己跳进去看吧 -->
 		<script src="/iframe/script/User_config/message.js"></script>
-		<script src="/iframe/script/eda_coder/allmethod.js"></script>
+		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
+		<script src='/iframe/script/User_config/Code_Config.js'></script>
 
 		<script>
-			const editor = ace.edit('editor'); // 初始化 Ace 编辑器
+			//初始化Ace 编辑器
+			const editor = ace.edit('editor');
 			ACE_Init(editor);
-			let currentFontSize = 14; // 注册放大缩小代码支持
 
+			// 注册放大缩小代码支持
+			let currentFontSize = 14;
+			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
+
+			//注册EDA智能补全
+			ACE_CodingForEDA(editor, edcode);
 
 			// 运行代码
 			document.getElementById('run-btn').addEventListener('click', () => {
 				ACE_RunCode(editor);
 			});
-
 			// 开启AI辅助支持
 			document.getElementById('ai-btn').addEventListener('click', () => {
 				activateECTAI();
-				showToast('AI辅助已激活', { type: 'success' });
+			});
+			
+			// 保存代码
+			document.getElementById('save-btn').addEventListener('click', () => {
+				Code_OpenSaveWindows(editor);
+			});
+			//加载代码
+			document.getElementById('load-btn').addEventListener('click', () => {
+				Code_OpenLoadWindows(editor);
 			});
 		</script>
 	</body>
