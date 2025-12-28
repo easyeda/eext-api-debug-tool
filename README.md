@@ -16,6 +16,12 @@
 
 ![alt text](images/效果图4.png)
 
+## 两套主题流畅切换
+
+![alt text](images/image.png)
+
+## 通过npm run dev 构建全新的提示词工程
+
 ## 特性
 
 - **Monokai 主题**：护眼暗色风格，与开发者习惯一致
