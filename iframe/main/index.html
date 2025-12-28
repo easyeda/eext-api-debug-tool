@@ -83,9 +83,10 @@
 			document.getElementById('example-btn').addEventListener('click', async () => {
 				eda.sys_Window.open('https://ext.lceda.cn/', "_blank");
 			});
-			//保存代码
+			//删除代码
 			document.getElementById('delete-btn').addEventListener('click', async () => {
 				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
+				eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行','warn',3);
 				Code_OpenDeleteWindow(editor);
 			});
 			//关于编辑器
