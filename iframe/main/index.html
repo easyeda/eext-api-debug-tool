@@ -3,7 +3,8 @@
 	<head>
 		<meta charset="UTF-8" />
 		<title>Ace Editor - EDA</title>
-		<link rel="stylesheet" href="/iframe/style/body.css" />
+		<link id="theme-light" rel="stylesheet" href="/iframe/style/body-light.css" disabled />
+		<link id='theme-night' rel="stylesheet" href="/iframe/style/body-night.css" />
 	</head>
 	<body>
 		<div id="app">
@@ -13,8 +14,8 @@
 					<li><button id="load-btn">加载</button></li>
 					<li><button id="save-btn">保存</button></li>
 					<li><button id="example-btn">案例</button></li>
-					<li><button id="setting-btn">设置</button></li>
 					<li><button id="ai-btn">AI辅助</button></li>
+					<li><button id="setting-btn">设置</button></li>
 					<li><button id="run-btn">关于</button></li>
 				</ul>
 			</div>
@@ -27,7 +28,9 @@
 		<script src="/iframe/script/Ace_Editor/ace.js"></script>
 		<script src="/iframe/script/Ace_Editor/ext-language_tools.js"></script>
 		<script src="/iframe/script/Ace_Editor/mode-javascript.js"></script>
+		<!-- 以下全都是ACE的风格文件，如果有需要可以自己添加 -->
 		<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
 
 		<!-- 一些编辑器支持 不想每个都写注释了 自己跳进去看吧 -->
 		<script src="/iframe/script/User_config/message.js"></script>
@@ -55,7 +58,7 @@
 			document.getElementById('ai-btn').addEventListener('click', () => {
 				activateECTAI();
 			});
-			
+
 			// 保存代码
 			document.getElementById('save-btn').addEventListener('click', () => {
 				Code_OpenSaveWindows(editor);

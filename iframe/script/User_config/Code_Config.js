@@ -33,7 +33,7 @@ function CodeStore_Init() {
  * @param {string} code - 代码内容字符串
  * @returns {Promise<number>} 返回新记录的自增 ID
  */
-function CodeStore_SaveCode( name, code) {
+async function CodeStore_SaveCode( name, code) {
 	const db = await CodeStore_Init();
 	return new Promise((resolve, reject) => {
 		const transaction = db.transaction(['CodeList'], 'readwrite'); //创建一个事务 这里指的是操作表CodeList 模式为读写 只读模式为readwrite
