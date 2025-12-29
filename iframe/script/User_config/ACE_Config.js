@@ -144,7 +144,7 @@ function ACE_RunCode(editor) {
 // ==========================
 function BtnStore_Init() {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('CodeStore', 1); 
+		const request = indexedDB.open('BtnStore', 1); 
 
 		request.onupgradeneeded = (e) => {
 			const db = e.target.result;
