@@ -124,9 +124,9 @@ function ACE_CodingForEDA(editor, edcode) {
 
 // 辅助函数：生成更详细的文档文本
 function buildDocText(item) {
-	let doc = item.description + '\n\n';
+	let doc = item.description + '\n用法：' + item.methodPath + '()\n';
 	if (item.parameters && item.parameters.length > 0) {
-		doc += 'Parameters:\n';
+		doc += '参数:\n';
 		item.parameters.forEach(p => {
 			doc += `  • ${p.name}: ${p.description}\n`;
 		});
