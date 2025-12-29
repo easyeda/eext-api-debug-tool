@@ -1,25 +1,25 @@
 {
-	"name": "script-code-tool",
+	"name": "eext-api-debug-tool",
 	"uuid": "7ca98ae04b7142599ab107e34acc8e5e",
 	"displayName": "嘉立创EDA代码编辑器",
-	"description": "更符合中国宝宝体质的EDA脚本代码编辑器，支持代码高亮、自动补全、函数提示，AI注释，AI报错分析等功能。",
-	"version": "1.12.2",
-	"publisher": "anan",
+	"description": "支持中文联想的EDA脚本代码编辑器，支持代码高亮、自动补全、函数提示，AI注释，AI报错分析等功能。",
+	"version": "1.12.3",
+	"publisher": "嘉立创EDA",
 	"engines": {
 		"eda": "^2.2.0"
 	},
 	"license": "Apache-2.0",
 	"repository": {
-		"type": "extension-store",
-		"url": ""
+		"type": "github",
+		"url": "https://github.com/easyeda/eext-api-debug-tool"
 	},
 	"categories": "Other",
 	"keywords": ["SDK"],
 	"images": {
 		"logo": "./images/logo.png"
 	},
-	"homepage": "https://pro.lceda.cn",
-	"bugs": "https://lceda.cn/page/feedback?originPage=other",
+	"homepage": "https://github.com/easyeda",
+	"bugs": "https://github.com/easyeda/eext-api-debug-tool/issues",
 	"activationEvents": {},
 	"entry": "./dist/index",
 	"dependentExtensions": {},
