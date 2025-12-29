@@ -2,8 +2,8 @@
 	"name": "script-code-tool",
 	"uuid": "7ca98ae04b7142599ab107e34acc8e5e",
 	"displayName": "嘉立创EDA代码编辑器",
-	"description": "更符合中国宝宝体质的EDA脚本代码编辑器，支持代码高亮、自动补全、函数提示等功能。",
-	"version": "1.12.1",
+	"description": "更符合中国宝宝体质的EDA脚本代码编辑器，支持代码高亮、自动补全、函数提示，AI注释，AI报错分析等功能。",
+	"version": "1.12.2",
 	"publisher": "anan",
 	"engines": {
 		"eda": "^2.2.0"
