@@ -4,7 +4,7 @@
 		<meta charset="UTF-8" />
 		<title>Ace Editor - EDA</title>
 		<link id="theme-light" rel="stylesheet" href="/iframe/style/body-light.css" disabled />
-		<link id='theme-dark' rel="stylesheet" href="/iframe/style/body-dark.css" />
+		<link id="theme-dark" rel="stylesheet" href="/iframe/style/body-dark.css" />
 	</head>
 	<body>
 		<div id="app">
@@ -38,7 +38,7 @@
 		<script src="/iframe/script/User_config/message.js"></script>
 		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
-		<script src='/iframe/script/User_config/Code_Config.js'></script>
+		<script src="/iframe/script/User_config/Code_Config.js"></script>
 
 		<script>
 			//初始化Ace 编辑器
@@ -63,7 +63,7 @@
 			//保存代码到左侧列表
 			document.getElementById('SaveinLeft-btn').addEventListener('click', () => {
 				Code_SaveToBtnList(editor);
-			})
+			});
 			// 运行代码
 			document.getElementById('run-btn').addEventListener('click', () => {
 				ACE_RunCode(editor);
@@ -89,7 +89,7 @@
 			});
 			//跳转代码扩展广场
 			document.getElementById('example-btn').addEventListener('click', async () => {
-				eda.sys_Window.open('https://ext.lceda.cn/', "_blank");
+				eda.sys_Window.open('https://ext.lceda.cn/', '_blank');
 			});
 			//删除代码
 			document.getElementById('delete-btn').addEventListener('click', async () => {
@@ -100,8 +100,17 @@
 			//关于编辑器 - 暂时先跳转GitHub 上架后修改跳转EDA扩展广场
 			document.getElementById('about-btn').addEventListener('click', async () => {
 				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
-				eda.sys_Window.open('https://github.com/easyeda/eext-api-debug-tool.git', "_blank");
+				eda.sys_Window.open('https://github.com/easyeda/eext-api-debug-tool.git', '_blank');
 			});
 		</script>
+		<!-- 一些资源文件 这些都不是必要的 删除也没什么影响 只不过用户也许会换主题所以放进来-->
+		<script src="/iframe/script/Ace_Editor/theme-ambiance.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-chaos.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-chrome.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-clouds.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-clouds_midnight.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-cobalt.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-crimson_editor.js"></script>
+		<script src="/iframe/script/Ace_Editor/theme-dreamweaver.js"></script>
 	</body>
 </html>
