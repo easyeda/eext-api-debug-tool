@@ -15,6 +15,7 @@
 					<li><button id="save-btn">保存</button></li>
 					<li><button id="delete-btn">删除</button></li>
 					<li><button id="example-btn">案例</button></li>
+					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="ai-btn">AI辅助</button></li>
 					<li><button id="setting-btn">切换主题</button></li>
 					<li><button id="about-btn">关于</button></li>
@@ -55,14 +56,21 @@
 			const light_theme = document.getElementById('theme-light');
 			const dark_theme = document.getElementById('theme-dark');
 			GetTheme(editor, light_theme, dark_theme);
+			
+			//加载按钮到左侧
+			Code_LoadBtnListFromDB(editor);
 
+			//保存代码到左侧列表
+			document.getElementById('SaveinLeft-btn').addEventListener('click', () => {
+				Code_SaveToBtnList(editor);
+			})
 			// 运行代码
 			document.getElementById('run-btn').addEventListener('click', () => {
 				ACE_RunCode(editor);
 			});
 			// 开启AI辅助支持
 			document.getElementById('ai-btn').addEventListener('click', () => {
-				activateECTAI();
+				activateECTAI(editor);
 			});
 			// 保存代码
 			document.getElementById('save-btn').addEventListener('click', async () => {

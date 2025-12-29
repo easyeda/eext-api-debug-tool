@@ -138,3 +138,164 @@ function ACE_RunCode(editor) {
 	}
 
 }
+
+// ==========================
+// 初始化 BtnList 表的数据库
+// ==========================
+function BtnStore_Init() {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('CodeStore', 2); // 注意：版本号升为 2，以触发 onupgradeneeded
+
+		request.onupgradeneeded = (e) => {
+			const db = e.target.result;
+			if (!db.objectStoreNames.contains('BtnList')) {
+				const store = db.createObjectStore('BtnList', { keyPath: 'id', autoIncrement: true });
+				store.createIndex('name', 'name', { unique: true });
+				store.createIndex('createdAt', 'createdAt', { unique: false });
+			}
+		};
+
+		request.onsuccess = (e) => resolve(e.target.result);
+		request.onerror = (e) => reject(e.target.error);
+	});
+}
+// ==========================
+// 初始化 BtnList 表（版本 2）
+// ==========================
+function BtnStore_Init() {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('CodeStore', 2); // 升级版本以创建 BtnList
+
+		request.onupgradeneeded = (e) => {
+			const db = e.target.result;
+			if (!db.objectStoreNames.contains('BtnList')) {
+				const store = db.createObjectStore('BtnList', { keyPath: 'id', autoIncrement: true });
+				store.createIndex('name', 'name', { unique: true });
+				store.createIndex('createdAt', 'createdAt', { unique: false });
+			}
+		};
+
+		request.onsuccess = (e) => resolve(e.target.result);
+		request.onerror = (e) => reject(e.target.error);
+	});
+}
+
+// ==========================
+// 保存当前代码为快捷按钮（追加到 <ul> 中）
+// ==========================
+async function Code_SaveToBtnList(editor) {
+	const currentCode = editor.getValue();
+	if (!currentCode.trim()) {
+		eda.sys_Message.showToastMessage('当前没有可保存的代码内容。', 'info', 1);
+		return;
+	}
+
+	eda.sys_Dialog.showInputDialog(
+		'请输入按钮名称：',
+		'该名称将作为左侧工具栏的新按钮，不可重复。',
+		'保存为快捷按钮',
+		'text',
+		'', {
+			placeholder: '例如：自动布线脚本',
+			minlength: 1,
+			maxlength: 50
+		},
+		async (inputValue) => {
+			if (inputValue == null || !inputValue.trim()) {
+				return;
+			}
+			const name = inputValue.trim();
+
+			try {
+				const db = await BtnStore_Init();
+				const tx = db.transaction(['BtnList'], 'readwrite');
+				const store = tx.objectStore('BtnList');
+
+				// 检查是否重名
+				const index = store.index('name');
+				const existing = await new Promise((res) => {
+					const req = index.get(name);
+					req.onsuccess = () => res(req.result);
+					req.onerror = () => res(null);
+				});
+
+				if (existing) {
+					eda.sys_Message.showToastMessage(`按钮名称 "${name}" 已存在，请换一个。`, 'warn', 2);
+					return;
+				}
+
+				// 保存到数据库
+				const record = {
+					name: name,
+					code: currentCode,
+					createdAt: new Date().toISOString()
+				};
+				await new Promise((resolve, reject) => {
+					const req = store.add(record);
+					req.onsuccess = () => resolve();
+					req.onerror = () => reject(req.error);
+				});
+
+				// 创建 <li><button>...</button></li>
+				const li = document.createElement('li');
+				const btn = document.createElement('button');
+				btn.textContent = name;
+				btn.onclick = () => {
+					editor.setValue(record.code, -1);
+					editor.clearSelection();
+					eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
+				};
+				li.appendChild(btn);
+
+				// 追加到 ul 末尾
+				const ul = document.querySelector('#sidebar ul');
+				if (ul) ul.appendChild(li);
+
+				eda.sys_Message.showToastMessage(`快捷按钮 "${name}" 已保存并添加到侧边栏。`, 'success', 2);
+
+			} catch (error) {
+				console.error('保存快捷按钮失败:', error);
+				eda.sys_Message.showToastMessage(`保存失败: ${error.message || error}`, 'error', 2);
+			}
+		}
+	);
+}
+
+// ==========================
+// 启动时从数据库加载所有快捷按钮并追加到 <ul>
+// ==========================
+async function Code_LoadBtnListFromDB(editor) {
+	try {
+		const db = await BtnStore_Init();
+		const tx = db.transaction(['BtnList'], 'readonly');
+		const store = tx.objectStore('BtnList');
+		const records = await new Promise((resolve, reject) => {
+			const req = store.getAll();
+			req.onsuccess = () => resolve(req.result || []);
+			req.onerror = () => reject(req.error);
+		});
+
+		const ul = document.querySelector('#sidebar ul');
+		if (!ul) return;
+
+		records.forEach(record => {
+			const li = document.createElement('li');
+			const btn = document.createElement('button');
+			btn.textContent = record.name;
+			btn.onclick = () => {
+				editor.setValue(record.code, -1);
+				editor.clearSelection();
+				eda.sys_Message.showToastMessage(`已加载：${record.name}`, 'info', 1);
+			};
+			li.appendChild(btn);
+			ul.appendChild(li);
+		});
+
+		if (records.length > 0) {
+			console.log(`成功加载 ${records.length} 个快捷按钮`);
+		}
+	} catch (error) {
+		console.error('加载快捷按钮失败:', error);
+		eda.sys_Message.showToastMessage(`加载失败: ${error.message || error}`, 'error', 2);
+	}
+}
