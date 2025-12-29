@@ -144,7 +144,7 @@ function ACE_RunCode(editor) {
 // ==========================
 function BtnStore_Init() {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('CodeStore', 2); // 升级版本以创建 BtnList
+		const request = indexedDB.open('CodeStore', 1); 
 
 		request.onupgradeneeded = (e) => {
 			const db = e.target.result;
