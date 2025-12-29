@@ -140,27 +140,7 @@ function ACE_RunCode(editor) {
 }
 
 // ==========================
-// 初始化 BtnList 表的数据库
-// ==========================
-function BtnStore_Init() {
-	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('CodeStore', 2); // 注意：版本号升为 2，以触发 onupgradeneeded
-
-		request.onupgradeneeded = (e) => {
-			const db = e.target.result;
-			if (!db.objectStoreNames.contains('BtnList')) {
-				const store = db.createObjectStore('BtnList', { keyPath: 'id', autoIncrement: true });
-				store.createIndex('name', 'name', { unique: true });
-				store.createIndex('createdAt', 'createdAt', { unique: false });
-			}
-		};
-
-		request.onsuccess = (e) => resolve(e.target.result);
-		request.onerror = (e) => reject(e.target.error);
-	});
-}
-// ==========================
-// 初始化 BtnList 表（版本 2）
+// 初始化 BtnList 表
 // ==========================
 function BtnStore_Init() {
 	return new Promise((resolve, reject) => {
@@ -181,7 +161,69 @@ function BtnStore_Init() {
 }
 
 // ==========================
-// 保存当前代码为快捷按钮（追加到 <ul> 中）
+// 删除 BtnList 中的按钮记录
+// ==========================
+async function deleteBtnFromDB(name) {
+	const db = await BtnStore_Init();
+	const tx = db.transaction(['BtnList'], 'readwrite');
+	const store = tx.objectStore('BtnList');
+	const index = store.index('name');
+
+	const key = await new Promise((resolve, reject) => {
+		const req = index.getKey(name);
+		req.onsuccess = () => resolve(req.result);
+		req.onerror = () => reject(req.error);
+	});
+
+	if (key === undefined) {
+		throw new Error('按钮不存在');
+	}
+
+	await new Promise((resolve, reject) => {
+		const req = store.delete(key);
+		req.onsuccess = () => resolve();
+		req.onerror = () => reject(req.error);
+	});
+}
+
+// ==========================
+// 创建一个快捷按钮元素（含右键删除）
+// ==========================
+function createQuickButton(editor, name, code) {
+	const li = document.createElement('li');
+	const btn = document.createElement('button');
+	btn.textContent = name;
+	btn.setAttribute('data-btn-name', name);
+
+	// 左键：加载代码
+	btn.onclick = () => {
+		editor.setValue(code, -1);
+		editor.clearSelection();
+		eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
+	};
+
+	// 右键：删除按钮
+	btn.oncontextmenu = (e) => {
+		e.preventDefault();
+		if (confirm(`确定要删除快捷按钮 "${name}" 吗？\n（此操作不可逆）`)) {
+			deleteBtnFromDB(name)
+				.then(() => {
+					li.remove(); // 移除整个 <li>
+					eda.sys_Message.showToastMessage(`已删除快捷按钮 "${name}"`, 'info', 1);
+				})
+				.catch(err => {
+					console.error('删除失败:', err);
+					eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 1);
+				});
+		}
+	};
+
+	li.appendChild(btn);
+	return li;
+}
+
+// ==========================
+// 保存为快捷按钮
 // ==========================
 async function Code_SaveToBtnList(editor) {
 	const currentCode = editor.getValue();
@@ -201,9 +243,7 @@ async function Code_SaveToBtnList(editor) {
 			maxlength: 50
 		},
 		async (inputValue) => {
-			if (inputValue == null || !inputValue.trim()) {
-				return;
-			}
+			if (inputValue == null || !inputValue.trim()) return;
 			const name = inputValue.trim();
 
 			try {
@@ -211,91 +251,57 @@ async function Code_SaveToBtnList(editor) {
 				const tx = db.transaction(['BtnList'], 'readwrite');
 				const store = tx.objectStore('BtnList');
 
-				// 检查是否重名
-				const index = store.index('name');
-				const existing = await new Promise((res) => {
-					const req = index.get(name);
-					req.onsuccess = () => res(req.result);
-					req.onerror = () => res(null);
+				// 检查重名
+				const existing = await new Promise(res => {
+					const req = store.index('name').get(name);
+					req.onsuccess = () => res(!!req.result);
 				});
-
 				if (existing) {
-					eda.sys_Message.showToastMessage(`按钮名称 "${name}" 已存在，请换一个。`, 'warn', 2);
+					eda.sys_Message.showToastMessage(`按钮名称 "${name}" 已存在`, 'warn', 2);
 					return;
 				}
 
-				// 保存到数据库
-				const record = {
-					name: name,
-					code: currentCode,
-					createdAt: new Date().toISOString()
-				};
+				// 保存
 				await new Promise((resolve, reject) => {
-					const req = store.add(record);
-					req.onsuccess = () => resolve();
-					req.onerror = () => reject(req.error);
+					const req = store.add({ name, code: currentCode, createdAt: new Date().toISOString() });
+					req.onsuccess = resolve;
+					req.onerror = reject;
 				});
 
-				// 创建 <li><button>...</button></li>
-				const li = document.createElement('li');
-				const btn = document.createElement('button');
-				btn.textContent = name;
-				btn.onclick = () => {
-					editor.setValue(record.code, -1);
-					editor.clearSelection();
-					eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
-				};
-				li.appendChild(btn);
+				// 创建并追加按钮
+				const li = createQuickButton(editor, name, currentCode);
+				document.querySelector('#sidebar ul')?.appendChild(li);
 
-				// 追加到 ul 末尾
-				const ul = document.querySelector('#sidebar ul');
-				if (ul) ul.appendChild(li);
-
-				eda.sys_Message.showToastMessage(`快捷按钮 "${name}" 已保存并添加到侧边栏。`, 'success', 2);
-
+				eda.sys_Message.showToastMessage(`快捷按钮 "${name}" 已添加`, 'success', 1);
 			} catch (error) {
-				console.error('保存快捷按钮失败:', error);
-				eda.sys_Message.showToastMessage(`保存失败: ${error.message || error}`, 'error', 2);
+				eda.sys_Message.showToastMessage(`保存失败: ${error.message}`, 'error', 2);
 			}
 		}
 	);
 }
 
 // ==========================
-// 启动时从数据库加载所有快捷按钮并追加到 <ul>
+// 加载所有快捷按钮
 // ==========================
 async function Code_LoadBtnListFromDB(editor) {
 	try {
 		const db = await BtnStore_Init();
-		const tx = db.transaction(['BtnList'], 'readonly');
-		const store = tx.objectStore('BtnList');
 		const records = await new Promise((resolve, reject) => {
-			const req = store.getAll();
+			const tx = db.transaction(['BtnList'], 'readonly');
+			const req = tx.objectStore('BtnList').getAll();
 			req.onsuccess = () => resolve(req.result || []);
-			req.onerror = () => reject(req.error);
+			req.onerror = reject;
 		});
 
 		const ul = document.querySelector('#sidebar ul');
 		if (!ul) return;
 
 		records.forEach(record => {
-			const li = document.createElement('li');
-			const btn = document.createElement('button');
-			btn.textContent = record.name;
-			btn.onclick = () => {
-				editor.setValue(record.code, -1);
-				editor.clearSelection();
-				eda.sys_Message.showToastMessage(`已加载：${record.name}`, 'info', 1);
-			};
-			li.appendChild(btn);
+			const li = createQuickButton(editor, record.name, record.code);
 			ul.appendChild(li);
 		});
-
-		if (records.length > 0) {
-			console.log(`成功加载 ${records.length} 个快捷按钮`);
-		}
 	} catch (error) {
 		console.error('加载快捷按钮失败:', error);
-		eda.sys_Message.showToastMessage(`加载失败: ${error.message || error}`, 'error', 2);
+		eda.sys_Message.showToastMessage(`加载失败: ${error.message}`, 'error', 1);
 	}
 }
