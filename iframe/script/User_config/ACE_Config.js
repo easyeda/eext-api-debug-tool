@@ -166,7 +166,7 @@ function ACE_RunCode(editor) {
 	try {
 		eval(code);
 	} catch (error) {
-		console.error('❌ 执行出错:', error);
+		console.error('执行出错:', error);
 	}
 
 }
@@ -264,12 +264,7 @@ async function Code_SaveToBtnList(editor) {
 		return;
 	}
 
-	eda.sys_Dialog.showInputDialog(
-		'请输入按钮名称：',
-		'该名称将作为左侧工具栏的新按钮，不可重复。',
-		'保存为快捷按钮',
-		'text',
-		'', {
+	eda.sys_Dialog.showInputDialog('请输入按钮名称：','该名称将作为左侧工具栏的新按钮，不可重复。','保存为快捷按钮','text','', {
 			placeholder: '例如：自动布线脚本',
 			minlength: 1,
 			maxlength: 50
