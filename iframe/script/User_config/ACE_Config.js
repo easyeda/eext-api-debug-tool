@@ -51,27 +51,45 @@ async function SetTheme(editor, light_theme, dark_theme) {
 }
 
 
-// 注册EDA的自动补全
 function ACE_CodingForEDA(editor, edcode) {
 	const completers = [];
+
 	for (const e of edcode) {
+		// 构建 snippet：${1:param1}, ${2:param2}, ...
+		const paramPlaceholders = e.parameters
+			.map((p, idx) => `\${${idx + 1}:${p.name}}`)
+			.join(', ');
+
+		const snippet = e.methodPath + '(' + paramPlaceholders + ')';
+
+		// 主补全项（按方法路径）
 		completers.push({
 			caption: e.methodPath,
-			value: e.methodPath + '()',
+			snippet: snippet, // ← 关键：使用 snippet
 			score: 1000,
 			meta: 'method',
-			docText: e.description,
-		}, {
+			docText: buildDocText(e), // 更丰富的文档
+		});
+
+		// 备用：按描述搜索
+		completers.push({
 			caption: e.description,
-			value: e.methodPath + '()',
+			snippet: snippet,
 			score: 999,
 			meta: 'desc',
-			docText: e.methodPath,
-		}, );
+			docText: buildDocText(e),
+		});
 	}
-	editor.completers = editor.completers.filter((c) => !c.getCompletions || (c.meta !== 'method' && c.meta !== 'desc'));
+
+	// 清除旧的 EDA 补全
+	editor.completers = editor.completers.filter((c) => {
+		return !c.getCompletions ||
+			!(c.meta === 'method' || c.meta === 'desc');
+	});
+
+	// 注册新的 completer
 	editor.completers.push({
-		identifierRegexps: [/[\w\$\u00A2-\uFFFF]/], // 支持中文
+		identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
 		getCompletions: function(editor, session, pos, prefix, callback) {
 			const { row, column } = pos;
 			const tokens = session.getTokens(row);
@@ -96,10 +114,24 @@ function ACE_CodingForEDA(editor, edcode) {
 			if (prefix === '') {
 				return callback(null, []);
 			}
-			const matches = completers.filter((item) => item.caption.toLowerCase().includes(prefix.toLowerCase()));
+			const matches = completers.filter((item) =>
+				item.caption.toLowerCase().includes(prefix.toLowerCase())
+			);
 			callback(null, matches);
 		},
 	});
+}
+
+// 辅助函数：生成更详细的文档文本
+function buildDocText(item) {
+	let doc = item.description + '\n\n';
+	if (item.parameters && item.parameters.length > 0) {
+		doc += 'Parameters:\n';
+		item.parameters.forEach(p => {
+			doc += `  • ${p.name}: ${p.description}\n`;
+		});
+	}
+	return doc.trim();
 }
 
 
@@ -144,7 +176,7 @@ function ACE_RunCode(editor) {
 // ==========================
 function BtnStore_Init() {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('BtnStore', 1); 
+		const request = indexedDB.open('BtnStore', 1);
 
 		request.onupgradeneeded = (e) => {
 			const db = e.target.result;
