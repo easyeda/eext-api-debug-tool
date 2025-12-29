@@ -94,3 +94,19 @@ body {
 	height: 100%;
 	width: 100%;
 }
+#sidebar {
+	overflow-y: auto;
+	/* 隐藏滚动条但可滚动 */
+}
+
+/* WebKit (Chrome, Safari) */
+#sidebar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Firefox */
+#sidebar {
+	scrollbar-width: none; /* 或 'thin' + 透明色 trick，但 display:none 不支持 */
+}
+
+/* 对于 Firefox，更稳妥的做法是用 wrapper 技巧，但简单场景下 scrollbar-width: none 足够 */

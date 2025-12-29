@@ -89,3 +89,17 @@ body {
 	height: 100%;
 	width: 100%;
 }
+#sidebar {
+	overflow-y: auto;
+}
+
+/* WebKit (Chrome, Safari) */
+#sidebar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Firefox */
+#sidebar {
+	scrollbar-width: none;
+}
+
