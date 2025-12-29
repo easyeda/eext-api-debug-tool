@@ -13,7 +13,7 @@ let content;
 try {
   content = fs.readFileSync(inputPath, 'utf8');
 } catch (err) {
-  console.error('❌ 无法读取 index.d.ts，请确认 @jlceda/pro-api-types 已安装。');
+  console.error('无法读取 index.d.ts，请确认 @jlceda/pro-api-types 已安装。');
   process.exit(1);
 }
 
@@ -132,4 +132,4 @@ outputStr += '];\n'; // 注意结尾加 ; 更安全
 
 fs.writeFileSync(outputPath, outputStr, 'utf8');
 
-console.log(`✅ 成功生成 ${results.length} 个方法条目到 ${outputPath}`);
+console.log(`成功生成 ${results.length} 个方法条目到 ${outputPath}`);

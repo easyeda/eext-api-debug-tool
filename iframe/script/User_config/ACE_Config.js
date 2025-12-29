@@ -31,7 +31,7 @@ async function GetTheme(editor, light_theme, dark_theme) {
 	console.log('当前主题', theme);
 }
 
-//修改
+//修改编辑器主题
 async function SetTheme(editor, light_theme, dark_theme) {
 	let theme = eda.sys_Storage.getExtensionUserConfig('theme');
 	if (theme == 'light') {
@@ -331,4 +331,28 @@ async function Code_LoadBtnListFromDB(editor) {
 		console.error('加载快捷按钮失败:', error);
 		eda.sys_Message.showToastMessage(`加载失败: ${error.message}`, 'error', 1);
 	}
+}
+
+//初始化插件数据库
+function ExtStore() {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('ExtStore', 1); //数据库名和数据库版本 如果要升级数据库那么版本号必须增加
+		request.onupgradeneeded = (e) => { //回调函数 这个不需要手动触发 入参e是db实例对象 调用时会自动传进event
+			const db = e.target.result; //参数传递 不传也行 只是不够优雅
+			if (!db.objectStoreNames.contains('ExtStore')) { //如果objectStoreNames返回的列表中不包含指定的数据表 则新建数据库
+				const store = db.createObjectStore('ExtStore', { keyPath: 'id', autoIncrement: true }); //自增的隐藏主键
+				store.createIndex('code', 'code', { unique: false }); //创建索引和字段，这里设置成一样的就可以用索引查找相同字段了
+				store.createIndex('name', 'name', { unique: true }); //插件名不允许重复
+			}
+		}; //这里是将函数赋值给事务处理器 所以花括号带个分号也正常
+		request.onsuccess = (e) => {
+			const result = e.target.result;
+			console.log('数据库打开成功', result);
+			resolve(result);	//这里将数据库对象传回去了
+		};
+		request.onerror = (e) => {
+			console.error('数据库打开失败:', e.target.error);
+			reject(e.target.error);
+		};
+	})
 }
