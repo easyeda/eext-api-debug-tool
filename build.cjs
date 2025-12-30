@@ -31,7 +31,7 @@ let currentClass = null;
 for (let i = 0; i < lines.length; i++) {
   const line = lines[i].trim();
 
-  // 捕获 class 声明（即使没有 { 在同一行）
+  // 捕获 class 声明
   if (line.startsWith('declare class ')) {
     const match = line.match(/declare\s+class\s+(\w+)/);
     if (match) {
@@ -57,6 +57,7 @@ for (let i = 0; i < lines.length; i++) {
   if (line === '/**') {
     let description = '';
     const params = [];
+    let returnsDesc = ''; // ← 新增：用于存储返回值描述
     let j = i + 1;
 
     // 解析整个注释块直到 */
@@ -74,16 +75,21 @@ for (let i = 0; i < lines.length; i++) {
         }
       }
 
-      // 提取 @param 行：格式为 * @param name - description
+      // 提取 @param 行：* @param name - description
       const paramMatch = l.match(/^\*\s*@param\s+([a-zA-Z_$][\w$]*)\s*-\s*(.+)$/);
       if (paramMatch) {
         let desc = paramMatch[2].trim();
-        // 转义单引号，避免 JS 字符串语法错误
         desc = desc.replace(/'/g, "\\'").replace(/\r/g, '');
         params.push({
           name: paramMatch[1],
           description: desc,
         });
+      }
+
+      // 提取 @returns 或 @return（支持两种写法）
+      const returnMatch = l.match(/^\*\s*@(?:returns?|return)\s+(.+)$/);
+      if (returnMatch && !returnsDesc) {
+        returnsDesc = returnMatch[1].trim().replace(/'/g, "\\'").replace(/\r/g, '');
       }
 
       j++;
@@ -93,16 +99,19 @@ for (let i = 0; i < lines.length; i++) {
     const methodLineIndex = j + 1;
     if (methodLineIndex < lines.length) {
       const methodLine = lines[methodLineIndex];
-      // 匹配方法名：允许 async，方法名后紧跟 (
       const methodMatch = methodLine.match(/^\s*(?:async\s+)?(\w+)\s*\(/);
       if (methodMatch) {
         const methodName = methodMatch[1];
         const classNameLower = formatClassName(currentClass);
-        results.push({
+        const item = {
           methodPath: `eda.${classNameLower}.${methodName}`,
           description: description.replace(/'/g, "\\'"),
           parameters: params,
-        });
+        };
+        if (returnsDesc !== '') {
+          item.returns = returnsDesc;
+        }
+        results.push(item);
 
         // 跳过已处理的方法行
         i = methodLineIndex;
@@ -121,6 +130,9 @@ results.forEach(item => {
   outputStr += '\t{\n';
   outputStr += `\t\t'methodPath': '${item.methodPath}',\n`;
   outputStr += `\t\t'description': '${item.description}',\n`;
+  if (item.hasOwnProperty('returns')) {
+    outputStr += `\t\t'returns': '${item.returns}',\n`;
+  }
   outputStr += '\t\t\'parameters\': [\n';
   item.parameters.forEach(param => {
     outputStr += `\t\t\t{ 'name': '${param.name}', 'description': '${param.description}' },\n`;
@@ -128,7 +140,7 @@ results.forEach(item => {
   outputStr += '\t\t],\n';
   outputStr += '\t},\n';
 });
-outputStr += '];\n'; // 注意结尾加 ; 更安全
+outputStr += '];\n';
 
 fs.writeFileSync(outputPath, outputStr, 'utf8');
 
