@@ -757,3 +757,41 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 		throw err;
 	}
 }
+
+/**
+ * 打开文件选择窗口，读取用户选择的 .js 文件内容，并加载到指定的 Ace Editor 中
+ * @param {Object} editor - Ace Editor 实例
+ */
+function ImportFile(editor) {
+  // 创建一个临时的 input 元素用于文件选择
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.js'; // 仅接受 .js 文件
+
+  input.onchange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 检查文件扩展名（虽然 accept 已限制，但再校验一次更安全）
+    if (!file.name.endsWith('.js')) {
+      alert('请选择一个有效的 JavaScript (.js) 文件。');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      editor.session.setValue(content); // 将内容设置到 Ace Editor
+      editor.session.setMode('ace/mode/javascript'); // 设置语法高亮模式为 JavaScript
+    };
+    reader.onerror = () => {
+      console.error('读取文件时出错');
+      alert('读取文件失败，请重试。');
+    };
+
+    reader.readAsText(file);
+  };
+
+  // 触发文件选择窗口
+  input.click();
+}

@@ -11,6 +11,7 @@
 			<div id="sidebar">
 				<ul>
 					<li><button id="run-btn">运行</button></li>
+					<li><button id="import-btn">导入</button></li>
 					<li><button id="load-btn">加载</button></li>
 					<li><button id="save-btn">保存</button></li>
 					<li><button id="delete-btn">删除</button></li>
@@ -101,9 +102,13 @@
 				eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
 				Code_OpenDeleteWindow(editor);
 			});
+			//导入JS文件
+			document.getElementById('import-btn').addEventListener('click', async () => {
+				ImportFile(editor);
+			})
 			//保存到插件
 			document.getElementById('Ext-btn').addEventListener('click', async () => {
-				showPluginManagerModal(editor,dark_theme);
+				showPluginManagerModal(editor);
 			})
 			//关于编辑器 - 暂时先跳转GitHub 上架后修改跳转EDA扩展广场
 			document.getElementById('about-btn').addEventListener('click', async () => {
