@@ -16,6 +16,7 @@
 					<li><button id="delete-btn">删除</button></li>
 					<li><button id="setting-btn">切换主题</button></li>
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
+					<li><button id="Ext-btn">插件管理</button></li>
 					<li><button id="ai-btn">AI辅助</button></li>
 					<li><button id="example-btn">案例</button></li>
 					<li><button id="about-btn">关于</button></li>
@@ -44,7 +45,7 @@
 			//初始化Ace 编辑器
 			const editor = ace.edit('editor');
 			ACE_Init(editor);
-
+			
 			// 注册放大缩小代码支持
 			let currentFontSize = 14;
 			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
@@ -56,6 +57,9 @@
 			const light_theme = document.getElementById('theme-light');
 			const dark_theme = document.getElementById('theme-dark');
 			GetTheme(editor, light_theme, dark_theme);
+			
+			//扫描插件并执行
+			ExtStore_LoadAndRunAllPlugins();
 
 			//加载按钮到左侧
 			Code_LoadBtnListFromDB(editor);
@@ -97,6 +101,10 @@
 				eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
 				Code_OpenDeleteWindow(editor);
 			});
+			//保存到插件
+			document.getElementById('Ext-btn').addEventListener('click', async () => {
+				showPluginManagerModal(editor,dark_theme);
+			})
 			//关于编辑器 - 暂时先跳转GitHub 上架后修改跳转EDA扩展广场
 			document.getElementById('about-btn').addEventListener('click', async () => {
 				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
