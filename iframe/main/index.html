@@ -52,7 +52,7 @@
 			//初始化Ace 编辑器
 			const editor = ace.edit('editor');
 			ACE_Init(editor);
-			
+
 			// 注册放大缩小代码支持
 			let currentFontSize = 14;
 			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
@@ -111,16 +111,19 @@
 			//导入JS文件
 			document.getElementById('import-btn').addEventListener('click', async () => {
 				ImportFile(editor);
-			})
+			});
 			//保存到插件
 			document.getElementById('Ext-btn').addEventListener('click', async () => {
 				showPluginManagerModal(editor);
-			})
+			});
 			//关于编辑器 - 暂时先跳转GitHub 上架后修改跳转EDA扩展广场
 			document.getElementById('about-btn').addEventListener('click', async () => {
 				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
 				eda.sys_Window.open('https://github.com/easyeda/eext-api-debug-tool.git', '_blank');
 			});
+			//注册文件跳转支持
+			const methodList = edcode.map((item) => item.methodPath); // 保留 'eda.XXX'
+			injectContextMenuJumpToDocs(editor, methodList);
 		</script>
 		<!-- 一些资源文件 这些都不是必要的 删除也没什么影响 只不过用户也许会换主题所以放进来-->
 		<script src="/iframe/script/Ace_Editor/theme-ambiance.js"></script>

@@ -28,10 +28,10 @@ async function GetTheme(editor, light_theme, dark_theme) {
 		dark_theme.disabled = false;
 		editor.setTheme('ace/theme/monokai');
 	}
-	//console.log('当前主题', theme);
+	// console.log('当前主题', theme);
 }
 
-//修改编辑器主题
+// 修改编辑器主题
 async function SetTheme(editor, light_theme, dark_theme) {
 	let theme = eda.sys_Storage.getExtensionUserConfig('theme');
 	if (theme == 'light') {
@@ -50,14 +50,12 @@ async function SetTheme(editor, light_theme, dark_theme) {
 	await eda.sys_Message.showToastMessage('当前主题已切换为' + theme, 'info', 1);
 }
 
-//注册ACE补全
+// 注册ACE补全
 function ACE_CodingForEDA(editor, edcode) {
 	const completers = [];
 	for (const e of edcode) {
 		// 构建 snippet：方法参数提示
-		const paramPlaceholders = e.parameters
-			.map((p, idx) => `\${${idx + 1}:${p.name}}`)
-			.join(', ');
+		const paramPlaceholders = e.parameters.map((p, idx) => `\${${idx + 1}:${p.name}}`).join(', ');
 		const snippet = e.methodPath + '(' + paramPlaceholders + ')';
 		// 按方法名注册
 		completers.push({
@@ -78,13 +76,12 @@ function ACE_CodingForEDA(editor, edcode) {
 	}
 	// 清除旧的 EDA 补全
 	editor.completers = editor.completers.filter((c) => {
-		return !c.getCompletions ||
-			!(c.meta === 'method' || c.meta === 'desc');
+		return !c.getCompletions || !(c.meta === 'method' || c.meta === 'desc');
 	});
 	// 注册新的 completer
 	editor.completers.push({
 		identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
-		getCompletions: function(editor, session, pos, prefix, callback) {
+		getCompletions: function (editor, session, pos, prefix, callback) {
 			const { row, column } = pos;
 			const tokens = session.getTokens(row);
 			let tokenStart = 0;
@@ -108,9 +105,7 @@ function ACE_CodingForEDA(editor, edcode) {
 			if (prefix === '') {
 				return callback(null, []);
 			}
-			const matches = completers.filter((item) =>
-				item.caption.toLowerCase().includes(prefix.toLowerCase())
-			);
+			const matches = completers.filter((item) => item.caption.toLowerCase().includes(prefix.toLowerCase()));
 			callback(null, matches);
 		},
 	});
@@ -121,15 +116,14 @@ function buildDocText(item) {
 	let doc = item.description + '\n用法：' + item.methodPath + '()\n';
 	if (item.parameters && item.parameters.length > 0) {
 		doc += '参数:\n';
-		item.parameters.forEach(p => {
+		item.parameters.forEach((p) => {
 			doc += `  • ${p.name}: ${p.description}\n`;
 		});
 	} else {
-		doc += '\n此方法无参数，可直接调用'
+		doc += '\n此方法无参数，可直接调用';
 	}
 	return doc.trim() + '\n\n返回值:' + item.returns;
 }
-
 
 // 滚动+Ctrl放大或缩小代码
 function ACE_ChangeCodeSize(editor, currentFontSize, showToast) {
@@ -147,7 +141,8 @@ function ACE_ChangeCodeSize(editor, currentFontSize, showToast) {
 				showToast(currentFontSize + 'px:' + (currentFontSize / 14) * 100 + '%');
 			}
 			editor.setFontSize(currentFontSize);
-		}, { passive: false },
+		},
+		{ passive: false },
 	);
 }
 
@@ -163,7 +158,6 @@ function ACE_RunCode(editor) {
 	} catch (error) {
 		console.error('执行出错:', error);
 	}
-
 }
 
 // ==========================
@@ -237,7 +231,7 @@ function createQuickButton(editor, name, code) {
 					li.remove(); // 移除整个 <li>
 					eda.sys_Message.showToastMessage(`已删除快捷按钮 "${name}"`, 'info', 1);
 				})
-				.catch(err => {
+				.catch((err) => {
 					console.error('删除失败:', err);
 					eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 1);
 				});
@@ -258,10 +252,16 @@ async function Code_SaveToBtnList(editor) {
 		return;
 	}
 
-	eda.sys_Dialog.showInputDialog('请输入按钮名称：', '该名称将作为左侧工具栏的新按钮，不可重复。', '保存为快捷按钮', 'text', '', {
+	eda.sys_Dialog.showInputDialog(
+		'请输入按钮名称：',
+		'该名称将作为左侧工具栏的新按钮，不可重复。',
+		'保存为快捷按钮',
+		'text',
+		'',
+		{
 			placeholder: '例如：自动布线脚本',
 			minlength: 1,
-			maxlength: 50
+			maxlength: 50,
 		},
 		async (inputValue) => {
 			if (inputValue == null || !inputValue.trim()) return;
@@ -273,7 +273,7 @@ async function Code_SaveToBtnList(editor) {
 				const store = tx.objectStore('BtnList');
 
 				// 检查重名
-				const existing = await new Promise(res => {
+				const existing = await new Promise((res) => {
 					const req = store.index('name').get(name);
 					req.onsuccess = () => res(!!req.result);
 				});
@@ -297,7 +297,7 @@ async function Code_SaveToBtnList(editor) {
 			} catch (error) {
 				eda.sys_Message.showToastMessage(`保存失败: ${error.message}`, 'error', 2);
 			}
-		}
+		},
 	);
 }
 
@@ -317,7 +317,7 @@ async function Code_LoadBtnListFromDB(editor) {
 		const ul = document.querySelector('#sidebar ul');
 		if (!ul) return;
 
-		records.forEach(record => {
+		records.forEach((record) => {
 			const li = createQuickButton(editor, record.name, record.code);
 			ul.appendChild(li);
 		});
@@ -341,7 +341,7 @@ function ExtStore_Init() {
 		};
 		request.onsuccess = (e) => {
 			const result = e.target.result;
-			//console.log('数据库打开成功', result);
+			// console.log('数据库打开成功', result);
 			resolve(result);
 		};
 		request.onerror = (e) => {
@@ -538,8 +538,8 @@ async function showPluginManagerModal(editor) {
 		border-radius: 4px;
 		outline: none;
 	`;
-	nameInput.onfocus = () => nameInput.style.borderColor = '#888';
-	nameInput.onblur = () => nameInput.style.borderColor = '#666';
+	nameInput.onfocus = () => (nameInput.style.borderColor = '#888');
+	nameInput.onblur = () => (nameInput.style.borderColor = '#666');
 	inputGroup.appendChild(nameInput);
 
 	const saveBtn = document.createElement('button');
@@ -721,7 +721,7 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 						try {
 							// 直接使用 eval 执行插件代码
 							eval(record.code);
-							//onLog(`插件 "${record.name}" 执行成功`, 'success');
+							// onLog(`插件 "${record.name}" 执行成功`, 'success');
 							results.push({ name: record.name, status: 'success' });
 						} catch (err) {
 							console.error(`插件 "${record.name}" 执行出错:`, err);
@@ -732,10 +732,10 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 					cursor.continue();
 				} else {
 					// 清理临时挂载的全局变量
-					tempKeys.forEach(key => {
+					tempKeys.forEach((key) => {
 						delete window[key];
 					});
-					//onLog(`共执行 ${results.length} 个插件`, 'info');
+					// onLog(`共执行 ${results.length} 个插件`, 'info');
 					resolve(results);
 				}
 			};
@@ -745,7 +745,7 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 				console.error('扫描插件数据库失败:', error);
 
 				// 清理（即使出错也要清理）
-				tempKeys.forEach(key => {
+				tempKeys.forEach((key) => {
 					delete window[key];
 				});
 
@@ -796,4 +796,83 @@ function ImportFile(editor) {
 
 	// 触发文件选择窗口
 	input.click();
+}
+
+/**
+ * 注入右键菜单项：「跳转方法文档」
+ * @param {Object} editor - ACE 编辑器实例
+ * @param {Array<string>} fullMethodPaths - 完整方法路径列表，如 ['eda.DMT_Board.copyBoard', ...]
+ */
+function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
+	const container = editor.container;
+
+	// 监听标准 contextmenu 事件（右键完整操作后触发）
+	container.addEventListener('contextmenu', (e) => {
+		e.preventDefault();
+
+		const pos = editor.renderer.screenToTextCoordinates(e.clientX, e.clientY);
+		editor.selection.moveTo(pos.row, pos.column);
+		const lineText = editor.session.getLine(pos.row);
+
+		// 按长度降序匹配
+		const sortedMethods = [...fullMethodPaths].sort((a, b) => b.length - a.length);
+		let matchedMethod = null;
+		for (const method of sortedMethods) {
+			const escaped = method.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			const regex = new RegExp(`\\b${escaped}\\b`);
+			if (regex.test(lineText)) {
+				matchedMethod = method;
+				break;
+			}
+		}
+
+		// 创建菜单
+		const menu = document.createElement('div');
+		menu.style.cssText = `
+			position: fixed;
+			top: ${e.clientY}px;
+			left: ${e.clientX}px;
+			background: #2d2d2d;
+			color: #f8f8f2;
+			border: 1px solid #555;
+		 border-radius: 4px;
+			z-index: 100000;
+			font-size: 13px;
+			min-width: 160px;
+			box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+			user-select: none;
+		`;
+
+		const item = document.createElement('div');
+		item.textContent = matchedMethod ? '跳转方法文档' : '未找到可跳转的方法';
+		item.style.padding = '6px 12px';
+		item.style.cursor = matchedMethod ? 'pointer' : 'default';
+		item.style.opacity = matchedMethod ? '1' : '0.6';
+
+		if (matchedMethod) {
+			item.onmouseenter = () => (item.style.background = '#3a3a3a');
+			item.onmouseleave = () => (item.style.background = '');
+			item.onclick = () => {
+				let clean = matchedMethod.startsWith('eda.') ? matchedMethod.substring(4) : matchedMethod;
+				const url = `https://prodocs.lceda.cn/cn/api/reference/pro-api.${clean.toLowerCase()}.html`;
+				window.open(url, '_blank');
+				closeMenu();
+			};
+		}
+
+		menu.appendChild(item);
+		document.body.appendChild(menu);
+
+		// 关闭菜单函数
+		function closeMenu() {
+			if (menu.parentNode) menu.parentNode.removeChild(menu);
+			document.removeEventListener('click', closeMenu);
+			document.removeEventListener('contextmenu', closeMenu);
+		}
+		// 点击任意地方关闭
+		setTimeout(() => {
+			document.addEventListener('click', closeMenu);
+			document.addEventListener('contextmenu', closeMenu);
+		}, 10);
+	});
 }
