@@ -20,10 +20,6 @@
 
 ![alt text](images/image.png)
 
-## 1.12.5 新增支持跳转方法地址
-
-<video controls src="images/ChangeForV1.12.5.mp4" title=""></video>
-
 ## 通过npm run dev 构建全新的提示词工程
 
 ## 特性
