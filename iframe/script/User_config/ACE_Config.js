@@ -223,20 +223,58 @@ function createQuickButton(editor, name, code) {
 		// eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
 	};
 
-	// 右键：删除按钮
+	// 右键：删除按钮 2026.1.5 修改增加一个新的菜单项
 	btn.oncontextmenu = (e) => {
 		e.preventDefault();
-		if (confirm(`确定要删除快捷按钮 "${name}" 吗？\n（此操作不可逆）`)) {
+		const menu =
+			document.getElementById('ctx-menu') ||
+			(() => {
+				const m = document.createElement('div');
+				m.id = 'ctx-menu';
+				m.style.cssText =
+					'position:fixed;z-index:10000;background:white;border:1px solid #ccc;box-shadow:2px 2px 6px rgba(0,0,0,0.2);display:none;font-size:14px;min-width:80px';
+				document.body.appendChild(m);
+				document.addEventListener('click', () => (m.style.display = 'none'));
+				return m;
+			})();
+		const showItem = (text, color, action) => {
+			const item = document.createElement('div');
+			item.textContent = text;
+			item.style.cssText = `padding:6px 12px;cursor:pointer;color:${color || '#000'};user-select:none`;
+			item.onmouseenter = () => (item.style.backgroundColor = color ? '#ffebee' : '#f0f0f0');
+			item.onmouseleave = () => (item.style.backgroundColor = '');
+			item.onclick = () => {
+				menu.style.display = 'none';
+				action();
+			};
+			menu.appendChild(item);
+		};
+		menu.innerHTML = '';
+		showItem('加载', '', () => {
+			editor.setValue(code, -1);
+			editor.clearSelection();
+			eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
+		});
+		showItem('删除', '#d32f2f', () => {
 			deleteBtnFromDB(name)
 				.then(() => {
-					li.remove(); // 移除整个 <li>
+					li.remove();
 					eda.sys_Message.showToastMessage(`已删除快捷按钮 "${name}"`, 'info', 1);
 				})
 				.catch((err) => {
 					console.error('删除失败:', err);
 					eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 1);
 				});
-		}
+		});
+		const x = e.pageX;
+		const y = e.pageY;
+		const w = window.innerWidth;
+		const h = window.innerHeight;
+		const mw = 100;
+		const mh = 50;
+		menu.style.left = `${Math.min(x, w - mw - 5)}px`;
+		menu.style.top = `${Math.min(y, h - mh - 5)}px`;
+		menu.style.display = 'block';
 	};
 
 	li.appendChild(btn);
