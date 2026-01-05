@@ -215,11 +215,12 @@ function createQuickButton(editor, name, code) {
 	btn.textContent = name;
 	btn.setAttribute('data-btn-name', name);
 
-	// 左键：加载代码
+	// 左键：加载代码 2026.1.5 修改为直接执行代码
 	btn.onclick = () => {
-		editor.setValue(code, -1);
-		editor.clearSelection();
-		eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
+		eval(code);
+		// editor.setValue(code, -1);
+		// editor.clearSelection();
+		// eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
 	};
 
 	// 右键：删除按钮
