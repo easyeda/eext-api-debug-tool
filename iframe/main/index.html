@@ -5,6 +5,8 @@
 		<title>Ace Editor - EDA</title>
 		<link id="theme-light" rel="stylesheet" href="/iframe/style/body-light.css" disabled />
 		<link id="theme-dark" rel="stylesheet" href="/iframe/style/body-dark.css" />
+		<!-- 风格文件 -->
+		<link rel="stylesheet" href="/iframe/script/SweetAlert2/sweetalert2.min.css" />
 	</head>
 	<body>
 		<div id="app">
@@ -45,12 +47,13 @@
 		<!-- 以下全都是ACE的风格文件，如果有需要可以自己添加 东西都在Ace_Editor文件夹里-->
 		<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
-
 		<!-- 一些编辑器支持 不想每个都写注释了 自己跳进去看吧 -->
 		<script src="/iframe/script/User_config/message.js"></script>
 		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
 		<script src="/iframe/script/User_config/Code_Config.js"></script>
+		<!-- SweetAlert JS模态框资源 -->
+		<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
 
 		<script>
 			//初始化Ace 编辑器
@@ -72,7 +75,6 @@
 
 			//扫描插件并执行
 			ExtStore_LoadAndRunAllPlugins();
-
 			//加载按钮到左侧
 			Code_LoadBtnListFromDB(editor);
 
@@ -103,10 +105,6 @@
 				// await eda.sys_Message.showToastMessage('这个还没写');
 				SetTheme(editor, light_theme, dark_theme);
 			});
-			//跳转代码扩展广场
-			document.getElementById('example-btn').addEventListener('click', async () => {
-				eda.sys_Window.open('https://ext.lceda.cn/', '_blank');
-			});
 			//删除代码
 			document.getElementById('delete-btn').addEventListener('click', async () => {
 				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
@@ -121,14 +119,15 @@
 			document.getElementById('Ext-btn').addEventListener('click', async () => {
 				showPluginManagerModal(editor);
 			});
-			//关于编辑器 - 暂时先跳转GitHub 上架后修改跳转EDA扩展广场
-			document.getElementById('about-btn').addEventListener('click', async () => {
-				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
-				eda.sys_Window.open('https://github.com/easyeda/eext-api-debug-tool.git', '_blank');
-			});
 			//注册文件跳转支持
 			const methodList = edcode.map((item) => item.methodPath); // 保留 'eda.XXX'
 			injectContextMenuJumpToDocs(editor, methodList);
+			//绑定运行快捷键
+			document.addEventListener('keydown', function (event) {
+				if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+					ACE_RunCode();
+				}
+			});
 		</script>
 		<!-- 一些资源文件 这些都不是必要的 删除也没什么影响 只不过用户也许会换主题所以放进来-->
 		<script src="/iframe/script/Ace_Editor/theme-ambiance.js"></script>
