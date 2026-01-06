@@ -125,7 +125,7 @@
 			//绑定运行快捷键
 			document.addEventListener('keydown', function (event) {
 				if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-					ACE_RunCode();
+					ACE_RunCode(editor);
 				}
 			});
 		</script>
