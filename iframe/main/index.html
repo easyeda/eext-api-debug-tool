@@ -19,8 +19,8 @@
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="Ext-btn">插件管理</button></li>
 					<li><button id="ai-btn">AI辅助</button></li>
-					<li><button id="example-btn">案例</button></li>
-					<li><button id="about-btn">关于</button></li>
+					<!-- <li><button id="example-btn" style="display: none;">案例</button></li>
+					<li><button id="about-btn" style="display: none;">关于</button></li> -->
 				</ul>
 			</div>
 			<div id="editor-container">
@@ -54,6 +54,7 @@
 
 		<script>
 			//初始化Ace 编辑器
+			const settingsMenu = ace.require('ace/ext/settings_menu');
 			const editor = ace.edit('editor');
 			ACE_Init(editor);
 
