@@ -3,7 +3,7 @@
 	"uuid": "7ca98ae04b7142599ab107e34acc8e5e",
 	"displayName": "嘉立创EDA代码编辑器",
 	"description": "支持中文联想的EDA脚本代码编辑器，支持代码高亮、自动补全、函数提示，AI注释，AI报错分析等功能。",
-	"version": "1.12.5",
+	"version": "2.1.1",
 	"publisher": "嘉立创EDA",
 	"engines": {
 		"eda": "^2.2.0"
