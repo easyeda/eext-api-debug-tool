@@ -1,5 +1,3 @@
-// 原生消息类
-
 /**
  * 在页面右下角显示一条临时消息提示（Toast）
  *
@@ -8,9 +6,7 @@
  * @param {number} [options.duration=3000] - 消息自动消失的毫秒数，默认 3000ms
  * @param {string} [options.type='info'] - 消息类型，可选 'info' | 'success' | 'warning' | 'error'
  * @param {boolean} [options.allowMultiple=false] - 是否允许多条消息同时存在
- *
  * @returns {void}
- *
  * @throws {TypeError} 当 message 不是字符串时抛出错误
  */
 function showToast(message, options = {}) {
@@ -36,13 +32,13 @@ function showToast(message, options = {}) {
 			toastContainer = document.createElement('div');
 			toastContainer.id = '__toast-container';
 			toastContainer.style.cssText = `
-	                position: fixed;
-	                bottom: 20px;
-	                right: 20px;
-	                z-index: 10000;
-	                max-width: 80vw;
-	                pointer-events: none;
-	            `;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 10000;
+                max-width: 80vw;
+                pointer-events: none;
+            `;
 			document.body.appendChild(toastContainer);
 		}
 		if (!config.allowMultiple) {
@@ -51,34 +47,34 @@ function showToast(message, options = {}) {
 		const toastEl = document.createElement('div');
 		toastEl.textContent = message;
 		toastEl.style.cssText = `
-	            background: ${
-					config.type === 'success' ? '#4caf50' : config.type === 'warning' ? '#ff9800' : config.type === 'error' ? '#f44336' : '#333'
-				};
-	            color: white;
-	            padding: 12px 16px;
-	            border-radius: 6px;
-	            margin-top: 8px;
-	            font-size: 14px;
-	            line-height: 1.4;
-	            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-	            opacity: 0;
-	            transform: translateY(20px);
-	            transition: opacity 0.3s ease, transform 0.3s ease;
-	            animation: __toast-fade-in 0.3s forwards;
-	            pointer-events: auto;
-	            word-break: break-word;
-	        `;
+            background: ${
+				config.type === 'success' ? '#4caf50' : config.type === 'warning' ? '#ff9800' : config.type === 'error' ? '#f44336' : '#333'
+			};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            animation: __toast-fade-in 0.3s forwards;
+            pointer-events: auto;
+            word-break: break-word;
+        `;
 		if (!document.getElementById('__toast-styles')) {
 			const styleEl = document.createElement('style');
 			styleEl.id = '__toast-styles';
 			styleEl.textContent = `
-	                @keyframes __toast-fade-in {
-	                    to { opacity: 1; transform: translateY(0); }
-	                }
-	                @keyframes __toast-fade-out {
-	                    to { opacity: 0; transform: translateY(20px); }
-	                }
-	            `;
+                @keyframes __toast-fade-in {
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes __toast-fade-out {
+                    to { opacity: 0; transform: translateY(20px); }
+                }
+            `;
 			document.head.appendChild(styleEl);
 		}
 		toastContainer.appendChild(toastEl);
@@ -103,15 +99,26 @@ function showToast(message, options = {}) {
 	}
 }
 
-function activateECTAI() {
+/**
+ * 激活 ECT AI 辅助功能
+ *
+ * 此函数负责：
+ * 1. 检查 Ace 编辑器是否存在
+ * 2. 尝试连接后端 AI 服务（/health 接口）
+ * 3. 初始化运行按钮拦截与智能注释功能
+ *
+ * @returns {void}
+ */
+async function activateECTAI() {
 	if (window.__eda_ai_injected__) {
-		console.log('[AI Assist] 已激活，跳过重复注入');
+		eda.sys_Message.showToastMessage('服务已连接，请勿重复唤起', 'info', 1);
 		return;
 	}
 	window.__eda_ai_injected__ = true;
 
 	if (typeof ace === 'undefined') {
 		console.error('[AI Assist] Ace 编辑器未加载');
+		eda.sys_Message.showToastMessage('Ace 编辑器未加载', 'error');
 		return;
 	}
 
@@ -120,21 +127,70 @@ function activateECTAI() {
 		editor = ace.edit('editor');
 	} catch (e) {
 		console.error('[AI Assist] 无法获取编辑器:', e);
+		eda.sys_Message.showToastMessage('无法获取编辑器', 'error');
 		return;
 	}
 
 	window._ai_editor = editor;
 
-	// ========== 原生 Toast（用于注释、加载等简单提示）==========
-	const safeShowToast =
-		typeof window.showToast === 'function' ?
-		(msg) => {
-			console.log('[TOAST]', msg);
-			window.showToast(msg);
-		} :
-		(msg) => console.warn('[FALLBACK TOAST]', msg);
+	// 后端健康检查配置
+	const BACKEND_URL = 'http://localhost:5000';
+	const MAX_RETRIES = 5;
+	const INTERVAL_MS = 1;
 
-	// ========== 自定义 ECT 错误分析提示（暗色 + 进度条 + 精确重置倒计时）==========
+	let isConnected = false;
+	let retryCount = 0;
+
+	/**
+	 * 检查后端健康状态
+	 *
+	 * @returns {Promise<boolean>} 是否连接成功且配置完整
+	 */
+	const checkHealth = async () => {
+		try {
+			const res = await fetch(`${BACKEND_URL}/health`, { method: 'GET' });
+			if (res.ok) {
+				const data = await res.json();
+				if (data.status === 'ok' && data.sk_set) {
+					isConnected = true;
+					eda.sys_Message.showToastMessage('连接成功！', 'success');
+					return true;
+				} else {
+					console.warn('[AI Assist] 后端配置不完整:', data);
+					return false;
+				}
+			}
+		} catch (err) {
+			console.warn('[AI Assist] 健康检查失败:', err.message);
+		}
+		return false;
+	};
+
+	// 初始提示
+	eda.sys_Message.showToastMessage('正在尝试连接AI服务器...');
+
+	while (retryCount < MAX_RETRIES && !isConnected) {
+		if (retryCount > 0) {
+			await new Promise((resolve) => setTimeout(resolve, INTERVAL_MS));
+			eda.sys_Message.showToastMessage('正在尝试链接AI服务器...');
+		}
+
+		isConnected = await checkHealth();
+		retryCount++;
+	}
+
+	if (!isConnected) {
+		eda.sys_Message.showToastMessage('连接超时：无法连接到AI服务器', 'error');
+		return;
+	}
+
+	/**
+	 * 显示自定义 ECT 错误分析提示框
+	 *
+	 * @param {string} message - 要显示的错误解释文本
+	 * @param {boolean} [isPersistent=false] - 是否为持久提示（不自动消失）
+	 * @returns {Function} 清理函数，用于手动移除提示
+	 */
 	function showECTMessage(message, isPersistent = false) {
 		const existing = document.getElementById('ect-toast');
 		if (existing) existing.remove();
@@ -163,7 +219,6 @@ function activateECTAI() {
             gap: 12px;
         `;
 
-		// 进度条容器
 		const progressContainer = document.createElement('div');
 		progressContainer.style.cssText = `
             height: 4px;
@@ -186,7 +241,6 @@ function activateECTAI() {
         `;
 		progressContainer.appendChild(progressBar);
 
-		// 内容与按钮区
 		const contentWrapper = document.createElement('div');
 		contentWrapper.style.display = 'flex';
 		contentWrapper.style.justifyContent = 'space-between';
@@ -202,7 +256,6 @@ function activateECTAI() {
 		buttonGroup.style.display = 'flex';
 		buttonGroup.style.gap = '8px';
 
-		// 复制按钮
 		const copyBtn = document.createElement('button');
 		copyBtn.textContent = '复制';
 		copyBtn.style.cssText = `
@@ -234,7 +287,6 @@ function activateECTAI() {
 			}
 		};
 
-		// 关闭按钮
 		const closeBtn = document.createElement('button');
 		closeBtn.textContent = '×';
 		closeBtn.style.cssText = `
@@ -268,11 +320,10 @@ function activateECTAI() {
 		container.appendChild(contentWrapper);
 		document.body.appendChild(container);
 
-		// ====== 精确倒计时（悬停离开后重置为完整5秒）======
 		let timeoutId = null;
 		let startTime = null;
 		let isHovered = false;
-		const DURATION = 5000; // 5秒
+		const DURATION = 5000;
 
 		function updateProgress() {
 			if (isPersistent || isHovered) return;
@@ -296,7 +347,7 @@ function activateECTAI() {
 		function resetTimer() {
 			if (isPersistent) return;
 			if (timeoutId) clearTimeout(timeoutId);
-			startTimer(); // 重新开始完整5秒
+			startTimer();
 		}
 
 		container.addEventListener('mouseenter', () => {
@@ -306,21 +357,28 @@ function activateECTAI() {
 
 		container.addEventListener('mouseleave', () => {
 			isHovered = false;
-			resetTimer(); // ⭐ 关键：离开后重新计时5秒
+			resetTimer();
 		});
 
 		if (!isPersistent) {
 			startTimer();
 		}
 
-		// 返回清理函数（当前未使用，但保留接口）
 		return () => {
 			if (container.parentNode) container.remove();
 			if (timeoutId) clearTimeout(timeoutId);
 		};
 	}
+
+	/**
+	 * 调用 AI 后端服务
+	 *
+	 * @param {string} prompt - 发送给 AI 的提示文本
+	 * @param {string} [mode='comment'] - 模式：'comment' 或 'error'
+	 * @returns {Promise<string|null>} AI 返回的文本，若无效则返回 null
+	 */
 	async function callAI(prompt, mode = 'comment') {
-		const backendUrl = 'http://localhost:5000/chat';
+		const backendUrl = `${BACKEND_URL}/chat`;
 
 		try {
 			const controller = new AbortController();
@@ -352,16 +410,10 @@ function activateECTAI() {
 
 			let clean = result.trim();
 
-			// ✅ 仅对注释模式做严格过滤；错误分析模式不过滤
 			if (mode === 'comment') {
 				clean = clean.replace(/[。.，,！!？?；;…]+$/, '');
-				if (
-					!clean ||
-					clean.length === 0 ||
-					clean.length > 30 || // ← 限制注释长度
-					/Error|异常|失败|无法|sorry|undefined|分析失败/i.test(clean)
-				) {
-					return null; // 表示无效注释
+				if (!clean || clean.length === 0 || clean.length > 30 || /Error|异常|失败|无法|sorry|undefined|分析失败/i.test(clean)) {
+					return null;
 				}
 			}
 
@@ -372,7 +424,7 @@ function activateECTAI() {
 		}
 	}
 
-	// ========== 拦截“运行”按钮 ==========
+	// 拦截“运行”按钮
 	const runBtn = document.getElementById('run-btn');
 	if (runBtn) {
 		const newBtn = runBtn.cloneNode(true);
@@ -380,19 +432,18 @@ function activateECTAI() {
 		newBtn.addEventListener('click', async () => {
 			const code = editor.getValue().trim();
 			if (!code) {
-				safeShowToast('代码为空');
+				eda.sys_Message.showToastMessage('代码为空');
 				return;
 			}
 			try {
 				(0, eval)(code);
 			} catch (error) {
-				console.error('❌ 执行出错:', error);
-				safeShowToast('检测到错误，ECT 正在分析原因...');
+				console.error('执行出错:', error);
+				eda.sys_Message.showToastMessage('检测到错误，ECT 正在分析原因...');
 				const explanation = await callAI(
 					`[ERROR_ANALYSIS] 请用中文简明解释以下 JavaScript 错误：\n错误信息: ${error.message}\n代码:\n${code}`,
 					'error',
 				);
-				// ✅ 关键修改：错误分析结果用 showECTMessage 显示（不是 showToast）
 				if (explanation && !explanation.includes('ECT 分析失败')) {
 					showECTMessage(explanation);
 				} else {
@@ -402,7 +453,7 @@ function activateECTAI() {
 		});
 	}
 
-	// ========== 智能注释 ==========
+	// 智能注释功能
 	let debounceTimer = null;
 	let lastTriggerAt = 0;
 	const COOLDOWN = 1500;
@@ -420,16 +471,16 @@ function activateECTAI() {
 				lastTriggerAt = Date.now();
 				const targetRow = cursor.row - 1;
 				if (targetRow < 0) {
-					safeShowToast('上方无代码可注释');
+					eda.sys_Message.showToastMessage('上方无代码可注释');
 					return;
 				}
 				const codeLine = editor.session.getLine(targetRow).trim();
 				if (!codeLine || codeLine.startsWith('//')) {
-					safeShowToast('上方不是有效代码');
+					eda.sys_Message.showToastMessage('上方不是有效代码');
 					return;
 				}
 
-				safeShowToast('ECT 正在生成注释...');
+				eda.sys_Message.showToastMessage('ECT 正在生成注释...');
 				const comment = await callAI(
 					`[LINE_COMMENT] 请为以下 JavaScript 代码行生成一句简短中文注释（10字以内，不要标点）：\n${codeLine}`,
 					'comment',
@@ -439,12 +490,9 @@ function activateECTAI() {
 					const pos = { row: cursor.row, column: editor.session.getLine(cursor.row).length };
 					editor.session.insert(pos, ` ${comment}`);
 				} else {
-					safeShowToast('ECT 暂无法生成注释');
+					eda.sys_Message.showToastMessage('ECT 暂无法生成注释');
 				}
 			}, 600);
 		}
 	});
-
-	console.log('[AI Assist] ECT AI 已激活 ✅');
-	eda.sys_Message.showToastMessage('AI辅助已激活，请确保后端连接正常');
 }
