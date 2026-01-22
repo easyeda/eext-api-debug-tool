@@ -496,3 +496,58 @@ async function activateECTAI() {
 		}
 	});
 }
+
+/**
+ * 调用后端服务，将用户提供的 JavaScript 代码注入到立创 EDA 扩展模板中，
+ * 生成并下载修改后的 .eext 文件。
+ *
+ * @async
+ * @function generateAndDownloadEext
+ * @param {string} jsCode - 要注入到 index.html 中的 JavaScript 代码字符串。
+ *                          不得为空或仅包含空白字符。
+ * @returns {Promise<void>} 无返回值。成功时触发浏览器下载 .eext 文件；
+ *                          失败时抛出错误（如网络错误、后端返回错误等）。
+ * @throws {Error} 当 jsCode 无效、网络请求失败或后端返回错误状态时抛出。
+ *
+ * @example
+ * try {
+ *   const userScript = "console.log('Hello from EDA extension!');";
+ *   await generateAndDownloadEext(userScript);
+ * } catch (err) {
+ *   console.error('生成扩展失败:', err.message);
+ * }
+ */
+async function generateAndDownloadEext(jsCode) {
+	if (!jsCode || typeof jsCode !== 'string' || !jsCode.trim()) {
+		throw new Error('jsCode must be a non-empty string');
+	}
+
+	const response = await fetch('http://localhost:5000/generate-eext', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ js_code: jsCode.trim() }),
+	});
+
+	if (!response.ok) {
+		let errorMessage = `请求失败: ${response.status} ${response.statusText}`;
+		try {
+			const errorData = await response.json();
+			errorMessage = errorData.error || errorMessage;
+		} catch (e) {
+			// 忽略 JSON 解析错误，使用默认消息
+		}
+		throw new Error(errorMessage);
+	}
+
+	const blob = await response.blob();
+	const url = window.URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'modified_tool.eext';
+	document.body.appendChild(a);
+	a.click();
+	window.URL.revokeObjectURL(url);
+	document.body.removeChild(a);
+}
