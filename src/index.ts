@@ -10,5 +10,5 @@ export function about(): void {
 	);
 }
 export function openScriptTool(): void {
-	eda.sys_IFrame.openIFrame('iframe/main/index.html', 1000, 700, 'ScriptTool');
+	eda.sys_IFrame.openIFrame('iframe/main/index.html', 1000, 700, 'ScriptTool', { maximizeButton: true, minimizeButton: true });
 }
