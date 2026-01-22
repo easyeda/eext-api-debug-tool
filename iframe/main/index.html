@@ -14,6 +14,7 @@
 				<ul>
 					<li><button id="run-btn">运行</button></li>
 					<li><button id="import-btn">导入</button></li>
+					<li><button id="export-btn">导出</button></li>
 					<li><button id="load-btn">加载</button></li>
 					<li><button id="save-btn">保存</button></li>
 					<li><button id="delete-btn">删除</button></li>
@@ -64,6 +65,7 @@
 			//加载上次关闭时的缓存
 			const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
 			editor.setValue(HistoryCode);
+
 			// 注册放大缩小代码支持
 			let currentFontSize = 14;
 			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
@@ -122,6 +124,10 @@
 			//导入JS文件
 			document.getElementById('import-btn').addEventListener('click', async () => {
 				ImportFile(editor);
+			});
+			//导出JS文件
+			document.getElementById('export-btn').addEventListener('click', async () => {
+				ExportFileForJs(editor.getValue(), Date() + '_script.js');
 			});
 			//保存到插件
 			document.getElementById('Ext-btn').addEventListener('click', async () => {

@@ -915,3 +915,38 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 		}, 10);
 	});
 }
+
+/**
+ * 将文本内容保存为 .js 文件并触发浏览器下载
+ *
+ * @param {string} text - 要保存的 JavaScript 源码文本
+ * @param {string} [filename='script.js'] - 下载的文件名
+ * @returns {void}
+ * @throws {TypeError} 如果 text 不是字符串
+ */
+function ExportFileForJs(text, filename = 'script.js') {
+	if (text == '') {
+		showToast('内容不能为空');
+		return; //我说怎么为空了还是下载，原来是没return，给我气笑了
+	}
+	// 确保文件名以 .js 结尾
+	if (!filename.endsWith('.js')) {
+		filename += '.js';
+	}
+	// 创建 Blob 对象，MIME 类型设为 application/javascript
+	const blob = new Blob([text], {
+		type: 'application/javascript;charset=utf-8',
+	});
+	// 生成临时 URL
+	const url = URL.createObjectURL(blob);
+	// 创建隐藏的 <a> 元素用于触发下载
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = filename; // 设置下载文件名
+	// 触发点击（必须添加到 DOM 才能在某些浏览器中生效）
+	document.body.appendChild(link);
+	link.click();
+	// 清理：移除元素并释放 URL
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
+}
