@@ -122,10 +122,18 @@
 			//注册文件跳转支持
 			const methodList = edcode.map((item) => item.methodPath); // 保留 'eda.XXX'
 			injectContextMenuJumpToDocs(editor, methodList);
+			/*================================== 以下为快捷键绑定配置 ===============================================================*/
 			//绑定运行快捷键
 			document.addEventListener('keydown', function (event) {
 				if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
 					ACE_RunCode(editor);
+				}
+			});
+			//绑定保存快捷键
+			document.addEventListener('keydown', function (e) {
+				if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+					e.preventDefault(); // 阻止浏览器默认的“保存网页”行为
+					Code_SaveCode(editor);
 				}
 			});
 		</script>
