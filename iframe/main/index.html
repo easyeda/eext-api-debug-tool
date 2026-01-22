@@ -61,12 +61,20 @@
 			const editor = ace.edit('editor');
 			ACE_Init(editor);
 
+			//加载上次关闭时的缓存
+			const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
+			editor.setValue(HistoryCode);
 			// 注册放大缩小代码支持
 			let currentFontSize = 14;
 			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
 
 			//注册EDA智能补全
 			ACE_CodingForEDA(editor, edcode);
+
+			//加载自动缓存
+			editor.session.on('change', function () {
+				eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
+			});
 
 			//获取当前编辑器主题
 			const light_theme = document.getElementById('theme-light');
