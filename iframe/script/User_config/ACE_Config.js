@@ -154,8 +154,11 @@ function ACE_RunCode(editor) {
 		return;
 	}
 	try {
-		eval(code);
+		// 使用 IIFE：定义并立即调用 async 函数
+		const newcode = `(async () => {\n ${code}\n})();`;
+		eval(newcode);
 	} catch (error) {
+		eda.sys_Message.showToastMessage('啊偶，执行出错了', 'error', 2);
 		console.error('执行出错:', error);
 	}
 }
@@ -949,4 +952,42 @@ function ExportFileForJs(text, filename = 'script.js') {
 	// 清理：移除元素并释放 URL
 	document.body.removeChild(link);
 	URL.revokeObjectURL(url);
+}
+
+/**
+ * 格式化 Ace 编辑器中的 JavaScript 代码，并将光标移至原光标所在行的行末
+ *
+ * @param {Object} editor - Ace 编辑器实例（必须已初始化）
+ * @throws {Error} 如果 editor 无效或无法获取内容
+ * @returns {void}
+ */
+function formatEditorCode(editor) {
+	if (!editor || typeof editor.getValue !== 'function') {
+		throw new Error('Invalid Ace editor instance provided.');
+	}
+	const rawCode = editor.getValue();
+	// 若内容为空或仅空白，清空编辑器并退出
+	if (!rawCode || rawCode.trim() === '') {
+		editor.setValue('', -1);
+		return;
+	}
+	// 记录当前光标所在行（0-based）
+	const originalRow = editor.getCursorPosition().row;
+	// 使用 js-beautify 格式化代码
+	const formattedCode = js_beautify(rawCode, {
+		indent_size: 4,
+		space_in_empty_paren: true,
+		end_with_newline: false,
+	});
+	// 应用格式化后的内容
+	editor.setValue(formattedCode, -1);
+	// 获取格式化后的总行数（getLength() 返回行数，0 行时为 1）
+	const session = editor.getSession();
+	const totalRows = session.getLength() - 1; // 最大有效行索引（0-based）
+	// 确保目标行不越界
+	const targetRow = Math.min(originalRow, totalRows);
+	// 获取该行内容长度（即行末列位置）
+	const lineEndColumn = session.getLine(targetRow).length;
+	// 移动光标到目标行末尾（Ace 的 gotoLine 行号是 1-based）
+	editor.gotoLine(targetRow + 1, lineEndColumn, false);
 }
