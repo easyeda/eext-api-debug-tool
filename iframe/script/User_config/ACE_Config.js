@@ -125,8 +125,16 @@ function buildDocText(item) {
 	return doc.trim() + '\n\n返回值:' + item.returns;
 }
 
-// 滚动+Ctrl放大或缩小代码
-function ACE_ChangeCodeSize(editor, currentFontSize, showToast) {
+/**
+ * 绑定 Ctrl + 滚轮事件以精细调整编辑器字体大小
+ * @param {Object} editor - ACE 编辑器实例
+ * @param {number} currentFontSize - 当前字体大小（单位：px）
+ * @param {function} showToast - 显示提示信息的函数
+ * @param {number} step - 每次缩放的步长（默认 1）
+ */
+function ACE_ChangeCodeSize(editor, currentFontSize, showToast, step = 1) {
+	// 确保初始字体大小合法
+	let fontSize = Math.max(8, Math.min(currentFontSize, 72));
 	editor.container.addEventListener(
 		'wheel',
 		(e) => {
@@ -134,13 +142,13 @@ function ACE_ChangeCodeSize(editor, currentFontSize, showToast) {
 			e.preventDefault();
 			const delta = e.deltaY;
 			if (delta < 0) {
-				currentFontSize = Math.min(currentFontSize + 7, 140);
-				showToast(currentFontSize + 'px:' + (currentFontSize / 14) * 100 + '%');
+				fontSize = Math.min(fontSize + step, 72);
 			} else if (delta > 0) {
-				currentFontSize = Math.max(currentFontSize - 7, 7);
-				showToast(currentFontSize + 'px:' + (currentFontSize / 14) * 100 + '%');
+				fontSize = Math.max(fontSize - step, 8);
 			}
-			editor.setFontSize(currentFontSize);
+			editor.setFontSize(fontSize);
+			const percent = ((fontSize / 14) * 100).toFixed(1);
+			showToast(` ${fontSize}px ( ${percent}%)`);
 		},
 		{ passive: false },
 	);
