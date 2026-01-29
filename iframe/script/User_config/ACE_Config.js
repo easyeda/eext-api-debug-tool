@@ -56,7 +56,7 @@ function ACE_CodingForEDA(editor, edcode) {
 	for (const e of edcode) {
 		// 构建 snippet：方法参数提示
 		const paramPlaceholders = e.parameters.map((p, idx) => `\${${idx + 1}:${p.name}}`).join(', ');
-		const snippet = e.methodPath + '(' + paramPlaceholders + ')';
+		const snippet = '//' + e.description + '\n' + e.methodPath + '(' + paramPlaceholders + ')';
 		// 按方法名注册
 		completers.push({
 			caption: e.methodPath,
