@@ -20,7 +20,7 @@ body {
 #sidebar {
 	width: 120px;
 	background: #f6f8fa; /* 浅灰背景 */
-	color: #24292f;       /* 深灰文字 */
+	color: #24292f; /* 深灰文字 */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -59,13 +59,13 @@ body {
 	padding: 8px 0;
 }
 
-/* 按钮：背景浅，文字深（与原来“调换”）*/
+/* 按钮*/
 #sidebar button {
 	width: 80px;
 	height: 36px;
-	background: white;           /* 原先是深色，现在白色 */
-	color: #24292f;             /* 原先是白色，现在深灰 */
-	border: 1px solid #d0d7de;  /* 浅灰边框 */
+	background: #5588ff;
+	color: #ffffff;
+	border: 1px solid #d0d7de;
 	border-radius: 4px;
 	font-size: 14px;
 	cursor: pointer;
@@ -75,7 +75,7 @@ body {
 }
 
 #sidebar button:hover {
-	background: #eaeef5;        /* hover 浅蓝灰 */
+	background: #eaeef5; /* hover 浅蓝灰 */
 	border-color: #8c959e;
 }
 
@@ -103,4 +103,3 @@ body {
 #sidebar {
 	scrollbar-width: none;
 }
-
