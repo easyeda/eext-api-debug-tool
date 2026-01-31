@@ -12,6 +12,7 @@
 		<div id="app">
 			<div id="sidebar">
 				<ul>
+					<li><button id="formatEditorCode-btn">代码格式化</button></li>
 					<li><button id="run-btn">运行</button></li>
 					<li><button id="import-btn">导入</button></li>
 					<li><button id="export-btn">导出</button></li>
@@ -44,7 +45,7 @@
 		<script src="/iframe/script/Js_beautify/beautify-css.min.js"></script>
 		<script src="/iframe/script/Js_beautify/beautify.min.js"></script>
 		<script src="/iframe/script/Js_beautify/beautify-html.min.js"></script>
-		<script src="/iframe"></script>
+		<!-- <script src="/iframe"></script> -->
 		<!-- 以下全都是ACE的风格文件，如果有需要可以自己添加 东西都在Ace_Editor文件夹里-->
 		<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
@@ -91,6 +92,10 @@
 			//保存代码到左侧列表
 			document.getElementById('SaveinLeft-btn').addEventListener('click', () => {
 				Code_SaveToBtnList(editor);
+			});
+			//格式化代码
+			document.getElementById('formatEditorCode-btn').addEventListener('click', () => {
+				formatEditorCode(editor);
 			});
 			// 运行代码
 			document.getElementById('run-btn').addEventListener('click', () => {
