@@ -8,7 +8,7 @@ html,
 body {
 	height: 100%;
 	overflow: hidden;
-	background: #f6f8fa; /* 可选：与浅色侧边栏统一，也可保留原色。这里建议同步 */
+	background: #f6f8fa;
 }
 
 #app {
@@ -16,36 +16,28 @@ body {
 	height: 100vh;
 }
 
-/* 左侧可滚动侧边栏 —— 改为浅色 */
+/* 左侧侧边栏 —— 浅色，隐藏滚动条 */
 #sidebar {
 	width: 120px;
-	background: #f6f8fa; /* 浅灰背景 */
-	color: #24292f; /* 深灰文字 */
+	background: #f6f8fa;
+	color: #24292f;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	padding-top: 16px;
-	border-right: 1px solid #d0d7de; /* 浅灰边框 */
+	border-right: 1px solid #d0d7de;
 	overflow-y: auto;
-	scrollbar-width: thin;
-	scrollbar-color: #adbac7 #f6f8fa; /* thumb + track */
+
+	/* 隐藏滚动条 */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE/Edge */
 }
 
-/* 滚动条 - WebKit */
 #sidebar::-webkit-scrollbar {
-	width: 6px;
+	display: none; /* WebKit */
 }
 
-#sidebar::-webkit-scrollbar-track {
-	background: #f6f8fa;
-}
-
-#sidebar::-webkit-scrollbar-thumb {
-	background: #adbac7;
-	border-radius: 3px;
-}
-
-/* 列表项样式 */
+/* 列表与按钮 */
 #sidebar ul {
 	list-style: none;
 	width: 100%;
@@ -59,7 +51,6 @@ body {
 	padding: 8px 0;
 }
 
-/* 按钮*/
 #sidebar button {
 	width: 80px;
 	height: 36px;
@@ -75,11 +66,11 @@ body {
 }
 
 #sidebar button:hover {
-	background: #eaeef5; /* hover 浅蓝灰 */
+	background: #eaeef5;
 	border-color: #8c959e;
 }
 
-/* 右侧编辑器区域 —— 完全不动 */
+/* 右侧编辑器区域 */
 #editor-container {
 	flex: 1;
 	height: 100%;
@@ -90,16 +81,19 @@ body {
 	height: 100%;
 	width: 100%;
 }
-#sidebar {
-	overflow-y: auto;
-}
 
-/* WebKit (Chrome, Safari) */
-#sidebar::-webkit-scrollbar {
-	display: none;
+/* 隐藏 Ace 编辑器滚动条 */
+#editor .ace_scrollbar {
+	opacity: 0 !important;
+	pointer-events: none !important;
 }
-
-/* Firefox */
-#sidebar {
-	scrollbar-width: none;
+#editor,
+#editor .ace_scroller {
+	scrollbar-width: none !important;
+	-ms-overflow-style: none !important;
+}
+#editor::-webkit-scrollbar,
+#editor .ace_scroller::-webkit-scrollbar,
+#editor .ace_scrollbar::-webkit-scrollbar {
+	display: none !important;
 }

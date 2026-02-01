@@ -8,8 +8,7 @@ html,
 body {
 	height: 100%;
 	overflow: hidden;
-	background: #272822;
-	/* 与编辑器背景一致 */
+	background: #272822; /* Monokai 背景色 */
 }
 
 #app {
@@ -17,39 +16,29 @@ body {
 	height: 100vh;
 }
 
-/* 左侧可滚动侧边栏 */
+/* 左侧侧边栏 */
 #sidebar {
 	width: 120px;
 	background: #272822;
-	/* Monokai 背景色 */
 	color: white;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	padding-top: 16px;
 	border-right: 1px solid #444;
-	overflow-y: auto;
-	/* 允许垂直滚动 */
-	scrollbar-width: thin;
-	/* Firefox */
-	scrollbar-color: #555 #272822;
+	overflow-y: auto; /* 允许滚动 */
+
+	/* 完全隐藏滚动条（视觉上），但保留滚动功能 */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE/Edge */
 }
 
-/* 隐藏默认滚动条（可选美化） */
+/* 隐藏 WebKit 滚动条 */
 #sidebar::-webkit-scrollbar {
-	width: 6px;
+	display: none;
 }
 
-#sidebar::-webkit-scrollbar-track {
-	background: #272822;
-}
-
-#sidebar::-webkit-scrollbar-thumb {
-	background: #555;
-	border-radius: 3px;
-}
-
-/* 列表项样式 */
+/* 列表与按钮样式 */
 #sidebar ul {
 	list-style: none;
 	width: 100%;
@@ -67,9 +56,7 @@ body {
 	width: 80px;
 	height: 36px;
 	background: #272822;
-	/* 与背景融合 */
 	color: white;
-	/* 文字白色 */
 	border: 1px solid #666;
 	border-radius: 4px;
 	font-size: 14px;
@@ -95,17 +82,21 @@ body {
 	width: 100%;
 	position: relative;
 }
-#sidebar {
-	overflow-y: auto;
+
+/* === 隐藏 Ace 编辑器滚动条=== */
+#editor .ace_scrollbar {
+	opacity: 0 !important;
+	pointer-events: none !important;
 }
 
-/* WebKit (Chrome, Safari) */
-#sidebar::-webkit-scrollbar {
-	display: none;
+#editor,
+#editor .ace_scroller {
+	scrollbar-width: none !important;
+	-ms-overflow-style: none !important;
 }
 
-/* Firefox */
-#sidebar {
-	scrollbar-width: none;
+#editor::-webkit-scrollbar,
+#editor .ace_scroller::-webkit-scrollbar,
+#editor .ace_scrollbar::-webkit-scrollbar {
+	display: none !important;
 }
-
