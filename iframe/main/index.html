@@ -151,7 +151,7 @@
 			//绑定保存快捷键
 			document.addEventListener('keydown', function (e) {
 				if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-					e.preventDefault(); // 阻止浏览器默认的“保存网页”行为
+					e.preventDefault();
 					Code_SaveCode(editor);
 				}
 			});
