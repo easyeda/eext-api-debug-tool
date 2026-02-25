@@ -76,6 +76,19 @@
 				]
 			}
 		],
+		"footprint": [
+			{
+				"id": "API SDK",
+				"title": "代码编辑器",
+				"menuItems": [
+					{
+						"id": "Open Script Tool",
+						"title": "打开编辑器...",
+						"registerFn": "openScriptTool"
+					}
+				]
+			}
+		],
 		"panel": [
 			{
 				"id": "API SDK",
