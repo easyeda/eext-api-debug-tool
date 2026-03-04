@@ -22,7 +22,7 @@
 					<li><button id="setting-btn">切换主题</button></li>
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="Ext-btn">插件管理</button></li>
-					<li><button id="ai-btn">AI编程：关</button></li>
+					<li><button id="ai-btn">AI编程</button></li>
 					<!-- <li><button id="example-btn" style="display: none;">案例</button></li>
 					<li><button id="about-btn" style="display: none;">关于</button></li> -->
 				</ul>
@@ -97,6 +97,11 @@
 		<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
 		<!-- 工具类 -->
 		<script src="/iframe/script/eext_tool/jszip.min.js"></script>
+		<!-- 文件解压 -->
+		<script src="/iframe/script/eext_tool/highlight.min.js"></script>
+		<!-- AI语法高亮 -->
+		<script src="/iframe/script/eext_tool/marked.min.js"></script>
+		<!-- MD语法解析 -->
 		<script>
 			//初始化Ace 编辑器
 			const settingsMenu = ace.require('ace/ext/settings_menu');
@@ -123,6 +128,9 @@
 			const light_theme = document.getElementById('theme-light');
 			const dark_theme = document.getElementById('theme-dark');
 			GetTheme(editor, light_theme, dark_theme);
+
+			//获取按钮状态
+			GetVibeCodingConfig();
 
 			//扫描插件并执行
 			ExtStore_LoadAndRunAllPlugins();

@@ -1,29 +1,63 @@
 async function SetVibeCodingConfig() {
 	const flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config');
 	if (flag == 'true') {
-		document.getElementById('ai-chat').style.display = '';
-		document.getElementById('ai-btn').innerText = 'AI编程：开';
 		eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'false');
+		const chatEl = document.getElementById('ai-chat');
+		if (chatEl) chatEl.style.display = 'none';
+		const btn = document.getElementById('ai-btn');
+		if (btn) btn.innerText = 'AI编程：关';
 	} else {
-		document.getElementById('ai-chat').style.display = 'none';
-		document.getElementById('ai-btn').innerText = 'AI编程：关';
 		eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true');
+		const chatEl = document.getElementById('ai-chat');
+		if (chatEl) chatEl.style.display = '';
+		const btn = document.getElementById('ai-btn');
+		if (btn) btn.innerText = 'AI编程：开';
+	}
+}
+
+async function GetVibeCodingConfig() {
+	const flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config');
+	const btn = document.getElementById('ai-btn');
+	if (!btn) return;
+
+	const chatEl = document.getElementById('ai-chat');
+
+	if (flag == 'true') {
+		btn.innerText = 'AI编程：开';
+		if (chatEl) chatEl.style.display = '';
+	} else {
+		btn.innerText = 'AI编程：关';
+		if (chatEl) chatEl.style.display = 'none';
 	}
 }
 
 function initAiChat() {
+	// 检查依赖库
+	if (typeof marked === 'undefined' || typeof hljs === 'undefined') {
+		console.error('AI Chat Init Error: marked or highlight.js not found.');
+	} else {
+		marked.setOptions({
+			highlight: function (code, lang) {
+				const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+				return hljs.highlight(code, { language }).value;
+			},
+			langPrefix: 'hljs language-',
+			breaks: true,
+			gfm: true,
+		});
+	}
+
 	const defaultConfig = {
 		apiKey: '',
 		baseUrl: 'https://api.openai.com/v1',
 		model: 'gpt-4',
 		multiTurn: true,
-		stream: true, // 控制是否开启“打字机效果”
+		stream: true,
 	};
 
 	let chatConfig = JSON.parse(localStorage.getItem('ai_chat_config')) || defaultConfig;
 	let messageHistory = [];
 
-	// DOM 元素
 	const settingsBtn = document.getElementById('ai-settings-trigger');
 	const sendBtn = document.getElementById('ai-send-btn');
 	const inputArea = document.getElementById('ai-input');
@@ -31,6 +65,51 @@ function initAiChat() {
 	const modelNameDisplay = document.getElementById('ai-model-name');
 
 	if (modelNameDisplay) modelNameDisplay.textContent = chatConfig.model || 'AI Model';
+
+	// --- 新增：添加复制按钮的逻辑 ---
+	function addCopyButtons(container) {
+		if (!container) return;
+
+		const pres = container.querySelectorAll('pre');
+		pres.forEach((pre) => {
+			// 如果已经添加过按钮，跳过
+			if (pre.querySelector('.code-copy-btn')) return;
+
+			const codeElement = pre.querySelector('code');
+			if (!codeElement) return;
+
+			const btn = document.createElement('button');
+			btn.className = 'code-copy-btn';
+			btn.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>复制</span>
+            `;
+
+			btn.onclick = async () => {
+				const text = codeElement.innerText;
+				try {
+					await navigator.clipboard.writeText(text);
+					// 更改按钮状态
+					const originalContent = btn.innerHTML;
+					btn.classList.add('copied');
+					btn.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <span>已复制</span>
+                    `;
+
+					setTimeout(() => {
+						btn.classList.remove('copied');
+						btn.innerHTML = originalContent;
+					}, 2000);
+				} catch (err) {
+					console.error('复制失败:', err);
+					alert('复制失败，请手动复制');
+				}
+			};
+
+			pre.appendChild(btn);
+		});
+	}
 
 	// --- 模态框创建 ---
 	function createModal() {
@@ -58,7 +137,7 @@ function initAiChat() {
                         <label class="ai-form-label">Model Name</label>
                         <input type="text" id="cfg-model" class="ai-form-input" value="${chatConfig.model}">
                     </div>
-                    <hr style="border: 0; border-top: 1px solid #3e3d32; margin: 4px 0;">
+                    <hr style="border: 0; border-top: 1px solid #d0d7de; margin: 4px 0;">
                     <div class="ai-toggle-row">
                         <span class="ai-toggle-label">多轮对话</span>
                         <label class="ai-switch"><input type="checkbox" id="cfg-multi-turn" ${chatConfig.multiTurn ? 'checked' : ''}><span class="ai-slider"></span></label>
@@ -89,7 +168,6 @@ function initAiChat() {
 		document.getElementById('cfg-model').value = chatConfig.model;
 		document.getElementById('cfg-multi-turn').checked = chatConfig.multiTurn;
 		document.getElementById('cfg-stream').checked = chatConfig.stream;
-
 		setTimeout(() => modalOverlay.classList.add('active'), 10);
 	}
 
@@ -109,7 +187,6 @@ function initAiChat() {
 			alert('请填写 API Key');
 			return;
 		}
-
 		chatConfig = newConfig;
 		localStorage.setItem('ai_chat_config', JSON.stringify(chatConfig));
 		if (!chatConfig.multiTurn) messageHistory = [];
@@ -134,23 +211,32 @@ function initAiChat() {
 	function appendMessage(role, text, isStreaming = false, isLoading = false) {
 		const msgDiv = document.createElement('div');
 		msgDiv.className = `ai-message ${role === 'user' ? 'ai-message-user' : 'ai-message-system'}`;
-
 		const bubble = document.createElement('div');
 		bubble.className = 'ai-message-bubble';
 
 		if (isLoading) {
-			// 加载状态：添加特定的 ID 和 loading 类
 			msgDiv.id = 'ai-loading-message';
 			bubble.classList.add('ai-loading-bubble');
-			// 内部放入三个跳动的点 (HTML 结构)
 			bubble.innerHTML = '<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span>';
 		} else if (isStreaming) {
 			bubble.id = 'streaming-bubble-' + Date.now();
-			bubble.textContent = '';
-			bubble.style.borderRight = '2px solid #66d9ef';
-			bubble.style.animation = 'blink 1s step-end infinite';
-		} else {
 			bubble.textContent = text;
+			bubble.classList.add('streaming-cursor');
+			bubble.style.whiteSpace = 'pre-wrap';
+		} else {
+			if (role === 'system' && typeof marked !== 'undefined') {
+				bubble.innerHTML = marked.parse(text);
+				if (typeof hljs !== 'undefined') {
+					bubble.querySelectorAll('pre code').forEach((block) => {
+						hljs.highlightElement(block);
+					});
+				}
+				// 渲染完成后添加复制按钮
+				addCopyButtons(bubble);
+			} else {
+				bubble.textContent = text;
+				bubble.style.whiteSpace = 'pre-wrap';
+			}
 		}
 
 		msgDiv.appendChild(bubble);
@@ -170,28 +256,22 @@ function initAiChat() {
 			return;
 		}
 
-		// 1. UI: 用户消息
 		appendMessage('user', text);
 		inputArea.value = '';
 		inputArea.style.height = 'auto';
 
-		// 2. UI: 显示 "AI 正在思考..." 加载气泡
 		const loadingElements = appendMessage('system', '', false, true);
-
-		// 准备历史
 		const currentMessages = [...messageHistory, { role: 'user', content: text }];
 
 		let aiBubble = null;
 		let fullResponse = '';
 		const originalBtnText = sendBtn.textContent;
 
-		// UI: 锁定按钮
 		sendBtn.disabled = true;
 		sendBtn.textContent = '...';
 		sendBtn.style.opacity = '0.6';
 
 		try {
-			// 3. 发起请求 (始终非流式)
 			const response = await fetch(`${chatConfig.baseUrl}/chat/completions`, {
 				method: 'POST',
 				headers: {
@@ -214,36 +294,44 @@ function initAiChat() {
 			const data = await response.json();
 			fullResponse = data.choices?.[0]?.message?.content || '无内容';
 
-			// 4. 移除加载气泡
 			if (loadingElements && loadingElements.msgDiv) {
 				loadingElements.msgDiv.remove();
 			}
 
-			// 5. 根据配置显示内容
 			if (chatConfig.stream) {
-				// === 打字机模式 ===
 				const streamElements = appendMessage('system', '', true);
 				aiBubble = streamElements.bubble;
 
 				let currentIndex = 0;
-				const speed = 20;
+				const speed = 15;
 
 				const typeWriter = () => {
 					if (currentIndex < fullResponse.length) {
-						aiBubble.textContent += fullResponse.charAt(currentIndex);
+						const currentText = fullResponse.slice(0, currentIndex + 1);
+						aiBubble.textContent = currentText;
 						currentIndex++;
 						chatList.scrollTop = chatList.scrollHeight;
 						setTimeout(typeWriter, speed);
 					} else {
-						// 结束
-						aiBubble.style.borderRight = 'none';
-						aiBubble.style.animation = 'none';
+						aiBubble.classList.remove('streaming-cursor');
+
+						if (typeof marked !== 'undefined') {
+							aiBubble.innerHTML = marked.parse(fullResponse);
+
+							if (typeof hljs !== 'undefined') {
+								aiBubble.querySelectorAll('pre code').forEach((block) => {
+									hljs.highlightElement(block);
+								});
+							}
+							// 打字结束后添加复制按钮
+							addCopyButtons(aiBubble);
+						}
+						chatList.scrollTop = chatList.scrollHeight;
 						finishProcess();
 					}
 				};
 				typeWriter();
 			} else {
-				// === 直接显示模式 ===
 				appendMessage('system', fullResponse);
 				finishProcess();
 			}
@@ -261,12 +349,10 @@ function initAiChat() {
 			}
 		} catch (error) {
 			console.error(error);
-			// 移除加载气泡
 			if (loadingElements && loadingElements.msgDiv) {
 				loadingElements.msgDiv.remove();
 			}
 
-			// 显示错误
 			const isDark = getComputedStyle(document.body).backgroundColor === 'rgb(39, 40, 34)';
 			const errStyle = isDark
 				? `background:#5a2d2d; border-color:#8b3a3a; color:#ffaaaa;`
@@ -274,7 +360,7 @@ function initAiChat() {
 
 			const errDiv = document.createElement('div');
 			errDiv.className = 'ai-message ai-message-system';
-			errDiv.innerHTML = `<div class="ai-message-bubble" style="${errStyle}">❌ 错误: ${error.message}</div>`;
+			errDiv.innerHTML = `<div class="ai-message-bubble" style="${errStyle}">❌ 错误：${error.message}</div>`;
 			chatList.appendChild(errDiv);
 			chatList.scrollTop = chatList.scrollHeight;
 
@@ -284,7 +370,6 @@ function initAiChat() {
 		}
 	}
 
-	// 初始化事件
 	if (settingsBtn) settingsBtn.onclick = openModal;
 	if (sendBtn) sendBtn.onclick = handleSend;
 
@@ -300,40 +385,6 @@ function initAiChat() {
 				handleSend();
 			}
 		};
-	}
-
-	// 注入样式 (Blink 动画 + Loading 跳动动画)
-	if (!document.getElementById('ai-chat-animations')) {
-		const s = document.createElement('style');
-		s.id = 'ai-chat-animations';
-		s.textContent = `
-            @keyframes blink { 50% { border-color: transparent; } }
-            
-            /* 加载跳动动画 */
-            .ai-loading-bubble {
-                display: flex;
-                gap: 4px;
-                padding: 12px 16px; /* 稍微调整内边距以适应圆点 */
-                align-items: center;
-                justify-content: center;
-                min-width: 60px;
-            }
-            .ai-loading-bubble .dot {
-                font-size: 20px;
-                line-height: 1;
-                color: inherit; /* 继承气泡文字颜色 */
-                opacity: 0.6;
-                animation: bounce 1.4s infinite ease-in-out both;
-            }
-            .ai-loading-bubble .dot:nth-child(1) { animation-delay: -0.32s; }
-            .ai-loading-bubble .dot:nth-child(2) { animation-delay: -0.16s; }
-            
-            @keyframes bounce {
-                0%, 80%, 100% { transform: scale(0); }
-                40% { transform: scale(1); }
-            }
-        `;
-		document.head.appendChild(s);
 	}
 }
 

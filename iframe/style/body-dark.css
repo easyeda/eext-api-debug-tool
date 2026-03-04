@@ -500,7 +500,7 @@ body {
    ========================================= */
 
 #ai-chat {
-	width: 380px; /* AI聊天窗口宽度 */
+	width: 400px; /* AI聊天窗口宽度 */
 	min-width: 300px;
 	background: #272822; /* 主背景色 */
 	border-left: 1px solid #3e3d32; /* 深色分割线 */
@@ -963,4 +963,242 @@ input:checked + .ai-slider:before {
 .ai-modal-body::-webkit-scrollbar-thumb {
 	background: #49483e;
 	border-radius: 3px;
+}
+/* =========================================
+   AI Chat Markdown & Animation Styles
+   (Append to your existing CSS)
+   ========================================= */
+
+/* --- 1. Markdown 内容渲染样式 --- */
+
+/* 代码块容器 */
+.ai-message-bubble pre {
+	background: #1e1f1c !important; /* 比主背景稍深，突出代码区 */
+	padding: 12px;
+	border-radius: 6px;
+	overflow-x: auto;
+	margin: 10px 0;
+	border: 1px solid #49483e;
+	position: relative;
+}
+
+/* 代码块内的 code 标签 */
+.ai-message-bubble pre code {
+	background: transparent !important;
+	padding: 0;
+	font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+	font-size: 0.85em;
+	line-height: 1.5;
+	color: #f8f8f2;
+}
+
+/* 行内代码 (例如 `var`) */
+.ai-message-bubble p code,
+.ai-message-bubble li code {
+	background: rgba(117, 113, 94, 0.3); /* Monokai 注释色半透明 */
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+	font-size: 0.9em;
+	color: #f8f8f2;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 段落与列表 */
+.ai-message-bubble p {
+	margin: 0.6em 0;
+	line-height: 1.6;
+}
+.ai-message-bubble p:first-child {
+	margin-top: 0;
+}
+.ai-message-bubble p:last-child {
+	margin-bottom: 0;
+}
+
+.ai-message-bubble ul,
+.ai-message-bubble ol {
+	padding-left: 20px;
+	margin: 0.6em 0;
+}
+.ai-message-bubble li {
+	margin-bottom: 4px;
+}
+
+/* 引用块 */
+.ai-message-bubble blockquote {
+	border-left: 4px solid #a6e22e; /* Monokai 绿色 */
+	padding: 4px 12px;
+	margin: 10px 0;
+	background: rgba(166, 226, 46, 0.05);
+	color: #b0b0b0;
+	border-radius: 0 4px 4px 0;
+}
+
+/* 表格 */
+.ai-message-bubble table {
+	border-collapse: collapse;
+	width: 100%;
+	margin: 10px 0;
+	font-size: 0.9em;
+	display: block; /* 允许小屏幕滚动 */
+	overflow-x: auto;
+}
+.ai-message-bubble th,
+.ai-message-bubble td {
+	border: 1px solid #49483e;
+	padding: 8px 12px;
+	text-align: left;
+}
+.ai-message-bubble th {
+	background: #3b3c35;
+	color: #a6e22e;
+	font-weight: bold;
+}
+.ai-message-bubble tr:nth-child(even) {
+	background: rgba(255, 255, 255, 0.03);
+}
+
+/* 链接 */
+.ai-message-bubble a {
+	color: #66d9ef; /* Monokai 青色 */
+	text-decoration: none;
+	border-bottom: 1px dashed #66d9ef;
+}
+.ai-message-bubble a:hover {
+	color: #ae81ff;
+	border-bottom-style: solid;
+}
+
+/* --- 2. 动画效果 --- */
+
+/* 打字机光标闪烁 */
+@keyframes blink-cursor {
+	0%,
+	100% {
+		border-right-color: #66d9ef;
+	}
+	50% {
+		border-right-color: transparent;
+	}
+}
+
+/* 加载跳动点 */
+@keyframes bounce-dot {
+	0%,
+	80%,
+	100% {
+		transform: scale(0);
+		opacity: 0.5;
+	}
+	40% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+.ai-loading-bubble .dot {
+	animation: bounce-dot 1.4s infinite ease-in-out both;
+}
+.ai-loading-bubble .dot:nth-child(1) {
+	animation-delay: -0.32s;
+}
+.ai-loading-bubble .dot:nth-child(2) {
+	animation-delay: -0.16s;
+}
+
+/* 流式输出时的光标样式类 */
+.streaming-cursor {
+	border-right: 2px solid #66d9ef !important;
+	animation: blink-cursor 1s step-end infinite;
+}
+
+/* --- 3. 辅助修正 --- */
+/* 确保气泡内的白色空间处理正确，防止 Markdown 换行丢失 */
+.ai-message-bubble {
+	white-space: normal;
+}
+/* 但在流式打字阶段，我们需要保留换行 */
+.ai-message-bubble[style*='white-space: pre-wrap'] {
+	white-space: pre-wrap;
+}
+
+/* =========================================
+   代码块复制按钮样式
+   ========================================= */
+
+/* 确保 pre 容器是相对定位，以便按钮绝对定位 */
+.ai-message-bubble pre {
+	position: relative; /* 关键：作为按钮的定位父级 */
+}
+
+/* 复制按钮容器 */
+.code-copy-btn {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	padding: 4px 8px;
+	font-size: 12px;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+	border-radius: 4px;
+	border: 1px solid rgba(128, 128, 128, 0.3);
+	cursor: pointer;
+	opacity: 0; /* 默认隐藏 */
+	visibility: hidden;
+	transition:
+		opacity 0.2s,
+		background-color 0.2s,
+		color 0.2s;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	user-select: none;
+}
+
+/* 鼠标悬停在 pre 上时显示按钮 */
+.ai-message-bubble pre:hover .code-copy-btn {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* 按钮点击/激活状态 */
+.code-copy-btn:active {
+	transform: scale(0.95);
+}
+
+/* --- 亮色主题适配 --- */
+/* 如果 body 或 ai-chat 是浅色背景 */
+body:not(.dark-theme) .ai-message-bubble pre .code-copy-btn,
+#ai-chat[style*='background: #ffffff'] .ai-message-bubble pre .code-copy-btn,
+#ai-chat[style*='background: #fff'] .ai-message-bubble pre .code-copy-btn {
+	background-color: rgba(255, 255, 255, 0.8);
+	color: #57606a;
+	backdrop-filter: blur(4px);
+}
+body:not(.dark-theme) .ai-message-bubble pre .code-copy-btn:hover {
+	background-color: #f6f8fa;
+	border-color: #d0d7de;
+	color: #0969da;
+}
+
+/* --- 暗色主题适配 --- */
+/* 如果 body 或 ai-chat 是深色背景 */
+body.dark-theme .ai-message-bubble pre .code-copy-btn,
+#ai-chat[style*='background: #272822'] .ai-message-bubble pre .code-copy-btn,
+#ai-chat[style*='background: #2d2e27'] .ai-message-bubble pre .code-copy-btn {
+	background-color: rgba(45, 45, 45, 0.8);
+	color: #c9d1d9;
+	backdrop-filter: blur(4px);
+}
+body.dark-theme .ai-message-bubble pre .code-copy-btn:hover {
+	background-color: #30363d;
+	border-color: #8b949e;
+	color: #58a6ff;
+}
+
+/* 复制成功后的提示样式 */
+.code-copy-btn.copied {
+	color: #2da44e !important; /* 绿色 */
+	border-color: #2da44e !important;
 }
