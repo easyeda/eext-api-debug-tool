@@ -22,7 +22,7 @@
 					<li><button id="setting-btn">切换主题</button></li>
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="Ext-btn">插件管理</button></li>
-					<li><button id="ai-btn">AI编程</button></li>
+					<li><button id="ai-btn">AI编程：关</button></li>
 					<!-- <li><button id="example-btn" style="display: none;">案例</button></li>
 					<li><button id="about-btn" style="display: none;">关于</button></li> -->
 				</ul>
@@ -143,7 +143,7 @@
 			});
 			// 开启AI辅助支持
 			document.getElementById('ai-btn').addEventListener('click', () => {
-				activateECTAI(editor);
+				SetVibeCodingConfig();
 			});
 			// 保存代码
 			document.getElementById('save-btn').addEventListener('click', async () => {

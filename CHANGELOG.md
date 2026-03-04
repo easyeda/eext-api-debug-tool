@@ -3,6 +3,7 @@
 ## 新增
 
 1. 新增过渡性弹窗动画
+2. 增加vibe coding 支持open ai格式的API调用
 
 ## 优化
 

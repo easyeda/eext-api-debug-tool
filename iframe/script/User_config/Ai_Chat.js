@@ -1,3 +1,16 @@
+async function SetVibeCodingConfig() {
+	const flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config');
+	if (flag == 'true') {
+		document.getElementById('ai-chat').style.display = '';
+		document.getElementById('ai-btn').innerText = 'AI编程：开';
+		eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'false');
+	} else {
+		document.getElementById('ai-chat').style.display = 'none';
+		document.getElementById('ai-btn').innerText = 'AI编程：关';
+		eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true');
+	}
+}
+
 function initAiChat() {
 	const defaultConfig = {
 		apiKey: '',
