@@ -97,3 +97,368 @@ body {
 #editor .ace_scrollbar::-webkit-scrollbar {
 	display: none !important;
 }
+
+/* --- 代码加载窗 --- */
+/* 遮罩层 */
+.code-load-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(0, 0, 0, 0.5);
+	z-index: 10000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* 窗口容器 */
+.code-load-modal {
+	width: 500px;
+	height: 350px;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	/* 防止动画闪烁 */
+	animation: fadeIn 0.2s ease-out;
+}
+
+/* 标题栏 */
+.code-load-header {
+	padding: 12px 16px;
+	background: #f5f5f5;
+	font-weight: bold;
+	font-size: 16px;
+	border-bottom: 1px solid #ddd;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	user-select: none; /* 防止双击选中文本 */
+}
+
+/* 关闭按钮 */
+.code-load-close-btn {
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	color: #999;
+	width: 24px;
+	height: 24px;
+	text-align: center;
+	line-height: 24px; /* 垂直居中 */
+	padding: 0;
+	border-radius: 4px;
+	transition:
+		color 0.2s,
+		background 0.2s;
+}
+
+.code-load-close-btn:hover {
+	color: #333;
+	background: #e0e0e0;
+}
+
+/* 搜索框 */
+.code-load-search {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #ccc;
+	border-bottom: none; /* 与列表融为一体 */
+	font-size: 14px;
+	box-sizing: border-box;
+	outline: none;
+}
+
+.code-load-search:focus {
+	border-color: #007bff; /* 聚焦高亮色，可根据主题调整 */
+	background-color: #fff;
+}
+
+/* 列表容器 */
+.code-load-list-container {
+	flex: 1;
+	overflow-y: auto;
+	padding: 8px;
+	background: #fafafa;
+}
+
+/* 列表项 */
+.code-load-item {
+	padding: 8px 12px;
+	margin: 4px 0;
+	background: #fff;
+	border: 1px solid #eee;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 14px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition:
+		background 0.2s,
+		border-color 0.2s;
+}
+
+.code-load-item:hover {
+	background: #f0f7ff;
+	border-color: #b3d7ff;
+}
+
+.code-load-item:active {
+	background: #e0efff;
+}
+
+/* 空状态提示 */
+.code-load-empty {
+	color: #888;
+	text-align: center;
+	padding: 20px;
+}
+
+/* 错误提示 */
+.code-load-error {
+	color: red;
+	padding: 10px;
+	text-align: center;
+}
+
+/*淡入动画 */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+/* =========================================
+   插件管理器模态框 - 亮色风格 (Light Mode)
+   ========================================= */
+
+/* 遮罩层 */
+.plugin-manager-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.4); /* 亮色下遮罩稍浅 */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 10000;
+	backdrop-filter: blur(2px);
+}
+
+/* 容器 */
+.plugin-manager-container {
+	background: #ffffff; /* 白色背景 */
+	color: #333333; /* 深色文字 */
+	width: 600px;
+	max-height: 80vh;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	border-radius: 8px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); /* 柔和阴影 */
+	border: 1px solid #dddddd; /* 浅灰边框 */
+	animation: fadeIn 0.2s ease-out;
+}
+
+/* 头部 */
+.plugin-manager-header {
+	padding: 16px;
+	border-bottom: 1px solid #e0e0e0;
+	position: relative;
+	font-weight: bold;
+	font-size: 16px;
+	user-select: none;
+	background: #f7f7f7; /* 浅灰头部背景 */
+	color: #333333;
+}
+
+/* 关闭按钮 */
+.plugin-manager-close-btn {
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	cursor: pointer;
+	font-size: 20px;
+	line-height: 1;
+	padding: 0 8px;
+	border: none;
+	background: none;
+	color: #999999; /* 灰色按钮 */
+	border-radius: 4px;
+	transition: all 0.2s;
+}
+
+.plugin-manager-close-btn:hover {
+	color: #333333; /* 悬停变黑 */
+	background: #eaeaea;
+}
+
+/* 主体内容区 */
+.plugin-manager-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	background: #ffffff;
+}
+
+/* 保存区域 */
+.plugin-manager-save-section {
+	margin-bottom: 20px;
+}
+
+.plugin-manager-label {
+	margin-bottom: 8px;
+	font-weight: bold;
+	font-size: 14px;
+	color: #333333;
+}
+
+.plugin-manager-input-group {
+	display: flex;
+	gap: 8px;
+}
+
+/* 输入框 */
+.plugin-manager-input {
+	flex: 1;
+	padding: 6px 10px;
+	background: #ffffff; /* 白色输入框 */
+	color: #333333;
+	border: 1px solid #cccccc;
+	border-radius: 4px;
+	outline: none;
+	font-size: 14px;
+	transition:
+		border-color 0.2s,
+		background 0.2s;
+}
+
+.plugin-manager-input::placeholder {
+	color: #aaaaaa;
+	opacity: 1;
+}
+
+.plugin-manager-input:focus {
+	border-color: #007bff; /* 蓝色聚焦 */
+	background: #ffffff;
+	box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* 通用按钮样式 (保存/删除) */
+.plugin-manager-btn {
+	width: 80px;
+	height: 36px;
+	background: #ffffff;
+	color: #333333;
+	border: 1px solid #cccccc;
+	border-radius: 4px;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* 保存按钮悬停 */
+.plugin-manager-btn.save:hover {
+	background: #007bff; /* 蓝色背景 */
+	border-color: #007bff;
+	color: #ffffff; /* 白色文字 */
+}
+
+/* 删除按钮悬停 (特殊红色高亮) */
+.plugin-manager-btn.delete:hover {
+	background: #dc3545; /* 红色背景 */
+	border-color: #dc3545;
+	color: #ffffff; /* 白色文字 */
+}
+
+/* 插件列表标题 */
+.plugin-manager-list-title {
+	margin: 16px 0 8px;
+	font-weight: bold;
+	font-size: 14px;
+	color: #333333;
+}
+
+/* 插件列表容器 */
+.plugin-manager-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+/* 单个插件项 */
+.plugin-manager-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 10px;
+	background: #f8f9fa; /* 极浅灰背景 */
+	border-radius: 4px;
+	border: 1px solid #eeeeee; /* 浅色边框 */
+	transition:
+		background 0.2s,
+		border-color 0.2s;
+}
+
+.plugin-manager-item:hover {
+	background: #ffffff;
+	border-color: #dddddd;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.plugin-manager-item-name {
+	color: #333333;
+	font-size: 14px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 70%;
+}
+
+/* 状态提示文本 */
+.plugin-manager-status {
+	color: #888888;
+	font-style: italic;
+	font-size: 14px;
+	text-align: center;
+	padding: 10px;
+}
+
+.plugin-manager-status.error {
+	color: #dc3545; /* 标准红 */
+	font-style: normal;
+	background: rgba(220, 53, 69, 0.08);
+	border-radius: 4px;
+}
+
+/* 自定义滚动条 (亮色版) */
+.plugin-manager-body::-webkit-scrollbar {
+	width: 8px;
+}
+.plugin-manager-body::-webkit-scrollbar-track {
+	background: #f1f1f1;
+}
+.plugin-manager-body::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 4px;
+}
+.plugin-manager-body::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
+}

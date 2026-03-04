@@ -505,192 +505,118 @@ async function ExtStore_GetExtList() {
 }
 
 // ==========================
-// 显示插件管理模态框
+// 显示插件管理模态框 (重构版 - 使用 CSS 类)
 // ==========================
 async function showPluginManagerModal(editor) {
 	if (document.getElementById('plugin-manager-modal')) return;
-
+	// 1. 创建遮罩层
 	const modal = document.createElement('div');
 	modal.id = 'plugin-manager-modal';
-	modal.style.cssText = `
-		position: fixed;
-		top: 0; left: 0; right: 0; bottom: 0;
-		background: rgba(0,0,0,0.6);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		z-index: 10000;
-	`;
-
+	modal.className = 'plugin-manager-backdrop';
+	// 2. 创建容器
 	const container = document.createElement('div');
-	container.style.cssText = `
-		background: #272822;
-		color: #f8f8f2;
-		width: 600px;
-		max-height: 80vh;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		border-radius: 8px;
-		box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-		border: 1px solid #444;
-	`;
-
-	// 头部
+	container.className = 'plugin-manager-container';
+	// 3. 头部
 	const header = document.createElement('div');
-	header.style.cssText = `padding: 16px; border-bottom: 1px solid #444; position: relative;`;
+	header.className = 'plugin-manager-header';
 	header.textContent = '插件管理';
 	const closeBtn = document.createElement('button');
+	closeBtn.className = 'plugin-manager-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.style.cssText = `
-		position: absolute;
-		right: 16px;
-		top: 50%;
-		transform: translateY(-50%);
-		cursor: pointer;
-		font-size: 20px;
-		line-height: 1;
-		padding: 0 8px;
-		border: none;
-		background: none;
-		color: #f8f8f2;
-	`;
-	closeBtn.onclick = () => modal.remove();
+	closeBtn.title = '关闭';
+	closeBtn.onclick = () => {
+		if (modal.parentNode) modal.parentNode.removeChild(modal);
+	};
 	header.appendChild(closeBtn);
 	container.appendChild(header);
-
-	// 主体
+	// 4. 主体
 	const body = document.createElement('div');
-	body.style.cssText = `flex: 1; overflow-y: auto; padding: 16px;`;
+	body.className = 'plugin-manager-body';
 	container.appendChild(body);
-
-	// 保存区域
+	// --- 保存区域 ---
 	const saveSection = document.createElement('div');
-	saveSection.style.cssText = `margin-bottom: 20px;`;
-
+	saveSection.className = 'plugin-manager-save-section';
 	const saveLabel = document.createElement('div');
+	saveLabel.className = 'plugin-manager-label';
 	saveLabel.textContent = '保存当前代码为插件：';
-	saveLabel.style.cssText = `margin-bottom: 8px; font-weight: bold;`;
 	saveSection.appendChild(saveLabel);
-
 	const inputGroup = document.createElement('div');
-	inputGroup.style.cssText = `display: flex; gap: 8px;`;
-
+	inputGroup.className = 'plugin-manager-input-group';
 	const nameInput = document.createElement('input');
 	nameInput.type = 'text';
 	nameInput.placeholder = '插件名称（不可重复）';
-	nameInput.style.cssText = `
-		flex: 1;
-		padding: 6px 10px;
-		background: #333430;
-		color: #f8f8f2;
-		border: 1px solid #666;
-		border-radius: 4px;
-		outline: none;
-	`;
-	nameInput.onfocus = () => (nameInput.style.borderColor = '#888');
-	nameInput.onblur = () => (nameInput.style.borderColor = '#666');
+	nameInput.className = 'plugin-manager-input';
 	inputGroup.appendChild(nameInput);
-
 	const saveBtn = document.createElement('button');
 	saveBtn.textContent = '保存';
-	saveBtn.style.cssText = `
-		width: 80px;
-		height: 36px;
-		background: #272822;
-		color: #f8f8f2;
-		border: 1px solid #666;
-		border-radius: 4px;
-		font-size: 14px;
-		cursor: pointer;
-		transition: background 0.2s, border-color 0.2s;
-	`;
-	saveBtn.onmouseenter = () => {
-		saveBtn.style.background = '#333430';
-		saveBtn.style.borderColor = '#888';
-	};
-	saveBtn.onmouseleave = () => {
-		saveBtn.style.background = '#272822';
-		saveBtn.style.borderColor = '#666';
-	};
+	saveBtn.className = 'plugin-manager-btn save'; // 添加 'save' 修饰类
 	saveBtn.onclick = async () => {
-		await saveCurrentCodeAsPlugin(editor, nameInput, (msg, type) => {
-			eda.sys_Message.showToastMessage(msg, type, 2);
-		});
-		await renderPluginList(pluginList);
+		const originalText = saveBtn.textContent;
+		saveBtn.textContent = '保存中...';
+		saveBtn.disabled = true;
+		try {
+			await saveCurrentCodeAsPlugin(editor, nameInput, (msg, type) => {
+				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(msg, type, 2);
+			});
+			await renderPluginList(pluginList);
+			nameInput.value = ''; // 清空输入框
+		} catch (e) {
+			console.error(e);
+		} finally {
+			saveBtn.textContent = originalText;
+			saveBtn.disabled = false;
+		}
 	};
 	inputGroup.appendChild(saveBtn);
 	saveSection.appendChild(inputGroup);
 	body.appendChild(saveSection);
-
-	// 插件列表标题
+	// --- 插件列表标题 ---
 	const listTitle = document.createElement('div');
+	listTitle.className = 'plugin-manager-list-title';
 	listTitle.textContent = '已有插件：';
-	listTitle.style.cssText = `margin: 16px 0 8px; font-weight: bold;`;
 	body.appendChild(listTitle);
-
 	const pluginList = document.createElement('div');
-	pluginList.style.cssText = `display: flex; flex-direction: column; gap: 8px;`;
+	pluginList.className = 'plugin-manager-list';
 	body.appendChild(pluginList);
-
-	// 渲染插件列表
+	// --- 渲染插件列表函数 ---
 	async function renderPluginList(listEl) {
-		listEl.innerHTML = '<div style="color:#75715e; font-style:italic;">加载中...</div>';
+		listEl.innerHTML = '<div class="plugin-manager-status">加载中...</div>';
 		try {
 			const plugins = await ExtStore_GetExtList();
 			if (plugins.length === 0) {
-				listEl.innerHTML = '<div style="color:#75715e; font-style:italic;">暂无插件</div>';
+				listEl.innerHTML = '<div class="plugin-manager-status">暂无插件</div>';
 			} else {
 				listEl.innerHTML = '';
 				for (const plugin of plugins) {
 					const item = document.createElement('div');
-					item.style.cssText = `
-						display: flex;
-						justify-content: space-between;
-						align-items: center;
-						padding: 6px 10px;
-						background: #333430;
-						border-radius: 4px;
-					`;
-
+					item.className = 'plugin-manager-item';
 					const nameSpan = document.createElement('span');
+					nameSpan.className = 'plugin-manager-item-name';
 					nameSpan.textContent = plugin.name;
-					nameSpan.style.cssText = `color: #f8f8f2;`;
+					nameSpan.title = plugin.name; // 鼠标悬停显示全名
 					item.appendChild(nameSpan);
-
 					const delBtn = document.createElement('button');
 					delBtn.textContent = '删除';
-					delBtn.style.cssText = `
-						width: 80px;
-						height: 36px;
-						background: #272822;
-						color: #f8f8f2;
-						border: 1px solid #666;
-						border-radius: 4px;
-						font-size: 14px;
-						cursor: pointer;
-						transition: background 0.2s, border-color 0.2s;
-					`;
-					delBtn.onmouseenter = () => {
-						delBtn.style.background = '#333430';
-						delBtn.style.borderColor = '#888';
-						delBtn.style.color = '#f92672';
-					};
-					delBtn.onmouseleave = () => {
-						delBtn.style.background = '#272822';
-						delBtn.style.borderColor = '#666';
-						delBtn.style.color = '#f8f8f2';
-					};
+					delBtn.className = 'plugin-manager-btn delete'; // 添加 'delete' 修饰类
 					delBtn.onclick = async (e) => {
 						e.stopPropagation();
 						if (!confirm(`确定删除插件 "${plugin.name}"？`)) return;
+						delBtn.textContent = '删除中...';
+						delBtn.disabled = true;
 						try {
 							await ExtStore_DeleteExt(plugin.name);
 							await renderPluginList(pluginList);
-							eda.sys_Message.showToastMessage(`插件 "${plugin.name}" 已删除`, 'info', 1);
+							if (eda && eda.sys_Message) {
+								eda.sys_Message.showToastMessage(`插件 "${plugin.name}" 已删除`, 'info', 1);
+							}
 						} catch (err) {
 							console.error('删除失败:', err);
-							eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 2);
+							if (eda && eda.sys_Message) {
+								eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 2);
+							}
+							// 恢复按钮状态
+							delBtn.textContent = '删除';
+							delBtn.disabled = false;
 						}
 					};
 					item.appendChild(delBtn);
@@ -698,20 +624,32 @@ async function showPluginManagerModal(editor) {
 				}
 			}
 		} catch (err) {
-			listEl.innerHTML = `<div style="color:#f92672;">加载插件失败：${err.message}</div>`;
+			listEl.innerHTML = `<div class="plugin-manager-status error">加载插件失败：${err.message}</div>`;
 		}
 	}
-
 	// 初始加载
 	await renderPluginList(pluginList);
-
+	// 点击遮罩层关闭
 	modal.onclick = (e) => {
-		if (e.target === modal) modal.remove();
+		if (e.target === modal) {
+			if (modal.parentNode) modal.parentNode.removeChild(modal);
+		}
 	};
-
-	container.appendChild(body);
+	// 组装 DOM
 	modal.appendChild(container);
 	document.body.appendChild(modal);
+	// 自动聚焦输入框
+	setTimeout(() => nameInput.focus(), 50);
+	// ESC 关闭
+	const escHandler = (e) => {
+		if (e.key === 'Escape') {
+			if (modal.parentNode) {
+				modal.parentNode.removeChild(modal);
+				document.removeEventListener('keydown', escHandler);
+			}
+		}
+	};
+	document.addEventListener('keydown', escHandler);
 }
 
 // ==========================
