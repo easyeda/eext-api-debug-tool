@@ -22,13 +22,52 @@
 					<li><button id="setting-btn">切换主题</button></li>
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="Ext-btn">插件管理</button></li>
-					<li><button id="ai-btn">AI辅助</button></li>
+					<li><button id="ai-btn">AI编程</button></li>
 					<!-- <li><button id="example-btn" style="display: none;">案例</button></li>
 					<li><button id="about-btn" style="display: none;">关于</button></li> -->
 				</ul>
 			</div>
 			<div id="editor-container">
 				<div id="editor"></div>
+			</div>
+			<!-- 右侧 AI 聊天窗口 -->
+			<div id="ai-chat">
+				<!-- 1. 顶部标题栏：包含模型名称和设置齿轮 -->
+				<div class="ai-chat-header">
+					<span class="ai-chat-title" id="ai-model-name">GPT-4 Model</span>
+					<!-- 设置齿轮图标 (使用 SVG 或 Unicode，这里用 SVG 更精致) -->
+					<button class="ai-chat-settings-btn" id="ai-settings-trigger" title="聊天设置">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<circle cx="12" cy="12" r="3"></circle>
+							<path
+								d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+							></path>
+						</svg>
+					</button>
+				</div>
+				<!-- 2. 中间消息列表区域 -->
+				<div class="ai-chat-content" id="ai-chat-list">
+					<!-- 示例消息：欢迎语 -->
+					<div class="ai-message ai-message-system">
+						<div class="ai-message-bubble">你好！我是你的 AI 编程助手。有什么可以帮你的吗？</div>
+					</div>
+					<!-- 动态消息会插入到这里 -->
+				</div>
+				<!-- 3. 底部输入框区域 -->
+				<div class="ai-chat-footer">
+					<textarea id="ai-input" placeholder="输入代码问题或指令... (Shift+Enter 换行)" rows="1"></textarea>
+					<button id="ai-send-btn">发送</button>
+				</div>
 			</div>
 		</div>
 
@@ -50,7 +89,7 @@
 		<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
 		<!-- 一些编辑器支持 -->
-		<script src="/iframe/script/User_config/message.js"></script>
+		<script src="/iframe/script/User_config/Ai_Chat.js"></script>
 		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
 		<script src="/iframe/script/User_config/Code_Config.js"></script>

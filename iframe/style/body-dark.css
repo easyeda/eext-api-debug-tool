@@ -495,3 +495,472 @@ body {
 .plugin-manager-body::-webkit-scrollbar-thumb:hover {
 	background: #555;
 }
+/* =========================================
+   右侧 AI 聊天窗口样式 - 暗色模式 (Monokai)
+   ========================================= */
+
+#ai-chat {
+	width: 380px; /* AI聊天窗口宽度 */
+	min-width: 300px;
+	background: #272822; /* 主背景色 */
+	border-left: 1px solid #3e3d32; /* 深色分割线 */
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+	color: #f8f8f2;
+}
+
+/* --- 1. 顶部标题栏 --- */
+.ai-chat-header {
+	height: 50px;
+	padding: 0 16px;
+	background: #2d2e27; /* 稍亮以区分 */
+	border-bottom: 1px solid #3e3d32;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.ai-chat-title {
+	font-weight: 600;
+	font-size: 15px;
+	color: #f8f8f2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.ai-chat-settings-btn {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 6px;
+	border-radius: 4px;
+	color: #75715e; /* 注释色作为图标默认色 */
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		background 0.2s,
+		color 0.2s;
+}
+
+.ai-chat-settings-btn:hover {
+	background: #3e3d32;
+	color: #66d9ef; /* 悬停变为青色 */
+}
+
+/* --- 2. 中间消息列表 --- */
+.ai-chat-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: 16px;
+	background: #272822;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+/* 消息气泡通用样式 */
+.ai-message {
+	display: flex;
+	flex-direction: column;
+	max-width: 85%;
+}
+
+/* 系统/AI 消息 (靠左) */
+.ai-message-system {
+	align-items: flex-start;
+	align-self: flex-start;
+}
+
+.ai-message-system .ai-message-bubble {
+	background: #3e3d32; /* 深灰背景 */
+	color: #f8f8f2;
+	border: 1px solid #49483e;
+	border-top-left-radius: 0;
+}
+
+/* 用户消息 (靠右) */
+.ai-message-user {
+	align-items: flex-end;
+	align-self: flex-end;
+}
+
+.ai-message-user .ai-message-bubble {
+	background: #ae81ff; /* Monokai 紫色 */
+	color: #272822; /* 深色文字以保证对比度 */
+	border-top-right-radius: 0;
+	border: 1px solid #ae81ff;
+}
+
+.ai-message-bubble {
+	padding: 10px 14px;
+	border-radius: 12px;
+	font-size: 14px;
+	line-height: 1.5;
+	word-wrap: break-word;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* 自定义滚动条 (暗色细条) */
+.ai-chat-content::-webkit-scrollbar {
+	width: 6px;
+}
+.ai-chat-content::-webkit-scrollbar-track {
+	background: #272822;
+}
+.ai-chat-content::-webkit-scrollbar-thumb {
+	background: #49483e;
+	border-radius: 3px;
+}
+.ai-chat-content::-webkit-scrollbar-thumb:hover {
+	background: #66d9ef;
+}
+
+/* --- 底部输入框区域 (修正 ID 选择器) --- */
+.ai-chat-footer {
+	padding: 12px;
+	background: #2d2e27; /* 保持你的暗色背景 */
+	border-top: 1px solid #3e3d32;
+	display: flex;
+	gap: 8px;
+	align-items: flex-end;
+	flex-shrink: 0;
+}
+
+/* 核心修改：针对 #ai-input 的样式 */
+#ai-input {
+	flex: 1;
+	padding: 10px;
+	border: 1px solid #49483e;
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: inherit;
+
+	/* 关键属性：禁止手动拖拽大小，允许内部滚动 */
+	resize: none !important;
+	overflow-y: auto !important;
+	overflow-x: hidden;
+
+	max-height: 100px;
+	min-height: 40px;
+	outline: none;
+
+	/* 颜色配置 (Monokai) */
+	background: #272822;
+	color: #f8f8f2;
+	transition:
+		border-color 0.2s,
+		background-color 0.2s;
+}
+
+#ai-input::placeholder {
+	color: #75715e;
+}
+
+/* 聚焦状态：黑色稍微亮一点 (无发光) */
+#ai-input:focus {
+	border-color: #55544e;
+	background-color: #2b2c26;
+	box-shadow: none;
+}
+
+/* --- 强力隐藏滚动条 (Chrome/Edge/Safari) --- */
+#ai-input::-webkit-scrollbar {
+	width: 0 !important;
+	height: 0 !important;
+	display: none !important;
+	background: transparent !important;
+}
+
+#ai-input::-webkit-scrollbar-track {
+	background: transparent !important;
+	width: 0 !important;
+}
+
+#ai-input::-webkit-scrollbar-thumb {
+	background: transparent !important;
+	width: 0 !important;
+}
+
+/* --- 强力隐藏滚动条 (Firefox) --- */
+#ai-input {
+	scrollbar-width: none !important; /* Firefox 隐藏 */
+}
+
+/* 发送按钮样式 (保持原样) */
+#ai-send-btn {
+	padding: 0 16px;
+	height: 40px;
+	border: 1px solid #49483e;
+	border-radius: 6px;
+	font-weight: 600;
+	font-size: 14px;
+	cursor: pointer;
+	transition:
+		background 0.2s,
+		transform 0.1s;
+	white-space: nowrap;
+	background: #333430;
+	color: #fff;
+}
+
+#ai-send-btn:hover {
+	background: #49483e;
+}
+
+#ai-send-btn:active {
+	transform: translateY(1px);
+}
+/* =========================================
+   AI 设置模态框样式 - 暗色模式 (Monokai)
+   ========================================= */
+
+/* 遮罩层 */
+.ai-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
+	backdrop-filter: blur(2px); /* 轻微模糊背景 */
+	z-index: 9999;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	opacity: 0;
+	visibility: hidden;
+	transition:
+		opacity 0.2s ease,
+		visibility 0.2s ease;
+}
+
+.ai-modal-overlay.active {
+	opacity: 1;
+	visibility: visible;
+}
+
+/* 模态框主体 */
+.ai-modal {
+	background: #272822;
+	border: 1px solid #3e3d32;
+	border-radius: 8px;
+	width: 400px;
+	max-width: 90%;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+	display: flex;
+	flex-direction: column;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+	color: #f8f8f2;
+	transform: translateY(-20px);
+	transition: transform 0.2s ease;
+}
+
+.ai-modal-overlay.active .ai-modal {
+	transform: translateY(0);
+}
+
+/* 模态框头部 */
+.ai-modal-header {
+	padding: 16px 20px;
+	border-bottom: 1px solid #3e3d32;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background: #2d2e27;
+	border-radius: 8px 8px 0 0;
+}
+
+.ai-modal-title {
+	font-weight: 600;
+	font-size: 16px;
+	color: #f8f8f2;
+}
+
+.ai-modal-close {
+	background: transparent;
+	border: none;
+	color: #75715e;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	transition:
+		color 0.2s,
+		background 0.2s;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.ai-modal-close:hover {
+	color: #f8f8f2;
+	background: #3e3d32;
+}
+
+/* 模态框内容区域 */
+.ai-modal-body {
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	max-height: 70vh;
+	overflow-y: auto;
+}
+
+/* 表单组 */
+.ai-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.ai-form-label {
+	font-size: 13px;
+	color: #a6e22e; /* Monokai 绿色作为标签色 */
+	font-weight: 500;
+}
+
+.ai-form-input {
+	background: #272822;
+	border: 1px solid #49483e;
+	border-radius: 4px;
+	padding: 8px 10px;
+	color: #f8f8f2;
+	font-size: 14px;
+	font-family: inherit;
+	outline: none;
+	transition: border-color 0.2s;
+}
+
+.ai-form-input:focus {
+	border-color: #66d9ef; /* 聚焦青色 */
+}
+
+.ai-form-input::placeholder {
+	color: #75715e;
+}
+
+/* 开关控件 (Toggle Switch) */
+.ai-toggle-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 4px 0;
+}
+
+.ai-toggle-label {
+	font-size: 14px;
+	color: #f8f8f2;
+}
+
+.ai-switch {
+	position: relative;
+	display: inline-block;
+	width: 44px;
+	height: 24px;
+}
+
+.ai-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.ai-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #3e3d32;
+	transition: 0.4s;
+	border-radius: 24px;
+	border: 1px solid #49483e;
+}
+
+.ai-slider:before {
+	position: absolute;
+	content: '';
+	height: 18px;
+	width: 18px;
+	left: 2px;
+	bottom: 2px;
+	background-color: #f8f8f2;
+	transition: 0.4s;
+	border-radius: 50%;
+}
+
+input:checked + .ai-slider {
+	background-color: #ae81ff; /* Monokai 紫色 */
+	border-color: #ae81ff;
+}
+
+input:checked + .ai-slider:before {
+	transform: translateX(20px);
+	background-color: #272822;
+}
+
+/* 模态框底部按钮 */
+.ai-modal-footer {
+	padding: 16px 20px;
+	border-top: 1px solid #3e3d32;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	background: #2d2e27;
+	border-radius: 0 0 8px 8px;
+}
+
+.ai-btn {
+	padding: 8px 16px;
+	border-radius: 4px;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
+	transition:
+		background 0.2s,
+		transform 0.1s;
+}
+
+.ai-btn-cancel {
+	background: transparent;
+	color: #75715e;
+	border: 1px solid #3e3d32;
+}
+
+.ai-btn-cancel:hover {
+	background: #3e3d32;
+	color: #f8f8f2;
+}
+
+.ai-btn-save {
+	background: #a6e22e; /* Monokai 绿色 */
+	color: #272822;
+}
+
+.ai-btn-save:hover {
+	background: #b6f23e;
+	transform: translateY(-1px);
+}
+
+.ai-btn-save:active {
+	transform: translateY(1px);
+}
+
+/* 滚动条适配模态框内部 */
+.ai-modal-body::-webkit-scrollbar {
+	width: 6px;
+}
+.ai-modal-body::-webkit-scrollbar-track {
+	background: #272822;
+}
+.ai-modal-body::-webkit-scrollbar-thumb {
+	background: #49483e;
+	border-radius: 3px;
+}
