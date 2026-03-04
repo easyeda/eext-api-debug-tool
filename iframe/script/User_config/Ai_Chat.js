@@ -247,8 +247,8 @@ function initAiChat() {
 
 	// --- 核心发送逻辑 ---
 	async function handleSend() {
-		const text = inputArea.value.trim();
-		if (!text) return;
+		const rawText = inputArea.value.trim();
+		if (!rawText) return;
 
 		if (!chatConfig.apiKey) {
 			alert('请先配置 API Key');
@@ -256,12 +256,52 @@ function initAiChat() {
 			return;
 		}
 
-		appendMessage('user', text);
+		// --- 新增逻辑：检测“理解代码”类指令并自动获取编辑器内容 ---
+		let finalUserText = rawText;
+		const codeKeywords = [
+			'理解我的代码',
+			'分析这段代码',
+			'解释代码',
+			'看我的代码',
+			'帮我优化代码',
+			'代码有什么问题',
+			'检查代码错误',
+			'重构这段代码',
+		];
+
+		// 检查是否触发自动获取代码逻辑
+		const shouldFetchCode = codeKeywords.some((keyword) => rawText.includes(keyword));
+
+		if (shouldFetchCode) {
+			// 检查 editor 对象是否存在且可用 (确保 editor 已在全局或当前作用域初始化)
+			if (typeof editor !== 'undefined' && editor && typeof editor.getValue === 'function') {
+				const currentCode = editor.getValue();
+
+				if (!currentCode || currentCode.trim() === '') {
+					// 如果编辑器为空，给予提示
+					finalUserText = `${rawText}\n\n[注意：当前编辑器内容为空，无法提供代码供你分析。]`;
+				} else {
+					// 构造包含代码的完整提示词
+					// 格式：用户指令 + 分隔符 + 代码块
+					finalUserText = `${rawText}\n\n以下是当前编辑器中的代码:\n\`\`\`\n${currentCode}\n\`\`\``;
+					console.log('已自动抓取编辑器代码并附加到请求中');
+				}
+			} else {
+				console.warn('未检测到 editor 对象，无法自动获取代码。请确保 editor 已全局初始化。');
+				// 如果 editor 不存在，保持原样发送，依靠用户手动粘贴
+			}
+		}
+		// --- 新增逻辑结束 ---
+
+		// 界面上显示用户原始输入
+		appendMessage('user', rawText);
 		inputArea.value = '';
 		inputArea.style.height = 'auto';
 
 		const loadingElements = appendMessage('system', '', false, true);
-		const currentMessages = [...messageHistory, { role: 'user', content: text }];
+
+		// 发送时使用 finalUserText (可能包含自动注入的代码)
+		const currentMessages = [...messageHistory, { role: 'user', content: finalUserText }];
 
 		let aiBubble = null;
 		let fullResponse = '';
@@ -281,7 +321,7 @@ function initAiChat() {
 				body: JSON.stringify({
 					model: chatConfig.model,
 					messages: currentMessages,
-					stream: false,
+					stream: false, // 注意：原代码此处强制为 false，实际使用模拟流式
 					temperature: 0.7,
 				}),
 			});
@@ -323,7 +363,6 @@ function initAiChat() {
 									hljs.highlightElement(block);
 								});
 							}
-							// 打字结束后添加复制按钮
 							addCopyButtons(aiBubble);
 						}
 						chatList.scrollTop = chatList.scrollHeight;
@@ -338,7 +377,8 @@ function initAiChat() {
 
 			function finishProcess() {
 				if (chatConfig.multiTurn) {
-					messageHistory.push({ role: 'user', content: text });
+					// 存入历史记录时使用 finalUserText 以保持上下文（包含代码）
+					messageHistory.push({ role: 'user', content: finalUserText });
 					messageHistory.push({ role: 'assistant', content: fullResponse });
 					if (messageHistory.length > 20) messageHistory = messageHistory.slice(-20);
 				}

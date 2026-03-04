@@ -6,19 +6,11 @@
 
 ## 中文联想支持
 
-![alt text](images/效果图1.png)
-
 ## AI智能注释
-
-![alt text](images/效果图2.png)
 
 ## AI智能报错分析
 
-![alt text](images/效果图4.png)
-
 ## 两套主题流畅切换
-
-![alt text](images/image.png)
 
 ## 通过npm run dev 构建全新的提示词工程
 

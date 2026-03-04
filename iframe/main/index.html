@@ -119,7 +119,7 @@
 			//注册EDA智能补全
 			ACE_CodingForEDA(editor, edcode);
 
-			//加载自动缓存
+			//自动缓存
 			editor.session.on('change', function () {
 				eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
 			});
