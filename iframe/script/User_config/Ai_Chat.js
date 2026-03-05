@@ -150,13 +150,20 @@ function initAiChat() {
 		const overlay = document.createElement('div');
 		overlay.className = 'ai-modal-overlay';
 		overlay.id = 'ai-settings-modal-overlay';
+		// 修改点：在 header 中增加了新的 SVG 按钮 (#ai-new-chat-btn)
 		overlay.innerHTML = `
             <div class="ai-modal">
                 <div class="ai-modal-header">
                     <span class="ai-modal-title">AI 配置设置</span>
-                    <button class="ai-modal-close" id="ai-modal-close-btn" title="关闭">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <!-- 新增：新对话按钮 -->
+                        <button id="ai-new-chat-btn" class="ai-icon-btn" title="开启新对话 (清空历史)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </button>
+                        <button class="ai-modal-close" id="ai-modal-close-btn" title="关闭">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="ai-modal-body">
                     <div class="ai-form-group">
@@ -186,6 +193,33 @@ function initAiChat() {
                     <button class="ai-btn ai-btn-save" id="ai-modal-save-btn">保存配置</button>
                 </div>
             </div>`;
+
+		// 注入简单的样式以支持新按钮的外观
+		const style = document.createElement('style');
+		style.textContent = `
+			.ai-icon-btn {
+				background: transparent;
+				border: 1px solid transparent;
+				border-radius: 4px;
+				cursor: pointer;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #57606a;
+				transition: all 0.2s;
+				padding: 4px;
+			}
+			.ai-icon-btn:hover {
+				background-color: #ffeef0;
+				color: #cf222e;
+				border-color: #fdaeb7;
+			}
+			.ai-icon-btn svg {
+				display: block;
+			}
+		`;
+		document.head.appendChild(style);
+
 		document.body.appendChild(overlay);
 		return overlay;
 	}
@@ -207,6 +241,28 @@ function initAiChat() {
 
 	function closeModal() {
 		if (modalOverlay) modalOverlay.classList.remove('active');
+	}
+
+	// --- 新增：开启新对话逻辑 ---
+	function startNewChat() {
+		// 1. 清空内存历史
+		messageHistory = [];
+
+		// 2. 清空本地存储
+		localStorage.removeItem('ai_chat_history');
+
+		// 3. 清空界面
+		if (chatList) {
+			chatList.innerHTML = '';
+		}
+
+		// 4. 关闭模态框
+		closeModal();
+
+		// 5. 聚焦输入框，方便用户立即开始
+		if (inputArea) inputArea.focus();
+
+		console.log('已开启新对话，历史记录已清空。');
 	}
 
 	function saveConfigFromModal() {
@@ -238,12 +294,28 @@ function initAiChat() {
 
 	function bindModalEvents() {
 		if (!modalOverlay) return;
+
+		// 绑定关闭按钮
 		modalOverlay.querySelector('#ai-modal-close-btn').onclick = closeModal;
+
+		// 绑定取消按钮
 		modalOverlay.querySelector('#ai-modal-cancel-btn').onclick = closeModal;
+
+		// 绑定保存按钮
 		modalOverlay.querySelector('#ai-modal-save-btn').onclick = saveConfigFromModal;
+
+		// --- 新增：绑定新对话按钮 ---
+		const newChatBtn = modalOverlay.querySelector('#ai-new-chat-btn');
+		if (newChatBtn) {
+			newChatBtn.onclick = startNewChat;
+		}
+
+		// 点击遮罩层关闭
 		modalOverlay.onclick = (e) => {
 			if (e.target === modalOverlay) closeModal();
 		};
+
+		// ESC 键关闭
 		document.onkeydown = (e) => {
 			if (e.key === 'Escape' && modalOverlay?.classList.contains('active')) closeModal();
 		};
