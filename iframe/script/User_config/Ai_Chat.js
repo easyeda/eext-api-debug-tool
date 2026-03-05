@@ -32,7 +32,6 @@ async function GetVibeCodingConfig() {
 }
 
 function initAiChat() {
-	// 检查依赖库
 	if (typeof marked === 'undefined' || typeof hljs === 'undefined') {
 		console.error('AI Chat Init Error: marked or highlight.js not found.');
 		return;
@@ -56,20 +55,17 @@ function initAiChat() {
 		stream: true,
 	};
 
-	// --- 修复 1: 安全地加载配置 ---
 	let chatConfig = defaultConfig;
 	try {
 		const storedConfig = localStorage.getItem('ai_chat_config');
 		if (storedConfig) {
 			const parsed = JSON.parse(storedConfig);
-			// 合并默认配置，防止旧配置缺少新字段
 			chatConfig = { ...defaultConfig, ...parsed };
 		}
 	} catch (e) {
 		console.error('加载配置失败，使用默认配置', e);
 	}
 
-	// --- 修复 2: 安全地加载历史记录 ---
 	let messageHistory = [];
 	try {
 		const storedHistory = localStorage.getItem('ai_chat_history');
@@ -89,26 +85,18 @@ function initAiChat() {
 
 	if (modelNameDisplay) modelNameDisplay.textContent = chatConfig.model || 'AI Model';
 
-	// --- 修复 3: 初始化时渲染历史消息 ---
 	if (messageHistory.length > 0 && chatList) {
 		messageHistory.forEach((msg) => {
-			// 重新渲染历史消息到界面
-			// 注意：这里直接调用 appendMessage，它会自动处理 markdown 和高亮
 			appendMessage(msg.role, msg.content, false, false);
 		});
-		// 滚动到底部
 		chatList.scrollTop = chatList.scrollHeight;
 	}
 
-	// --- 新增：添加复制按钮的逻辑 ---
 	function addCopyButtons(container) {
 		if (!container) return;
-
 		const pres = container.querySelectorAll('pre');
 		pres.forEach((pre) => {
-			// 如果已经添加过按钮，跳过
 			if (pre.querySelector('.code-copy-btn')) return;
-
 			const codeElement = pre.querySelector('code');
 			if (!codeElement) return;
 
@@ -118,19 +106,16 @@ function initAiChat() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                 <span>复制</span>
             `;
-
 			btn.onclick = async () => {
 				const text = codeElement.innerText;
 				try {
 					await navigator.clipboard.writeText(text);
-					// 更改按钮状态
 					const originalContent = btn.innerHTML;
 					btn.classList.add('copied');
 					btn.innerHTML = `
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         <span>已复制</span>
                     `;
-
 					setTimeout(() => {
 						btn.classList.remove('copied');
 						btn.innerHTML = originalContent;
@@ -140,23 +125,19 @@ function initAiChat() {
 					alert('复制失败，请手动复制');
 				}
 			};
-
 			pre.appendChild(btn);
 		});
 	}
 
-	// --- 模态框创建 ---
 	function createModal() {
 		const overlay = document.createElement('div');
 		overlay.className = 'ai-modal-overlay';
 		overlay.id = 'ai-settings-modal-overlay';
-		// 修改点：在 header 中增加了新的 SVG 按钮 (#ai-new-chat-btn)
 		overlay.innerHTML = `
             <div class="ai-modal">
                 <div class="ai-modal-header">
                     <span class="ai-modal-title">AI 配置设置</span>
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <!-- 新增：新对话按钮 -->
                         <button id="ai-new-chat-btn" class="ai-icon-btn" title="开启新对话 (清空历史)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         </button>
@@ -194,32 +175,13 @@ function initAiChat() {
                 </div>
             </div>`;
 
-		// 注入简单的样式以支持新按钮的外观
 		const style = document.createElement('style');
 		style.textContent = `
-			.ai-icon-btn {
-				background: transparent;
-				border: 1px solid transparent;
-				border-radius: 4px;
-				cursor: pointer;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				color: #57606a;
-				transition: all 0.2s;
-				padding: 4px;
-			}
-			.ai-icon-btn:hover {
-				background-color: #ffeef0;
-				color: #cf222e;
-				border-color: #fdaeb7;
-			}
-			.ai-icon-btn svg {
-				display: block;
-			}
+			.ai-icon-btn { background: transparent; border: 1px solid transparent; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #57606a; transition: all 0.2s; padding: 4px; }
+			.ai-icon-btn:hover { background-color: #ffeef0; color: #cf222e; border-color: #fdaeb7; }
+			.ai-icon-btn svg { display: block; }
 		`;
 		document.head.appendChild(style);
-
 		document.body.appendChild(overlay);
 		return overlay;
 	}
@@ -243,26 +205,12 @@ function initAiChat() {
 		if (modalOverlay) modalOverlay.classList.remove('active');
 	}
 
-	// --- 新增：开启新对话逻辑 ---
 	function startNewChat() {
-		// 1. 清空内存历史
 		messageHistory = [];
-
-		// 2. 清空本地存储
 		localStorage.removeItem('ai_chat_history');
-
-		// 3. 清空界面
-		if (chatList) {
-			chatList.innerHTML = '';
-		}
-
-		// 4. 关闭模态框
+		if (chatList) chatList.innerHTML = '';
 		closeModal();
-
-		// 5. 聚焦输入框，方便用户立即开始
 		if (inputArea) inputArea.focus();
-
-		console.log('已开启新对话，历史记录已清空。');
 	}
 
 	function saveConfigFromModal() {
@@ -278,53 +226,33 @@ function initAiChat() {
 			return;
 		}
 		chatConfig = newConfig;
-		// 保存配置到 localStorage
 		localStorage.setItem('ai_chat_config', JSON.stringify(chatConfig));
-
 		if (!chatConfig.multiTurn) {
 			messageHistory = [];
-			// 如果关闭多轮对话，清空界面和历史存储
 			if (chatList) chatList.innerHTML = '';
 			localStorage.removeItem('ai_chat_history');
 		}
-
 		if (modelNameDisplay) modelNameDisplay.textContent = chatConfig.model;
 		closeModal();
 	}
 
 	function bindModalEvents() {
 		if (!modalOverlay) return;
-
-		// 绑定关闭按钮
 		modalOverlay.querySelector('#ai-modal-close-btn').onclick = closeModal;
-
-		// 绑定取消按钮
 		modalOverlay.querySelector('#ai-modal-cancel-btn').onclick = closeModal;
-
-		// 绑定保存按钮
 		modalOverlay.querySelector('#ai-modal-save-btn').onclick = saveConfigFromModal;
-
-		// --- 新增：绑定新对话按钮 ---
 		const newChatBtn = modalOverlay.querySelector('#ai-new-chat-btn');
-		if (newChatBtn) {
-			newChatBtn.onclick = startNewChat;
-		}
-
-		// 点击遮罩层关闭
+		if (newChatBtn) newChatBtn.onclick = startNewChat;
 		modalOverlay.onclick = (e) => {
 			if (e.target === modalOverlay) closeModal();
 		};
-
-		// ESC 键关闭
 		document.onkeydown = (e) => {
 			if (e.key === 'Escape' && modalOverlay?.classList.contains('active')) closeModal();
 		};
 	}
 
-	// --- 消息渲染 ---
 	function appendMessage(role, text, isStreaming = false, isLoading = false) {
 		if (!chatList) return null;
-
 		const msgDiv = document.createElement('div');
 		msgDiv.className = `ai-message ${role === 'user' ? 'ai-message-user' : 'ai-message-system'}`;
 		const bubble = document.createElement('div');
@@ -343,74 +271,50 @@ function initAiChat() {
 			if (role === 'system' && typeof marked !== 'undefined') {
 				bubble.innerHTML = marked.parse(text);
 				if (typeof hljs !== 'undefined') {
-					bubble.querySelectorAll('pre code').forEach((block) => {
-						hljs.highlightElement(block);
-					});
+					bubble.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
 				}
-				// 渲染完成后添加复制按钮
 				addCopyButtons(bubble);
 			} else {
 				bubble.textContent = text;
 				bubble.style.whiteSpace = 'pre-wrap';
 			}
 		}
-
 		msgDiv.appendChild(bubble);
 		chatList.appendChild(msgDiv);
 		chatList.scrollTop = chatList.scrollHeight;
 		return isStreaming || isLoading ? { msgDiv, bubble } : null;
 	}
 
-	// --- 核心发送逻辑 ---
 	async function handleSend() {
 		const rawText = inputArea.value.trim();
 		if (!rawText) return;
-
 		if (!chatConfig.apiKey) {
 			alert('请先配置 API Key');
 			openModal();
 			return;
 		}
 
-		// --- 检测“理解代码”类指令并自动获取编辑器内容 ---
-		let finalUserText = rawText;
-		const codeKeywords = [
-			'理解我的代码',
-			'分析这段代码',
-			'解释代码',
-			'看我的代码',
-			'帮我优化代码',
-			'代码有什么问题',
-			'检查代码错误',
-			'重构这段代码',
-		];
-
-		const shouldFetchCode = codeKeywords.some((keyword) => rawText.includes(keyword));
-
-		if (shouldFetchCode) {
-			if (typeof editor !== 'undefined' && editor && typeof editor.getValue === 'function') {
-				const currentCode = editor.getValue();
-
-				if (!currentCode || currentCode.trim() === '') {
-					finalUserText = `${rawText}\n\n[注意：当前编辑器内容为空，无法提供代码供你分析。]`;
-				} else {
-					finalUserText = `${rawText}\n\n以下是当前编辑器中的代码:\n\`\`\`\n${currentCode}\n\`\`\``;
-					console.log('已自动抓取编辑器代码并附加到请求中');
-				}
-			} else {
-				console.warn('未检测到 editor 对象，无法自动获取代码。');
-			}
-		}
-
-		// 界面上显示用户原始输入
 		appendMessage('user', rawText);
 		inputArea.value = '';
 		inputArea.style.height = 'auto';
-
 		const loadingElements = appendMessage('system', '', false, true);
 
-		// 发送时使用 finalUserText
-		const currentMessages = [...messageHistory, { role: 'user', content: finalUserText }];
+		// --- 修改点 1: 强化 System Prompt ---
+		const systemInstruction = `
+你是一个智能编程助手。你拥有操作当前编辑器的能力。
+请严格遵守以下规则：
+1. **隐形指令**：如果你需要操作编辑器，请在回复的**最第一行**插入特殊标记。这个标记是系统内部指令，**绝对不要**在标记后向用户解释它，也**不要**把它作为普通文本展示给用户。系统会自动识别并隐藏它。
+2. **读取代码**：如果需要查看代码，第一行必须仅包含：[ACTION: READ_CODE]
+3. **写入代码**：如果需要写代码，第一行必须仅包含：[ACTION: WRITE_CODE]，紧接着换行后提供完整的代码块（必须包含语言标识，如 \`\`\`javascript）。
+   - 示例格式：
+     [ACTION: WRITE_CODE]
+     \`\`\`javascript
+     console.log("Hello");
+     \`\`\`
+4. **正常回答**：如果不需操作编辑器，直接回答用户问题。
+`;
+
+		const currentMessages = [{ role: 'system', content: systemInstruction }, ...messageHistory, { role: 'user', content: rawText }];
 
 		let aiBubble = null;
 		let fullResponse = '';
@@ -423,16 +327,8 @@ function initAiChat() {
 		try {
 			const response = await fetch(`${chatConfig.baseUrl}/chat/completions`, {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${chatConfig.apiKey}`,
-				},
-				body: JSON.stringify({
-					model: chatConfig.model,
-					messages: currentMessages,
-					stream: false,
-					temperature: 0.7,
-				}),
+				headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${chatConfig.apiKey}` },
+				body: JSON.stringify({ model: chatConfig.model, messages: currentMessages, stream: false, temperature: 0.7 }),
 			});
 
 			if (!response.ok) {
@@ -443,99 +339,208 @@ function initAiChat() {
 			const data = await response.json();
 			fullResponse = data.choices?.[0]?.message?.content || '无内容';
 
-			if (loadingElements && loadingElements.msgDiv) {
-				loadingElements.msgDiv.remove();
+			if (loadingElements && loadingElements.msgDiv) loadingElements.msgDiv.remove();
+
+			await processAiActions(fullResponse, 0);
+		} catch (error) {
+			console.error(error);
+			if (loadingElements && loadingElements.msgDiv) loadingElements.msgDiv.remove();
+			showError(error.message);
+			resetSendButton();
+		}
+
+		async function processAiActions(responseText, depth = 0) {
+			if (depth > 2) {
+				renderFinalResponse(responseText);
+				finishProcess(rawText, responseText);
+				return;
 			}
 
+			let finalDisplayText = responseText;
+			let actionTaken = false;
+			let codeToWrite = null;
+
+			// --- 修改点 2: 更鲁棒的指令解析 ---
+
+			// 1. 检查 READ_CODE (允许前后有少量空白)
+			if (/^\s*\[ACTION:\s*READ_CODE\]\s*/i.test(responseText)) {
+				actionTaken = true;
+				// 移除标记行
+				finalDisplayText = responseText.replace(/^\s*\[ACTION:\s*READ_CODE\]\s*\n?/i, '').trim();
+
+				let codeContent = '';
+				if (typeof editor !== 'undefined' && editor && typeof editor.getValue === 'function') {
+					codeContent = editor.getValue();
+				}
+
+				if (!codeContent) {
+					finalDisplayText = (finalDisplayText || '好的') + '\n\n⚠️ 检测到您想分析代码，但编辑器当前为空。';
+				} else {
+					const tempLoading = appendMessage('system', '', false, true);
+					try {
+						const retryMessages = [
+							{ role: 'system', content: systemInstruction },
+							...messageHistory,
+							{ role: 'user', content: rawText },
+							{
+								role: 'user',
+								content: `[系统自动注入]: 这是当前编辑器的代码内容:\n\`\`\`\n${codeContent}\n\`\`\`\n请基于此代码回答用户最初的问题。`,
+							},
+						];
+						const retryResp = await fetch(`${chatConfig.baseUrl}/chat/completions`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${chatConfig.apiKey}` },
+							body: JSON.stringify({ model: chatConfig.model, messages: retryMessages, temperature: 0.7 }),
+						});
+						if (retryResp.ok) {
+							const retryData = await retryResp.json();
+							finalDisplayText = retryData.choices?.[0]?.message?.content || '分析完成';
+							if (tempLoading && tempLoading.msgDiv) tempLoading.msgDiv.remove();
+							await processAiActions(finalDisplayText, depth + 1);
+							return;
+						} else {
+							throw new Error('二次请求失败');
+						}
+					} catch (e) {
+						if (tempLoading && tempLoading.msgDiv) tempLoading.msgDiv.remove();
+						finalDisplayText += '\n\n❌ 自动获取代码后重新生成失败：' + e.message;
+					}
+				}
+			}
+
+			// 2. 检查 WRITE_CODE (允许前后有少量空白)
+			// 使用更宽松的正则，匹配 [ACTION: WRITE_CODE] 以及后面所有的内容
+			const writeMatch = responseText.match(/^\s*\[ACTION:\s*WRITE_CODE\]\s*\n?([\s\S]*)/i);
+
+			if (writeMatch) {
+				actionTaken = true;
+				const rawCodeBlock = writeMatch[1].trim();
+
+				// 尝试从 Markdown 代码块中提取纯代码
+				// 匹配 ```lang ... ``` 结构
+				const mdMatch = rawCodeBlock.match(/^```[\w]*\n([\s\S]*?)\n```$/);
+
+				if (mdMatch) {
+					codeToWrite = mdMatch[1]; // 提取出的纯净代码
+					// 构造给用户的显示文本：只保留代码块之外的自然语言（如果有）
+					// 这里我们简单处理：如果 AI 在代码块后还有话，保留；否则显示成功提示
+					const afterCode = rawCodeBlock.replace(/^```[\w]*\n[\s\S]*?\n```/, '').trim();
+					finalDisplayText = afterCode ? afterCode : '✅ 代码已写入编辑器。';
+				} else {
+					// 如果没有 markdown 包裹，假设整个剩余部分都是代码
+					codeToWrite = rawCodeBlock;
+					finalDisplayText = '✅ 代码已写入编辑器。';
+				}
+
+				// 执行写入
+				if (typeof editor !== 'undefined' && editor && typeof editor.setValue === 'function') {
+					if (chatConfig.stream) {
+						await typeWriterWriteToEditor(codeToWrite);
+					} else {
+						editor.setValue(codeToWrite, -1);
+					}
+				} else {
+					finalDisplayText += '\n\n⚠️ 未检测到编辑器，无法写入。';
+				}
+			}
+
+			renderFinalResponse(finalDisplayText);
+			finishProcess(rawText, finalDisplayText);
+		}
+
+		function typeWriterWriteToEditor(text) {
+			return new Promise((resolve) => {
+				if (!editor) {
+					resolve();
+					return;
+				}
+				editor.setValue('', -1);
+				let i = 0;
+				const speed = 10;
+				const chunkSize = 3;
+
+				function type() {
+					if (i < text.length) {
+						const end = Math.min(i + chunkSize, text.length);
+						editor.setValue(text.substring(0, end), -1);
+						editor.scrollToLine(editor.session.getLength(), true, true, function () {});
+						i = end;
+						setTimeout(type, speed);
+					} else {
+						resolve();
+					}
+				}
+				type();
+			});
+		}
+
+		function renderFinalResponse(text) {
 			if (chatConfig.stream) {
 				const streamElements = appendMessage('system', '', true);
 				aiBubble = streamElements.bubble;
-
 				let currentIndex = 0;
 				const speed = 15;
 
 				const typeWriter = () => {
-					if (currentIndex < fullResponse.length) {
-						const currentText = fullResponse.slice(0, currentIndex + 1);
-						aiBubble.textContent = currentText;
+					if (currentIndex < text.length) {
+						aiBubble.textContent = text.slice(0, currentIndex + 1);
 						currentIndex++;
 						chatList.scrollTop = chatList.scrollHeight;
 						setTimeout(typeWriter, speed);
 					} else {
 						aiBubble.classList.remove('streaming-cursor');
-
 						if (typeof marked !== 'undefined') {
-							aiBubble.innerHTML = marked.parse(fullResponse);
-
+							aiBubble.innerHTML = marked.parse(text);
 							if (typeof hljs !== 'undefined') {
-								aiBubble.querySelectorAll('pre code').forEach((block) => {
-									hljs.highlightElement(block);
-								});
+								aiBubble.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
 							}
 							addCopyButtons(aiBubble);
 						}
 						chatList.scrollTop = chatList.scrollHeight;
-						finishProcess();
 					}
 				};
 				typeWriter();
 			} else {
-				appendMessage('system', fullResponse);
-				finishProcess();
+				appendMessage('system', text);
 			}
+		}
 
-			function finishProcess() {
-				if (chatConfig.multiTurn) {
-					// 更新内存中的历史
-					messageHistory.push({ role: 'user', content: finalUserText });
-					messageHistory.push({ role: 'assistant', content: fullResponse });
-
-					// 限制长度
-					if (messageHistory.length > 20) messageHistory = messageHistory.slice(-20);
-
-					// --- 修复 4: 持久化保存历史记录 ---
-					try {
-						localStorage.setItem('ai_chat_history', JSON.stringify(messageHistory));
-					} catch (e) {
-						console.error('保存历史记录失败:', e);
-						// 如果存储满了，可以尝试清除最早的记录或提示用户
-						if (e.name === 'QuotaExceededError') {
-							alert('本地存储空间已满，历史对话可能无法保存。');
-						}
-					}
+		function finishProcess(userText, aiText) {
+			if (chatConfig.multiTurn) {
+				messageHistory.push({ role: 'user', content: userText });
+				messageHistory.push({ role: 'assistant', content: aiText });
+				if (messageHistory.length > 20) messageHistory = messageHistory.slice(-20);
+				try {
+					localStorage.setItem('ai_chat_history', JSON.stringify(messageHistory));
+				} catch (e) {
+					console.error(e);
 				}
-
-				sendBtn.disabled = false;
-				sendBtn.textContent = originalBtnText;
-				sendBtn.style.opacity = '1';
-				inputArea.focus();
 			}
-		} catch (error) {
-			console.error(error);
-			if (loadingElements && loadingElements.msgDiv) {
-				loadingElements.msgDiv.remove();
-			}
+			resetSendButton();
+		}
 
+		function resetSendButton() {
+			sendBtn.disabled = false;
+			sendBtn.textContent = originalBtnText;
+			sendBtn.style.opacity = '1';
+			inputArea.focus();
+		}
+
+		function showError(msg) {
 			const isDark = getComputedStyle(document.body).backgroundColor === 'rgb(39, 40, 34)';
 			const errStyle = isDark
 				? `background:#5a2d2d; border-color:#8b3a3a; color:#ffaaaa;`
 				: `background:#ffeef0; border-color:#fdaeb7; color:#cf222e;`;
-
 			const errDiv = document.createElement('div');
 			errDiv.className = 'ai-message ai-message-system';
-			errDiv.innerHTML = `<div class="ai-message-bubble" style="${errStyle}">❌ 错误：${error.message}</div>`;
+			errDiv.innerHTML = `<div class="ai-message-bubble" style="${errStyle}">❌ 错误：${msg}</div>`;
 			chatList.appendChild(errDiv);
 			chatList.scrollTop = chatList.scrollHeight;
-
-			sendBtn.disabled = false;
-			sendBtn.textContent = originalBtnText;
-			sendBtn.style.opacity = '1';
 		}
 	}
 
 	if (settingsBtn) settingsBtn.onclick = openModal;
 	if (sendBtn) sendBtn.onclick = handleSend;
-
 	if (inputArea) {
 		inputArea.oninput = function () {
 			this.style.height = 'auto';
