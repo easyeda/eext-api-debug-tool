@@ -35,6 +35,7 @@ function initAiChat() {
 	// 检查依赖库
 	if (typeof marked === 'undefined' || typeof hljs === 'undefined') {
 		console.error('AI Chat Init Error: marked or highlight.js not found.');
+		return;
 	} else {
 		marked.setOptions({
 			highlight: function (code, lang) {
@@ -55,8 +56,30 @@ function initAiChat() {
 		stream: true,
 	};
 
-	let chatConfig = JSON.parse(localStorage.getItem('ai_chat_config')) || defaultConfig;
+	// --- 修复 1: 安全地加载配置 ---
+	let chatConfig = defaultConfig;
+	try {
+		const storedConfig = localStorage.getItem('ai_chat_config');
+		if (storedConfig) {
+			const parsed = JSON.parse(storedConfig);
+			// 合并默认配置，防止旧配置缺少新字段
+			chatConfig = { ...defaultConfig, ...parsed };
+		}
+	} catch (e) {
+		console.error('加载配置失败，使用默认配置', e);
+	}
+
+	// --- 修复 2: 安全地加载历史记录 ---
 	let messageHistory = [];
+	try {
+		const storedHistory = localStorage.getItem('ai_chat_history');
+		if (storedHistory) {
+			messageHistory = JSON.parse(storedHistory);
+		}
+	} catch (e) {
+		console.error('加载历史记录失败，清空历史', e);
+		messageHistory = [];
+	}
 
 	const settingsBtn = document.getElementById('ai-settings-trigger');
 	const sendBtn = document.getElementById('ai-send-btn');
@@ -65,6 +88,17 @@ function initAiChat() {
 	const modelNameDisplay = document.getElementById('ai-model-name');
 
 	if (modelNameDisplay) modelNameDisplay.textContent = chatConfig.model || 'AI Model';
+
+	// --- 修复 3: 初始化时渲染历史消息 ---
+	if (messageHistory.length > 0 && chatList) {
+		messageHistory.forEach((msg) => {
+			// 重新渲染历史消息到界面
+			// 注意：这里直接调用 appendMessage，它会自动处理 markdown 和高亮
+			appendMessage(msg.role, msg.content, false, false);
+		});
+		// 滚动到底部
+		chatList.scrollTop = chatList.scrollHeight;
+	}
 
 	// --- 新增：添加复制按钮的逻辑 ---
 	function addCopyButtons(container) {
@@ -127,15 +161,15 @@ function initAiChat() {
                 <div class="ai-modal-body">
                     <div class="ai-form-group">
                         <label class="ai-form-label">API Key</label>
-                        <input type="password" id="cfg-api-key" class="ai-form-input" value="${chatConfig.apiKey}">
+                        <input type="password" id="cfg-api-key" class="ai-form-input" value="${chatConfig.apiKey || ''}">
                     </div>
                     <div class="ai-form-group">
                         <label class="ai-form-label">Base URL</label>
-                        <input type="text" id="cfg-base-url" class="ai-form-input" value="${chatConfig.baseUrl}">
+                        <input type="text" id="cfg-base-url" class="ai-form-input" value="${chatConfig.baseUrl || ''}">
                     </div>
                     <div class="ai-form-group">
                         <label class="ai-form-label">Model Name</label>
-                        <input type="text" id="cfg-model" class="ai-form-input" value="${chatConfig.model}">
+                        <input type="text" id="cfg-model" class="ai-form-input" value="${chatConfig.model || ''}">
                     </div>
                     <hr style="border: 0; border-top: 1px solid #d0d7de; margin: 4px 0;">
                     <div class="ai-toggle-row">
@@ -163,9 +197,9 @@ function initAiChat() {
 			modalOverlay = createModal();
 			bindModalEvents();
 		}
-		document.getElementById('cfg-api-key').value = chatConfig.apiKey;
-		document.getElementById('cfg-base-url').value = chatConfig.baseUrl;
-		document.getElementById('cfg-model').value = chatConfig.model;
+		document.getElementById('cfg-api-key').value = chatConfig.apiKey || '';
+		document.getElementById('cfg-base-url').value = chatConfig.baseUrl || '';
+		document.getElementById('cfg-model').value = chatConfig.model || '';
 		document.getElementById('cfg-multi-turn').checked = chatConfig.multiTurn;
 		document.getElementById('cfg-stream').checked = chatConfig.stream;
 		setTimeout(() => modalOverlay.classList.add('active'), 10);
@@ -188,8 +222,16 @@ function initAiChat() {
 			return;
 		}
 		chatConfig = newConfig;
+		// 保存配置到 localStorage
 		localStorage.setItem('ai_chat_config', JSON.stringify(chatConfig));
-		if (!chatConfig.multiTurn) messageHistory = [];
+
+		if (!chatConfig.multiTurn) {
+			messageHistory = [];
+			// 如果关闭多轮对话，清空界面和历史存储
+			if (chatList) chatList.innerHTML = '';
+			localStorage.removeItem('ai_chat_history');
+		}
+
 		if (modelNameDisplay) modelNameDisplay.textContent = chatConfig.model;
 		closeModal();
 	}
@@ -209,6 +251,8 @@ function initAiChat() {
 
 	// --- 消息渲染 ---
 	function appendMessage(role, text, isStreaming = false, isLoading = false) {
+		if (!chatList) return null;
+
 		const msgDiv = document.createElement('div');
 		msgDiv.className = `ai-message ${role === 'user' ? 'ai-message-user' : 'ai-message-system'}`;
 		const bubble = document.createElement('div');
@@ -256,7 +300,7 @@ function initAiChat() {
 			return;
 		}
 
-		// --- 新增逻辑：检测“理解代码”类指令并自动获取编辑器内容 ---
+		// --- 检测“理解代码”类指令并自动获取编辑器内容 ---
 		let finalUserText = rawText;
 		const codeKeywords = [
 			'理解我的代码',
@@ -269,29 +313,22 @@ function initAiChat() {
 			'重构这段代码',
 		];
 
-		// 检查是否触发自动获取代码逻辑
 		const shouldFetchCode = codeKeywords.some((keyword) => rawText.includes(keyword));
 
 		if (shouldFetchCode) {
-			// 检查 editor 对象是否存在且可用 (确保 editor 已在全局或当前作用域初始化)
 			if (typeof editor !== 'undefined' && editor && typeof editor.getValue === 'function') {
 				const currentCode = editor.getValue();
 
 				if (!currentCode || currentCode.trim() === '') {
-					// 如果编辑器为空，给予提示
 					finalUserText = `${rawText}\n\n[注意：当前编辑器内容为空，无法提供代码供你分析。]`;
 				} else {
-					// 构造包含代码的完整提示词
-					// 格式：用户指令 + 分隔符 + 代码块
 					finalUserText = `${rawText}\n\n以下是当前编辑器中的代码:\n\`\`\`\n${currentCode}\n\`\`\``;
 					console.log('已自动抓取编辑器代码并附加到请求中');
 				}
 			} else {
-				console.warn('未检测到 editor 对象，无法自动获取代码。请确保 editor 已全局初始化。');
-				// 如果 editor 不存在，保持原样发送，依靠用户手动粘贴
+				console.warn('未检测到 editor 对象，无法自动获取代码。');
 			}
 		}
-		// --- 新增逻辑结束 ---
 
 		// 界面上显示用户原始输入
 		appendMessage('user', rawText);
@@ -300,7 +337,7 @@ function initAiChat() {
 
 		const loadingElements = appendMessage('system', '', false, true);
 
-		// 发送时使用 finalUserText (可能包含自动注入的代码)
+		// 发送时使用 finalUserText
 		const currentMessages = [...messageHistory, { role: 'user', content: finalUserText }];
 
 		let aiBubble = null;
@@ -321,7 +358,7 @@ function initAiChat() {
 				body: JSON.stringify({
 					model: chatConfig.model,
 					messages: currentMessages,
-					stream: false, // 注意：原代码此处强制为 false，实际使用模拟流式
+					stream: false,
 					temperature: 0.7,
 				}),
 			});
@@ -377,11 +414,25 @@ function initAiChat() {
 
 			function finishProcess() {
 				if (chatConfig.multiTurn) {
-					// 存入历史记录时使用 finalUserText 以保持上下文（包含代码）
+					// 更新内存中的历史
 					messageHistory.push({ role: 'user', content: finalUserText });
 					messageHistory.push({ role: 'assistant', content: fullResponse });
+
+					// 限制长度
 					if (messageHistory.length > 20) messageHistory = messageHistory.slice(-20);
+
+					// --- 修复 4: 持久化保存历史记录 ---
+					try {
+						localStorage.setItem('ai_chat_history', JSON.stringify(messageHistory));
+					} catch (e) {
+						console.error('保存历史记录失败:', e);
+						// 如果存储满了，可以尝试清除最早的记录或提示用户
+						if (e.name === 'QuotaExceededError') {
+							alert('本地存储空间已满，历史对话可能无法保存。');
+						}
+					}
 				}
+
 				sendBtn.disabled = false;
 				sendBtn.textContent = originalBtnText;
 				sendBtn.style.opacity = '1';
