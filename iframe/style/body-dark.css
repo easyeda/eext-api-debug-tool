@@ -631,7 +631,6 @@ body {
 	flex-shrink: 0;
 }
 
-/* 核心修改：针对 #ai-input 的样式 */
 #ai-input {
 	flex: 1;
 	padding: 10px;
@@ -639,17 +638,13 @@ body {
 	border-radius: 6px;
 	font-size: 14px;
 	font-family: inherit;
-
-	/* 关键属性：禁止手动拖拽大小，允许内部滚动 */
-	resize: none !important;
-	overflow-y: auto !important;
+	resize: none;
+	overflow-y: auto;
 	overflow-x: hidden;
-
+	scrollbar-width: none;
 	max-height: 100px;
 	min-height: 40px;
 	outline: none;
-
-	/* 颜色配置 (Monokai) */
 	background: #272822;
 	color: #f8f8f2;
 	transition:
@@ -661,34 +656,22 @@ body {
 	color: #75715e;
 }
 
-/* 聚焦状态：黑色稍微亮一点 (无发光) */
 #ai-input:focus {
 	border-color: #55544e;
 	background-color: #2b2c26;
 	box-shadow: none;
 }
 
-/* --- 强力隐藏滚动条 (Chrome/Edge/Safari) --- */
 #ai-input::-webkit-scrollbar {
-	width: 0 !important;
-	height: 0 !important;
-	display: none !important;
-	background: transparent !important;
+	display: none;
 }
 
 #ai-input::-webkit-scrollbar-track {
-	background: transparent !important;
-	width: 0 !important;
+	background: transparent;
 }
 
 #ai-input::-webkit-scrollbar-thumb {
-	background: transparent !important;
-	width: 0 !important;
-}
-
-/* --- 强力隐藏滚动条 (Firefox) --- */
-#ai-input {
-	scrollbar-width: none !important; /* Firefox 隐藏 */
+	background: transparent;
 }
 
 /* 发送按钮样式 (保持原样) */

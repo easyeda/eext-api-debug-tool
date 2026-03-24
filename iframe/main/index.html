@@ -5,7 +5,6 @@
 		<title>Ace Editor - EDA V2.3.1</title>
 		<link id="theme-light" rel="stylesheet" href="/iframe/style/body-light.css" disabled />
 		<link id="theme-dark" rel="stylesheet" href="/iframe/style/body-dark.css" />
-		<!-- 风格文件 -->
 		<link rel="stylesheet" href="/iframe/script/SweetAlert2/sweetalert2.min.css" />
 	</head>
 	<body>
@@ -23,8 +22,6 @@
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="Ext-btn">插件管理</button></li>
 					<li><button id="ai-btn">AI编程</button></li>
-					<!-- <li><button id="example-btn" style="display: none;">案例</button></li>
-					<li><button id="about-btn" style="display: none;">关于</button></li> -->
 				</ul>
 			</div>
 			<div id="editor-container">
@@ -32,10 +29,8 @@
 			</div>
 			<!-- 右侧 AI 聊天窗口 -->
 			<div id="ai-chat" style="display: none">
-				<!-- 1. 顶部标题栏：包含模型名称和设置齿轮 -->
 				<div class="ai-chat-header">
 					<span class="ai-chat-title" id="ai-model-name">GPT-4 Model</span>
-					<!-- 设置齿轮图标 (使用 SVG 或 Unicode，这里用 SVG 更精致) -->
 					<button class="ai-chat-settings-btn" id="ai-settings-trigger" title="聊天设置">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -55,15 +50,11 @@
 						</svg>
 					</button>
 				</div>
-				<!-- 2. 中间消息列表区域 -->
 				<div class="ai-chat-content" id="ai-chat-list">
-					<!-- 欢迎语 -->
 					<div class="ai-message ai-message-system">
 						<div class="ai-message-bubble">你好！我是你的 AI 编程助手。有什么可以帮你的吗？</div>
 					</div>
-					<!-- 动态消息会插入到这里 -->
 				</div>
-				<!-- 3. 底部输入框区域 -->
 				<div class="ai-chat-footer">
 					<textarea id="ai-input" placeholder="输入代码问题或指令... (Shift+Enter 换行)" rows="1"></textarea>
 					<button id="ai-send-btn">发送</button>
@@ -71,7 +62,7 @@
 			</div>
 		</div>
 
-		<!-- Ace 插件资源等 -->
+		<!-- Ace 核心 -->
 		<script src="/iframe/script/Ace_Editor/ace.js"></script>
 		<script src="/iframe/script/Ace_Editor/ext-language_tools.js"></script>
 		<script src="/iframe/script/Ace_Editor/mode-javascript.js"></script>
@@ -81,130 +72,9 @@
 		<script src="/iframe/script/Ace_Editor/ext-themelist.js"></script>
 		<script src="/iframe/script/Ace_Editor/ext-settings_menu.js"></script>
 		<script src="/iframe/script/Ace_Editor/ext-prompt.js"></script>
-		<script src="/iframe/script/Js_beautify/beautify-css.min.js"></script>
-		<script src="/iframe/script/Js_beautify/beautify.min.js"></script>
-		<script src="/iframe/script/Js_beautify/beautify-html.min.js"></script>
-		<!-- <script src="/iframe"></script> -->
-		<!-- 以下全都是ACE的风格文件，如果有需要可以自己添加 东西都在Ace_Editor文件夹里-->
+		<!-- Ace 主题 -->
 		<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
-		<!-- 一些编辑器支持 -->
-		<script src="/iframe/script/User_config/Ai_Chat.js"></script>
-		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
-		<script src="/iframe/script/User_config/ACE_Config.js"></script>
-		<script src="/iframe/script/User_config/Code_Config.js"></script>
-		<!-- SweetAlert JS模态框资源 -->
-		<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
-		<!-- 工具类 -->
-		<script src="/iframe/script/eext_tool/jszip.min.js"></script>
-		<!-- 文件解压 -->
-		<script src="/iframe/script/eext_tool/highlight.min.js"></script>
-		<!-- AI语法高亮 -->
-		<script src="/iframe/script/eext_tool/marked.min.js"></script>
-		<!-- MD语法解析 -->
-		<script>
-			//初始化Ace 编辑器
-			const settingsMenu = ace.require('ace/ext/settings_menu');
-			const editor = ace.edit('editor');
-			ACE_Init(editor);
-
-			//加载上次关闭时的缓存
-			const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
-			editor.setValue(HistoryCode);
-
-			// 注册放大缩小代码支持
-			let currentFontSize = 14;
-			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
-
-			//注册EDA智能补全
-			ACE_CodingForEDA(editor, edcode);
-
-			//自动缓存
-			editor.session.on('change', function () {
-				eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
-			});
-
-			//获取当前编辑器主题
-			const light_theme = document.getElementById('theme-light');
-			const dark_theme = document.getElementById('theme-dark');
-			GetTheme(editor, light_theme, dark_theme);
-
-			//获取按钮状态
-			GetVibeCodingConfig();
-
-			//扫描插件并执行
-			ExtStore_LoadAndRunAllPlugins();
-			//加载按钮到左侧
-			Code_LoadBtnListFromDB(editor);
-
-			//保存代码到左侧列表
-			document.getElementById('SaveinLeft-btn').addEventListener('click', () => {
-				Code_SaveToBtnList(editor);
-			});
-			//格式化代码
-			document.getElementById('formatEditorCode-btn').addEventListener('click', () => {
-				formatEditorCode(editor);
-			});
-			// 运行代码
-			document.getElementById('run-btn').addEventListener('click', () => {
-				ACE_RunCode(editor);
-			});
-			// 开启AI辅助支持
-			document.getElementById('ai-btn').addEventListener('click', () => {
-				SetVibeCodingConfig();
-			});
-			// 保存代码
-			document.getElementById('save-btn').addEventListener('click', async () => {
-				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
-				Code_SaveCode(editor);
-			});
-			//加载代码
-			document.getElementById('load-btn').addEventListener('click', async () => {
-				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
-				Code_OpenLoadWindow(editor);
-			});
-			//编辑器设置
-			document.getElementById('setting-btn').addEventListener('click', async () => {
-				// await eda.sys_Message.showToastMessage('这个还没写');
-				SetTheme(editor, light_theme, dark_theme);
-			});
-			//删除代码
-			document.getElementById('delete-btn').addEventListener('click', async () => {
-				// await eda.sys_Message.showToastMessage('这个还没写', 'info', 1);
-				eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
-				Code_OpenDeleteWindow(editor);
-			});
-			//导入JS文件
-			document.getElementById('import-btn').addEventListener('click', async () => {
-				ImportFile(editor);
-			});
-			//导出JS文件
-			document.getElementById('export-btn').addEventListener('click', async () => {
-				ExportFileForJs(editor.getValue(), Date() + '_script.js');
-			});
-			//保存到插件
-			document.getElementById('Ext-btn').addEventListener('click', async () => {
-				showPluginManagerModal(editor);
-			});
-			//注册文件跳转支持
-			const methodList = edcode.map((item) => item.methodPath); // 保留 'eda.XXX'
-			injectContextMenuJumpToDocs(editor, methodList);
-			/*================================== 以下为快捷键绑定配置 ===============================================================*/
-			//绑定运行快捷键
-			document.addEventListener('keydown', function (event) {
-				if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-					ACE_RunCode(editor);
-				}
-			});
-			//绑定保存快捷键
-			document.addEventListener('keydown', function (e) {
-				if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-					e.preventDefault();
-					Code_SaveCode(editor);
-				}
-			});
-		</script>
-		<!-- 一些资源文件 这些都不是必要的 删除也没什么影响 只不过用户也许会换主题所以放进来-->
 		<script src="/iframe/script/Ace_Editor/theme-ambiance.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-chaos.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-chrome.js"></script>
@@ -213,5 +83,106 @@
 		<script src="/iframe/script/Ace_Editor/theme-cobalt.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-crimson_editor.js"></script>
 		<script src="/iframe/script/Ace_Editor/theme-dreamweaver.js"></script>
+		<!-- 代码格式化 -->
+		<script src="/iframe/script/Js_beautify/beautify.min.js"></script>
+		<script src="/iframe/script/Js_beautify/beautify-css.min.js"></script>
+		<script src="/iframe/script/Js_beautify/beautify-html.min.js"></script>
+		<!-- SweetAlert2 模态框 -->
+		<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
+		<!-- 工具库 -->
+		<script src="/iframe/script/eext_tool/jszip.min.js"></script>
+		<script src="/iframe/script/eext_tool/highlight.min.js"></script>
+		<script src="/iframe/script/eext_tool/marked.min.js"></script>
+		<!-- 应用逻辑 -->
+		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
+		<script src="/iframe/script/User_config/Ai_Chat.js"></script>
+		<script src="/iframe/script/User_config/ACE_Config.js"></script>
+		<script src="/iframe/script/User_config/Code_Config.js"></script>
+		<script>
+			const editor = ace.edit('editor');
+			ACE_Init(editor);
+
+			// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
+			const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
+			editor.setValue(HistoryCode || '', -1);
+
+			// 注册 Ctrl+滚轮缩放字体
+			let currentFontSize = 14;
+			ACE_ChangeCodeSize(editor, currentFontSize, showToast);
+
+			// 注册 EDA 智能补全
+			ACE_CodingForEDA(editor, edcode);
+
+			// 自动缓存编辑器内容
+			editor.session.on('change', function () {
+				eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
+			});
+
+			// 初始化主题
+			const light_theme = document.getElementById('theme-light');
+			const dark_theme = document.getElementById('theme-dark');
+			GetTheme(editor, light_theme, dark_theme);
+
+			// 初始化 AI 按钮状态
+			GetVibeCodingConfig();
+
+			// 加载并执行已保存插件
+			ExtStore_LoadAndRunAllPlugins();
+			// 加载快捷按钮列表
+			Code_LoadBtnListFromDB(editor);
+
+			// 注册右键跳转文档
+			const methodList = edcode.map((item) => item.methodPath);
+			injectContextMenuJumpToDocs(editor, methodList);
+
+			// 按钮事件绑定
+			document.getElementById('SaveinLeft-btn').addEventListener('click', () => {
+				Code_SaveToBtnList(editor);
+			});
+			document.getElementById('formatEditorCode-btn').addEventListener('click', () => {
+				formatEditorCode(editor);
+			});
+			document.getElementById('run-btn').addEventListener('click', () => {
+				ACE_RunCode(editor);
+			});
+			document.getElementById('ai-btn').addEventListener('click', () => {
+				SetVibeCodingConfig();
+			});
+			document.getElementById('save-btn').addEventListener('click', () => {
+				Code_SaveCode(editor);
+			});
+			document.getElementById('load-btn').addEventListener('click', () => {
+				Code_OpenLoadWindow(editor);
+			});
+			document.getElementById('setting-btn').addEventListener('click', () => {
+				SetTheme(editor, light_theme, dark_theme);
+			});
+			document.getElementById('delete-btn').addEventListener('click', () => {
+				eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
+				Code_OpenDeleteWindow(editor);
+			});
+			document.getElementById('import-btn').addEventListener('click', () => {
+				ImportFile(editor);
+			});
+			document.getElementById('export-btn').addEventListener('click', () => {
+				ExportFileForJs(editor.getValue(), Date() + '_script.js');
+			});
+			document.getElementById('Ext-btn').addEventListener('click', () => {
+				showPluginManagerModal(editor);
+			});
+
+			// 快捷键绑定
+			document.addEventListener('keydown', function (event) {
+				if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+					ACE_RunCode(editor);
+				}
+			});
+			document.addEventListener('keydown', function (e) {
+				if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+					e.preventDefault();
+					Code_SaveCode(editor);
+				}
+			});
+		</script>
 	</body>
 </html>

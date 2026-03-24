@@ -6,6 +6,7 @@ function ACE_Init(editor) {
 	editor.setOptions({
 		enableBasicAutocompletion: true,
 		enableLiveAutocompletion: true,
+		enableSnippets: false,
 		fontSize: 14,
 		useWorker: false,
 		highlightActiveLine: true,
@@ -17,8 +18,7 @@ function ACE_Init(editor) {
 async function GetTheme(editor, light_theme, dark_theme) {
 	const theme = eda.sys_Storage.getExtensionUserConfig('theme');
 	if (theme == undefined) {
-		const result = await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
-		console.log(result);
+		await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
 	} else if (theme == 'light') {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
@@ -38,13 +38,13 @@ async function SetTheme(editor, light_theme, dark_theme) {
 		light_theme.disabled = true;
 		dark_theme.disabled = false;
 		editor.setTheme('ace/theme/monokai');
-		const result = await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+		await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
 		theme = 'dark';
 	} else {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
 		editor.setTheme('ace/theme/github');
-		const result = await eda.sys_Storage.setExtensionUserConfig('theme', 'light');
+		await eda.sys_Storage.setExtensionUserConfig('theme', 'light');
 		theme = 'light';
 	}
 	await eda.sys_Message.showToastMessage('当前主题已切换为' + theme, 'info', 1);
@@ -52,36 +52,44 @@ async function SetTheme(editor, light_theme, dark_theme) {
 
 // 注册ACE补全
 function ACE_CodingForEDA(editor, edcode) {
-	const completers = [];
-	for (const e of edcode) {
-		// 构建 snippet：方法参数提示
-		const paramPlaceholders = e.parameters.map((p, idx) => `\${${idx + 1}:${p.name}}`).join(', ');
-		const snippet = e.methodPath + '(' + paramPlaceholders + ')';
-		// 按方法名注册
-		completers.push({
-			caption: e.methodPath,
-			snippet: snippet, // 关键：使用 snippet
-			score: 1000,
-			meta: 'method',
-			docText: buildDocText(e), // 更丰富的文档
-		});
-		// 中文联想反向注册
-		completers.push({
-			caption: e.description,
-			snippet: snippet,
-			score: 999,
-			meta: 'desc',
-			docText: buildDocText(e),
-		});
-	}
-	// 清除旧的 EDA 补全
-	editor.completers = editor.completers.filter((c) => {
-		return !c.getCompletions || !(c.meta === 'method' || c.meta === 'desc');
+	// 初始化时预计算小写缓存，避免每次按键重复计算
+	const completers = edcode.flatMap((e) => {
+		const paramStr = e.parameters && e.parameters.length > 0 ? e.parameters.map((p) => p.name).join(', ') : '';
+		// 使用 value 而非 snippet，避免 SnippetManager 注册 back marker
+		// snippet 格式会向 session 注入纯 JS 对象作为 marker，
+		// 平台 ui.js 订阅 onChangeBackMarker 后将其当 DOM 元素调用 getAttribute 导致崩溃
+		const value = e.methodPath + '(' + paramStr + ')';
+		const doc = buildDocText(e);
+		return [
+			{
+				caption: e.methodPath,
+				value: value,
+				score: 1000,
+				meta: 'method',
+				docText: doc,
+				_lc: e.methodPath.toLowerCase(),
+			},
+			{
+				caption: e.description,
+				value: value,
+				score: 999,
+				meta: 'desc',
+				docText: doc,
+				_lc: e.description.toLowerCase(),
+			},
+		];
 	});
-	// 注册新的 completer
+
+	// 移除之前注册的 EDA 补全器（防止重复注册）
+	editor.completers = editor.completers.filter((c) => !c._isEdaCompleter);
+
 	editor.completers.push({
+		_isEdaCompleter: true,
 		identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
 		getCompletions: function (editor, session, pos, prefix, callback) {
+			// 前缀少于 2 个字符时不触发，减少无效过滤
+			if (prefix.length < 2) return callback(null, []);
+
 			const { row, column } = pos;
 			const tokens = session.getTokens(row);
 			let tokenStart = 0;
@@ -102,10 +110,16 @@ function ACE_CodingForEDA(editor, edcode) {
 			if (/[\s"'\(\)\[\]\{\}\+\-\*\/\=\!\&\|\<\>]/.test(prefix)) {
 				return callback(null, []);
 			}
-			if (prefix === '') {
-				return callback(null, []);
+
+			// 使用预计算的 _lc 字段，for 循环提前退出，最多返回 20 条
+			const lc = prefix.toLowerCase();
+			const matches = [];
+			for (const item of completers) {
+				if (item._lc.includes(lc)) {
+					matches.push(item);
+					if (matches.length >= 20) break;
+				}
 			}
-			const matches = completers.filter((item) => item.caption.toLowerCase().includes(prefix.toLowerCase()));
 			callback(null, matches);
 		},
 	});
@@ -234,25 +248,30 @@ function createQuickButton(editor, name, code) {
 		// eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
 	};
 
-	// 右键：删除按钮 2026.1.5 修改增加一个新的菜单项
+	// 右键：显示快捷菜单（加载 / 删除）
 	btn.oncontextmenu = (e) => {
 		e.preventDefault();
+		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+		const menuBg = isDark ? '#2d2e27' : '#ffffff';
+		const menuBorder = isDark ? '#444' : '#ccc';
+		const menuShadow = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)';
 		const menu =
 			document.getElementById('ctx-menu') ||
 			(() => {
 				const m = document.createElement('div');
 				m.id = 'ctx-menu';
-				m.style.cssText =
-					'position:fixed;z-index:10000;background:white;border:1px solid #ccc;box-shadow:2px 2px 6px rgba(0,0,0,0.2);display:none;font-size:14px;min-width:80px';
 				document.body.appendChild(m);
 				document.addEventListener('click', () => (m.style.display = 'none'));
 				return m;
 			})();
+		menu.style.cssText = `position:fixed;z-index:10000;background:${menuBg};border:1px solid ${menuBorder};box-shadow:2px 2px 6px ${menuShadow};display:none;font-size:14px;min-width:80px;border-radius:4px`;
 		const showItem = (text, color, action) => {
 			const item = document.createElement('div');
 			item.textContent = text;
-			item.style.cssText = `padding:6px 12px;cursor:pointer;color:${color || '#000'};user-select:none`;
-			item.onmouseenter = () => (item.style.backgroundColor = color ? '#ffebee' : '#f0f0f0');
+			const defaultColor = isDark ? '#f8f8f2' : '#000';
+			item.style.cssText = `padding:6px 12px;cursor:pointer;color:${color || defaultColor};user-select:none`;
+			const hoverBg = isDark ? (color ? '#3d1a1a' : '#3b3c35') : color ? '#ffebee' : '#f0f0f0';
+			item.onmouseenter = () => (item.style.backgroundColor = hoverBg);
 			item.onmouseleave = () => (item.style.backgroundColor = '');
 			item.onclick = () => {
 				menu.style.display = 'none';
@@ -814,16 +833,22 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			}
 		}
 
-		// 创建菜单
+		// 创建菜单（颜色跟随当前主题）
+		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+		const menuBg = isDark ? '#2d2e27' : '#ffffff';
+		const menuColor = isDark ? '#f8f8f2' : '#333333';
+		const menuBorder = isDark ? '#555' : '#ccc';
+		const menuHover = isDark ? '#3b3c35' : '#f0f0f0';
+
 		const menu = document.createElement('div');
 		menu.style.cssText = `
 			position: fixed;
 			top: ${e.clientY}px;
 			left: ${e.clientX}px;
-			background: #2d2d2d;
-			color: #f8f8f2;
-			border: 1px solid #555;
-		 border-radius: 4px;
+			background: ${menuBg};
+			color: ${menuColor};
+			border: 1px solid ${menuBorder};
+			border-radius: 4px;
 			z-index: 100000;
 			font-size: 13px;
 			min-width: 160px;
@@ -838,7 +863,7 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 		item.style.opacity = matchedMethod ? '1' : '0.6';
 
 		if (matchedMethod) {
-			item.onmouseenter = () => (item.style.background = '#3a3a3a');
+			item.onmouseenter = () => (item.style.background = menuHover);
 			item.onmouseleave = () => (item.style.background = '');
 			item.onclick = () => {
 				let clean = matchedMethod.startsWith('eda.') ? matchedMethod.substring(4) : matchedMethod;
@@ -874,9 +899,9 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
  * @throws {TypeError} 如果 text 不是字符串
  */
 function ExportFileForJs(text, filename = 'script.js') {
-	if (text == '') {
+	if (!text || text.trim() === '') {
 		showToast('内容不能为空');
-		return; //我说怎么为空了还是下载，原来是没return，给我气笑了
+		return;
 	}
 	// 确保文件名以 .js 结尾
 	if (!filename.endsWith('.js')) {

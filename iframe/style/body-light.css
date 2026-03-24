@@ -603,36 +603,26 @@ body {
 	border-radius: 6px;
 	font-size: 14px;
 	font-family: inherit;
-
-	/* 核心修改开始 */
-	resize: none; /* 禁止手动拖拽大小 */
-	overflow-y: auto; /* 允许内容过多时滚动 (功能保留) */
-	scrollbar-width: none; /* Firefox: 隐藏滚动条 */
-	/* 核心修改结束 */
-
+	resize: none;
+	overflow-y: auto;
+	scrollbar-width: none;
 	max-height: 100px;
+	min-height: 40px;
 	outline: none;
 	background: #ffffff;
 	transition: border-color 0.2s;
-	min-height: 40px;
 }
 
-/* Chrome, Edge, Safari: 隐藏滚动条 */
 #ai-input::-webkit-scrollbar {
-	width: 0;
-	height: 0;
 	display: none;
-	background: transparent;
 }
 
 #ai-input::-webkit-scrollbar-track {
 	background: transparent;
-	width: 0;
 }
 
 #ai-input::-webkit-scrollbar-thumb {
 	background: transparent;
-	width: 0;
 }
 
 #ai-input:focus {

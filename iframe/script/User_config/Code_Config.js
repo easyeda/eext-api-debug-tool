@@ -18,9 +18,7 @@ function CodeStore_Init() {
 			}
 		}; //这里是将函数赋值给事务处理器 所以花括号带个分号也正常
 		request.onsuccess = (e) => {
-			const result = e.target.result;
-			console.log('数据库打开成功', result);
-			resolve(result);
+			resolve(e.target.result);
 		};
 		request.onerror = (e) => {
 			console.error('数据库打开失败:', e.target.error);
@@ -45,11 +43,9 @@ async function CodeStore_SaveCode(name, code) {
 			code: code,
 			createdAt: new Date().toISOString(), // ISO 字符串，便于排序和显示
 		};
-		const request = store.add(record); //将数据插入表中并获得返回值 返回值由事务自动识别
+		const request = store.add(record);
 		request.onsuccess = (e) => {
-			const newId = e.target.result; //此处返回的是主键的值
-			console.log('保存成功，ID', newId);
-			resolve(newId); // 返回新记录的 ID
+			resolve(e.target.result);
 		};
 
 		request.onerror = (e) => {
@@ -128,7 +124,6 @@ function CodeStore_UpdateCode(db, name, newCode) {
 
 			const putRequest = store.put(updatedRecord); //使用put方法更新指定主键的字段值
 			putRequest.onsuccess = () => {
-				console.log(`"${name}已保存"`);
 				resolve(true);
 			};
 			putRequest.onerror = (e) => {
@@ -405,71 +400,32 @@ async function Code_OpenLoadWindow(editor) {
  * @param {Object} editor - ACE 编辑器实例（此处仅用于保持 API 一致，实际未使用）
  */
 async function Code_OpenDeleteWindow(editor) {
-	// 防止重复打开多个窗口
 	if (document.getElementById('code-delete-modal')) {
 		return;
 	}
 
-	// 创建遮罩层（modal backdrop）
+	// 创建遮罩层（复用 code-load 的 CSS 类，统一风格）
 	const backdrop = document.createElement('div');
 	backdrop.id = 'code-delete-backdrop';
-	Object.assign(backdrop.style, {
-		position: 'fixed',
-		top: '0',
-		left: '0',
-		width: '100vw',
-		height: '100vh',
-		backgroundColor: 'rgba(0,0,0,0.5)',
-		zIndex: '10000',
-		display: 'flex',
-		justifyContent: 'center',
-		alignItems: 'center',
-	});
+	backdrop.className = 'code-load-backdrop';
 
 	// 创建窗口容器
 	const modal = document.createElement('div');
 	modal.id = 'code-delete-modal';
-	Object.assign(modal.style, {
-		width: '500px',
-		height: '350px',
-		background: '#fff',
-		borderRadius: '8px',
-		boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-		display: 'flex',
-		flexDirection: 'column',
-		overflow: 'hidden',
-	});
+	modal.className = 'code-load-modal';
 
 	// 标题栏
 	const header = document.createElement('div');
+	header.className = 'code-load-header';
 	header.textContent = '删除代码片段';
-	Object.assign(header.style, {
-		padding: '12px 16px',
-		background: '#f5f5f5',
-		fontWeight: 'bold',
-		fontSize: '16px',
-		borderBottom: '1px solid #ddd',
-		display: 'flex',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-	});
 
 	// 关闭按钮
 	const closeBtn = document.createElement('button');
+	closeBtn.className = 'code-load-close-btn';
 	closeBtn.textContent = '×';
 	closeBtn.title = '关闭';
-	Object.assign(closeBtn.style, {
-		background: 'none',
-		border: 'none',
-		fontSize: '20px',
-		cursor: 'pointer',
-		color: '#999',
-		width: '24px',
-		height: '24px',
-		textAlign: 'center',
-	});
 	closeBtn.onclick = () => {
-		document.body.removeChild(backdrop);
+		if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
 	};
 
 	header.appendChild(closeBtn);
@@ -479,29 +435,18 @@ async function Code_OpenDeleteWindow(editor) {
 	const searchBox = document.createElement('input');
 	searchBox.type = 'text';
 	searchBox.placeholder = '搜索代码名称...';
-	Object.assign(searchBox.style, {
-		width: '100%',
-		padding: '8px 12px',
-		border: '1px solid #ccc',
-		borderBottom: 'none',
-		fontSize: '14px',
-		boxSizing: 'border-box',
-	});
+	searchBox.className = 'code-load-search';
 	modal.appendChild(searchBox);
 
 	// 列表容器
 	const listContainer = document.createElement('div');
-	Object.assign(listContainer.style, {
-		flex: '1',
-		overflowY: 'auto',
-		padding: '8px',
-		background: '#fafafa',
-	});
+	listContainer.className = 'code-load-list-container';
 	modal.appendChild(listContainer);
 
-	// 添加到页面
 	backdrop.appendChild(modal);
 	document.body.appendChild(backdrop);
+
+	setTimeout(() => searchBox.focus(), 50);
 
 	// 加载数据并渲染
 	let allItems = [];
@@ -513,45 +458,32 @@ async function Code_OpenDeleteWindow(editor) {
 		renderList(allItems);
 	} catch (err) {
 		eda.sys_Message.showToastMessage('加载代码列表失败', 'info', 1);
-		listContainer.innerHTML = '<div style="color:red;padding:10px;">加载失败</div>';
+		listContainer.innerHTML = '<div class="code-load-error">加载失败</div>';
 	}
 
-	// 渲染列表
+	// 渲染列表（列表项用红色提示这是删除操作）
 	function renderList(items) {
 		listContainer.innerHTML = '';
 		if (items.length === 0) {
-			listContainer.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">暂无代码片段</div>';
+			listContainer.innerHTML = '<div class="code-load-empty">暂无代码片段</div>';
 			return;
 		}
 
 		items.forEach((item) => {
 			const itemEl = document.createElement('div');
+			itemEl.className = 'code-load-item';
 			itemEl.textContent = `${item.name} • ${new Date(item.createdAt).toLocaleString()}`;
-			Object.assign(itemEl.style, {
-				padding: '8px 12px',
-				margin: '4px 0',
-				background: '#fff',
-				border: '1px solid #eee',
-				borderRadius: '4px',
-				cursor: 'pointer',
-				fontSize: '14px',
-				overflow: 'hidden',
-				textOverflow: 'ellipsis',
-				whiteSpace: 'nowrap',
-				color: '#d32f2f', // 可选：用红色提示这是删除操作
-			});
-
+			itemEl.style.color = '#f92672';
 			itemEl.title = `点击删除：${item.name}`;
+
 			itemEl.onclick = async () => {
 				if (!dbInstance) {
 					eda.sys_Message.showToastMessage('数据库连接已断开，无法删除', 'info', 1);
 					return;
 				}
-
 				try {
 					const deleted = await CodeStore_DeleteCode(dbInstance, item.name);
 					if (deleted) {
-						// 从列表中移除该项
 						allItems = allItems.filter((i) => i.name !== item.name);
 						renderList(allItems);
 						eda.sys_Message.showToastMessage(`代码 "${item.name}" 已删除`, 'info', 1);
@@ -577,4 +509,20 @@ async function Code_OpenDeleteWindow(editor) {
 			renderList(filtered);
 		}
 	});
+
+	// 点击遮罩层关闭
+	backdrop.addEventListener('click', (e) => {
+		if (e.target === backdrop && backdrop.parentNode) {
+			backdrop.parentNode.removeChild(backdrop);
+		}
+	});
+
+	// ESC 键关闭
+	const escHandler = (e) => {
+		if (e.key === 'Escape' && backdrop.parentNode) {
+			backdrop.parentNode.removeChild(backdrop);
+			document.removeEventListener('keydown', escHandler);
+		}
+	};
+	document.addEventListener('keydown', escHandler);
 }

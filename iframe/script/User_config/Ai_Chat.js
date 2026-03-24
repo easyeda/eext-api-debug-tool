@@ -246,9 +246,9 @@ function initAiChat() {
 		modalOverlay.onclick = (e) => {
 			if (e.target === modalOverlay) closeModal();
 		};
-		document.onkeydown = (e) => {
+		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape' && modalOverlay?.classList.contains('active')) closeModal();
-		};
+		});
 	}
 
 	function appendMessage(role, text, isStreaming = false, isLoading = false) {
