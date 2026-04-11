@@ -54,13 +54,68 @@ async function SetTheme(editor, light_theme, dark_theme) {
 function ACE_CodingForEDA(editor, edcode) {
 	// 初始化时预计算小写缓存，避免每次按键重复计算
 	const completers = edcode.flatMap((e) => {
+		const doc = buildDocText(e);
+
+		// 枚举成员：直接插入完整路径（无括号）
+		if (e.isEnumMember) {
+			const value = e.methodPath;
+			const entries = [
+				{
+					caption: e.methodPath,
+					value: value,
+					score: 1000,
+					meta: 'enum',
+					docText: doc,
+					_lc: e.methodPath.toLowerCase(),
+				},
+			];
+			if (e.description) {
+				entries.push({
+					caption: e.description,
+					value: value,
+					score: 999,
+					meta: 'enum',
+					docText: doc,
+					_lc: e.description.toLowerCase(),
+				});
+			}
+			return entries;
+		}
+
+		// 枚举类型本身：插入完整路径（无括号）
+		if (e.isEnum) {
+			const value = e.methodPath;
+			const entries = [
+				{
+					caption: e.methodPath,
+					value: value,
+					score: 1000,
+					meta: 'enum',
+					docText: doc,
+					_lc: e.methodPath.toLowerCase(),
+				},
+			];
+			if (e.description) {
+				entries.push({
+					caption: e.description,
+					value: value,
+					score: 999,
+					meta: 'enum',
+					docText: doc,
+					_lc: e.description.toLowerCase(),
+				});
+			}
+			return entries;
+		}
+
+		// 普通方法或属性
 		const paramStr = e.parameters && e.parameters.length > 0 ? e.parameters.map((p) => p.name).join(', ') : '';
 		// 使用 value 而非 snippet，避免 SnippetManager 注册 back marker
 		// snippet 格式会向 session 注入纯 JS 对象作为 marker，
 		// 平台 ui.js 订阅 onChangeBackMarker 后将其当 DOM 元素调用 getAttribute 导致崩溃
-		const value = e.methodPath + '(' + paramStr + ')';
-		const doc = buildDocText(e);
-		return [
+		const hasParams = e.parameters && e.parameters.length > 0;
+		const value = hasParams ? e.methodPath + '(' + paramStr + ')' : e.methodPath + '()';
+		const entries = [
 			{
 				caption: e.methodPath,
 				value: value,
@@ -69,15 +124,18 @@ function ACE_CodingForEDA(editor, edcode) {
 				docText: doc,
 				_lc: e.methodPath.toLowerCase(),
 			},
-			{
+		];
+		if (e.description) {
+			entries.push({
 				caption: e.description,
 				value: value,
 				score: 999,
 				meta: 'desc',
 				docText: doc,
 				_lc: e.description.toLowerCase(),
-			},
-		];
+			});
+		}
+		return entries;
 	});
 
 	// 移除之前注册的 EDA 补全器（防止重复注册）
@@ -111,15 +169,8 @@ function ACE_CodingForEDA(editor, edcode) {
 				return callback(null, []);
 			}
 
-			// 使用预计算的 _lc 字段，for 循环提前退出，最多返回 20 条
 			const lc = prefix.toLowerCase();
-			const matches = [];
-			for (const item of completers) {
-				if (item._lc.includes(lc)) {
-					matches.push(item);
-					if (matches.length >= 20) break;
-				}
-			}
+			const matches = completers.filter((item) => item._lc.includes(lc));
 			callback(null, matches);
 		},
 	});
@@ -127,7 +178,26 @@ function ACE_CodingForEDA(editor, edcode) {
 
 // 辅助函数：生成更详细的文档文本
 function buildDocText(item) {
-	let doc = item.description + '\n用法：' + item.methodPath + '()\n';
+	let doc = item.description || '';
+
+	// 附加 @remarks 说明
+	if (item.remarks) {
+		doc += '\n备注：' + item.remarks;
+	}
+
+	// 枚举成员：显示所属枚举类型
+	if (item.isEnumMember) {
+		doc += '\n枚举：' + (item.enumType || '');
+		return doc.trim();
+	}
+
+	// 枚举类型本身
+	if (item.isEnum) {
+		return doc.trim();
+	}
+
+	// 方法/属性
+	doc += '\n用法：' + item.methodPath + '()\n';
 	if (item.parameters && item.parameters.length > 0) {
 		doc += '参数:\n';
 		item.parameters.forEach((p) => {
@@ -136,7 +206,10 @@ function buildDocText(item) {
 	} else {
 		doc += '\n此方法无参数，可直接调用';
 	}
-	return doc.trim() + '\n\n返回值:' + item.returns;
+	if (item.returns) {
+		doc += '\n\n返回值:' + item.returns;
+	}
+	return doc.trim();
 }
 
 /**
