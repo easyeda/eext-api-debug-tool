@@ -226,11 +226,27 @@ const merged = [
 ];
 merged.sort((a, b) => a.methodPath.localeCompare(b.methodPath));
 
+// === 辅助函数：根据 methodPath 判断类型并返回后缀 ===
+function getSuffix(methodPath) {
+  if (methodPath.includes('sch_')) {
+    return '(原理图)';
+  }
+  if (methodPath.includes('pcb_')) {
+    return '(PCB)';
+  }
+  return '';
+}
+
 // === 安全输出 ===
 const outputObject = merged.map(item => {
+  // 获取后缀
+  const suffix = getSuffix(item.methodPath);
+  // 将后缀追加到描述后面
+  const description = item.description + (suffix ? ` ${suffix}` : '');
+
   const obj = {
     methodPath: item.methodPath,
-    description: item.description,
+    description: description, // 使用修改后的描述
     parameters: (item.parameters || []).map(p => ({ name: p.name, description: p.description })),
   };
   if (item.returns) obj.returns = item.returns;
