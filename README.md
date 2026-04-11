@@ -6,7 +6,9 @@
 
 ![alt text](image.png)
 
-## 通过npm run dev 构建全新的提示词工程
+## API自动生成测试用例
+
+![alt text](images/example.gif)
 
 ## 特性
 
@@ -52,34 +54,6 @@ editor.completers.push({
 ```
 
 支持动态更新词库，适用于内部 SDK 或平台 API。
-
-## AI 后端支持配置教程
-
-要启用 AI 智能补全、注释生成及错误分析等高级功能，您需要配置本地 AI 后端服务：
-
-1. **下载 ECT（EDA Code Tool）拓展包**
-
-    访问 [GitHub Release 页面](https://github.com/easyeda/eext-api-debug-tool/releases/tag/AI)，下载最新 `.exe` 文件（Windows）或对应平台的可执行文件。
-
-2. **运行 ECT 工具**
-
-    双击运行下载的 `.exe` 文件，将自动启动本地 AI 代理服务（默认监听 `http://127.0.0.1:5000`）。
-
-3. **配置 OneAPI 令牌与模型**
-
-    首次运行时，工具会提示您在命令行中输入以下信息：
-
-    - **OneAPI 地址**（例如：`http://localhost:5000/v1`）
-    - **访问令牌（API Key）**
-    - **默认模型名称**（如 `gpt-4o`, `claude-3-5-sonnet`, `qwen-max` 等）
-
-    提示：ECT 支持统一管理多个模型，只需配置一次 OneAPI 接口即可切换使用不同模型。
-
-4. **在 EDA 编辑器中启用 AI 功能**
-
-    确保 EDA 内嵌的 Ace 编辑器能访问 `http://127.0.0.1:5000`，并在初始化时启用 AI 补全模块（通常通过 `cc` 模式调用）。
-
-注意：AI 功能依赖本地运行的 ECT 服务，请勿关闭命令行窗口。如需后台运行，可将其注册为系统服务或使用 `nohup`（Linux/macOS）。
 
 ## 开发与扩展
 
