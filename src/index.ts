@@ -10,5 +10,6 @@ export function about(): void {
 	);
 }
 export function openScriptTool(): void {
+	eda.sys_Storage.setExtensionUserConfig('version', extensionConfig.version);
 	eda.sys_IFrame.openIFrame('iframe/main/index.html', 1200, 700, 'ScriptTool', { maximizeButton: true, minimizeButton: true });
 }

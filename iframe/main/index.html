@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 	<head>
 		<meta charset="UTF-8" />
-		<title>Ace Editor - EDA V2.3.1</title>
+		<title>Ace Editor - EDA V2.4.1</title>
 		<link id="theme-light" rel="stylesheet" href="/iframe/style/body-light.css" disabled />
 		<link id="theme-dark" rel="stylesheet" href="/iframe/style/body-dark.css" />
 		<link rel="stylesheet" href="/iframe/script/SweetAlert2/sweetalert2.min.css" />
@@ -99,6 +99,9 @@
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
 		<script src="/iframe/script/User_config/Code_Config.js"></script>
 		<script>
+			// document.title = 'Ace Editor - EDA' + eda.sys_Storage.getExtensionUserConfig('version'); 暂时失效 等解决
+			// console.log(eda.sys_Storage.getExtensionUserConfig('version'))
+
 			const editor = ace.edit('editor');
 			ACE_Init(editor);
 
