@@ -1,0 +1,5 @@
+{
+	"permissions": {
+		"allow": ["Bash(node build.cjs)", "Bash(node -e ':*)", "Bash(node _patch.cjs)"]
+	}
+}

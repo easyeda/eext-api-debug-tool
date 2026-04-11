@@ -879,7 +879,7 @@ function ImportFile(editor) {
 }
 
 /**
- * 注入右键菜单项：「跳转方法文档」
+ * 注入右键菜单项：「跳转方法文档」+「生成测试用例」
  * @param {Object} editor - ACE 编辑器实例
  * @param {Array<string>} fullMethodPaths - 完整方法路径列表，如 ['eda.DMT_Board.copyBoard', ...]
  */
@@ -929,24 +929,40 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			user-select: none;
 		`;
 
-		const item = document.createElement('div');
-		item.textContent = matchedMethod ? '跳转方法文档' : '未找到可跳转的方法';
-		item.style.padding = '6px 12px';
-		item.style.cursor = matchedMethod ? 'pointer' : 'default';
-		item.style.opacity = matchedMethod ? '1' : '0.6';
+		// ── 菜单项辅助函数 ────────────────────────────────
+		function createMenuItem(text, enabled, onClick) {
+			const el = document.createElement('div');
+			el.textContent = text;
+			el.style.padding = '6px 12px';
+			el.style.cursor = enabled ? 'pointer' : 'default';
+			el.style.opacity = enabled ? '1' : '0.6';
+			if (enabled) {
+				el.onmouseenter = () => (el.style.background = menuHover);
+				el.onmouseleave = () => (el.style.background = '');
+				el.onclick = () => {
+					closeMenu();
+					onClick();
+				};
+			}
+			return el;
+		}
 
-		if (matchedMethod) {
-			item.onmouseenter = () => (item.style.background = menuHover);
-			item.onmouseleave = () => (item.style.background = '');
-			item.onclick = () => {
+		// 1. 跳转方法文档
+		menu.appendChild(
+			createMenuItem(matchedMethod ? '跳转方法文档' : '未找到可跳转的方法', !!matchedMethod, () => {
 				let clean = matchedMethod.startsWith('eda.') ? matchedMethod.substring(4) : matchedMethod;
 				const url = `https://prodocs.lceda.cn/cn/api/reference/pro-api.${clean.toLowerCase()}.html`;
 				window.open(url, '_blank');
-				closeMenu();
-			};
-		}
+			}),
+		);
 
-		menu.appendChild(item);
+		// 2. 生成测试用例
+		menu.appendChild(
+			createMenuItem('生成测试用例', !!matchedMethod, () => {
+				generateTestCase(editor, matchedMethod);
+			}),
+		);
+
 		document.body.appendChild(menu);
 
 		// 关闭菜单函数
@@ -961,6 +977,263 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			document.addEventListener('contextmenu', closeMenu);
 		}, 10);
 	});
+}
+
+// ============================================================
+// 生成测试用例（通过 AI 生成单例/组合用法示例）
+// ============================================================
+
+/**
+ * 从 edcode 中查找方法信息
+ */
+function _findMethodInfo(methodPath) {
+	if (typeof edcode === 'undefined') return null;
+	return edcode.find((e) => e.methodPath === methodPath) || null;
+}
+
+/**
+ * 将一个 edcode 条目格式化为可读的描述文本
+ */
+function _formatMethodDoc(info) {
+	if (!info) return '';
+	let doc = `方法路径: ${info.methodPath}\n`;
+	doc += `描述: ${info.description || '无'}\n`;
+	if (info.parameters && info.parameters.length > 0) {
+		doc += '参数:\n';
+		info.parameters.forEach((p) => {
+			doc += `  - ${p.name}: ${p.description || ''}\n`;
+		});
+	} else {
+		doc += '参数: 无（可直接调用）\n';
+	}
+	doc += `返回值: ${info.returns || '无'}\n`;
+	doc += `备注: ${info.remarks || '无'}\n`;
+	return doc;
+}
+
+/**
+ * 显示 toast（封装，兼容 eda 不存在的情况）
+ */
+function _toast(msg, type, duration) {
+	if (typeof eda !== 'undefined' && eda.sys_Message) {
+		eda.sys_Message.showToastMessage(msg, type || 'info', duration || 2);
+	}
+}
+
+/**
+ * 本地依赖分析：扫描参数描述中的类名引用和关键词，匹配已知方法
+ * 返回按依赖顺序排列的方法信息数组（叶子节点在前）
+ */
+function _traceDependencies(methodPath, visited) {
+	if (!visited) visited = new Set();
+	if (visited.has(methodPath)) return [];
+	visited.add(methodPath);
+
+	const info = _findMethodInfo(methodPath);
+	if (!info || !info.parameters || info.parameters.length === 0) return [];
+
+	const deps = [];
+	const allMethods = edcode.filter((e) => (e.methodPath.match(/\./g) || []).length >= 2);
+
+	for (const param of info.parameters) {
+		const desc = (param.description || '').toLowerCase();
+		const name = (param.name || '').toLowerCase();
+
+		for (const candidate of allMethods) {
+			if (candidate.methodPath === methodPath) continue;
+			if (!candidate.returns) continue;
+
+			const candidateReturns = (candidate.returns || '').toLowerCase();
+			const candidateMethodName = candidate.methodPath.split('.').pop().toLowerCase();
+			const candidateClassName = candidate.methodPath.split('.')[1] || '';
+			const classNameLower = candidateClassName.toLowerCase();
+
+			let matched = false;
+
+			// 参数描述中引用了候选方法所属的类名（如 LIB_LibrariesList）
+			if (classNameLower && desc.includes(classNameLower)) {
+				if (name.includes('uuid') && candidateReturns.includes('uuid')) matched = true;
+				if (name.includes('list') && candidateReturns.includes('列表')) matched = true;
+				if (name.includes('name') && candidateReturns.includes('名称')) matched = true;
+				if (desc.includes('获取') || desc.includes('接口')) matched = true;
+			}
+
+			// 参数描述中直接出现候选方法名
+			if (candidateMethodName.length > 3 && desc.includes(candidateMethodName)) {
+				matched = true;
+			}
+
+			if (matched && !visited.has(candidate.methodPath)) {
+				const subDeps = _traceDependencies(candidate.methodPath, visited);
+				deps.push(...subDeps, candidate);
+				break; // 每个参数只匹配一个依赖
+			}
+		}
+	}
+
+	return deps;
+}
+
+/**
+ * 执行依赖追溯并逐步显示 toast 进度
+ * 返回去重后的有序依赖链（叶子在前）
+ */
+async function _traceWithProgress(methodPath) {
+	const info = _findMethodInfo(methodPath);
+	if (!info) return [];
+
+	_toast(`[1/3] 分析 ${info.description || methodPath} 的参数依赖...`, 'info', 2);
+	await new Promise((r) => setTimeout(r, 300));
+
+	const rawDeps = _traceDependencies(methodPath);
+
+	const seen = new Set();
+	const uniqueDeps = [];
+	for (const dep of rawDeps) {
+		if (!seen.has(dep.methodPath)) {
+			seen.add(dep.methodPath);
+			uniqueDeps.push(dep);
+		}
+	}
+
+	if (uniqueDeps.length === 0) {
+		_toast(`[2/3] ${info.description} 无外部依赖，直接生成`, 'info', 2);
+	} else {
+		for (let i = 0; i < uniqueDeps.length; i++) {
+			const dep = uniqueDeps[i];
+			_toast(`[2/3] 追溯依赖 (${i + 1}/${uniqueDeps.length}): ${dep.methodPath} — ${dep.description || ''}`, 'info', 2);
+			await new Promise((r) => setTimeout(r, 400));
+		}
+	}
+
+	return uniqueDeps;
+}
+
+/**
+ * 构建发送给 AI 的完整 prompt（仅包含目标方法 + 已追溯的依赖链）
+ */
+function _buildTestCasePrompt(methodPath, dependencyChain) {
+	const targetInfo = _findMethodInfo(methodPath);
+	if (!targetInfo) return null;
+
+	const targetDoc = _formatMethodDoc(targetInfo);
+
+	let depsDocs = '';
+	if (dependencyChain.length > 0) {
+		depsDocs = '\n## 依赖方法（按调用顺序排列，叶子节点在前）\n';
+		dependencyChain.forEach((dep, i) => {
+			depsDocs += `\n### 依赖 ${i + 1}\n`;
+			depsDocs += _formatMethodDoc(dep);
+		});
+	}
+
+	const systemPrompt = `你是 EDA（嘉立创EDA/EasyEDA Pro）扩展 API 的测试用例生成器。
+
+你的任务是为指定的 API 方法生成**可直接运行的 JavaScript 测试用例代码**。
+
+## 规则
+
+1. **输出格式**：只输出一段纯 JavaScript 代码，不要包含 markdown 代码块标记（不要 \`\`\`），不要有任何解释文字。
+2. **JSDoc 头部**：代码最上方必须有一个 JSDoc 注释块，格式如下：
+   /**
+    * <方法全路径>()
+    * 方法用例: <方法描述>
+    * @parameters
+    * <参数名>: <参数描述>
+    * ...（如果无参数则写"本方法无输入参数，可直接调用"）
+    * @returns <返回值描述>
+    * @remarks: <备注，如果无则写"无">
+    */
+3. **依赖追溯**：下方提供的依赖方法必须在代码中按顺序先调用，取得返回值后作为目标方法的参数传入。
+4. **变量命名**：每个 API 调用结果用有意义的变量名（如 libraryList、searchResult 等），并在调用后加上 console.log 打印结果。
+5. **所有 API 调用都是异步的**：使用 await 调用，代码在顶层作用域执行（不需要包裹 async 函数）。
+6. **只使用提供的方法**：绝对不要编造不存在的 API。
+7. **参数值**：对于字符串参数使用合理的示例值（如 '' 表示空搜索词），对于可选参数可以使用 undefined。`;
+
+	const userPrompt = `## 目标方法
+${targetDoc}
+${depsDocs}
+请为 ${methodPath} 生成测试用例代码。`;
+
+	return { systemPrompt, userPrompt };
+}
+
+/**
+ * 调用 AI API 生成测试用例并写入编辑器
+ */
+async function generateTestCase(editor, methodPath) {
+	let chatConfig;
+	try {
+		const stored = localStorage.getItem('ai_chat_config');
+		chatConfig = stored ? JSON.parse(stored) : null;
+	} catch (e) {
+		chatConfig = null;
+	}
+
+	if (!chatConfig || !chatConfig.apiKey) {
+		if (typeof eda !== 'undefined' && eda.sys_Message) {
+			eda.sys_Message.showToastMessage('请先在 AI 配置设置中填写 API Key', 'warn', 3);
+		} else {
+			alert('请先在 AI 配置设置中填写 API Key');
+		}
+		return;
+	}
+
+	// 第一阶段：本地依赖追溯（带逐步 toast）
+	const dependencyChain = await _traceWithProgress(methodPath);
+
+	// 第二阶段：构建 prompt 并调用 AI
+	const prompts = _buildTestCasePrompt(methodPath, dependencyChain);
+	if (!prompts) {
+		_toast(`未在方法库中找到 ${methodPath}`, 'error', 2);
+		return;
+	}
+
+	_toast('[3/3] 正在生成代码...', 'info', 3);
+
+	const messages = [
+		{ role: 'system', content: prompts.systemPrompt },
+		{ role: 'user', content: prompts.userPrompt },
+	];
+
+	try {
+		const response = await fetch(`${chatConfig.baseUrl}/chat/completions`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${chatConfig.apiKey}`,
+			},
+			body: JSON.stringify({
+				model: chatConfig.model,
+				messages: messages,
+				temperature: 0.3,
+			}),
+		});
+
+		if (!response.ok) {
+			const errData = await response.json().catch(() => ({ error: { message: '未知错误' } }));
+			throw new Error(errData.error?.message || `HTTP ${response.status}`);
+		}
+
+		const data = await response.json();
+		let code = data.choices?.[0]?.message?.content || '';
+
+		code = code
+			.replace(/^```[\w]*\n?/, '')
+			.replace(/\n?```\s*$/, '')
+			.trim();
+
+		if (code) {
+			editor.setValue(code, -1);
+			editor.clearSelection();
+			_toast('测试用例已生成', 'success', 2);
+		} else {
+			throw new Error('AI 返回内容为空');
+		}
+	} catch (error) {
+		console.error('生成测试用例失败:', error);
+		_toast(`生成失败: ${error.message}`, 'error', 3);
+	}
 }
 
 /**
