@@ -14,6 +14,10 @@
 
 ![alt text](images/分区.png)
 
+## 支持自定义补全 编辑补全参数
+
+![alt text](images/补全.png)
+
 ## 特性
 
 - **Monokai 主题**：护眼暗色风格，与开发者习惯一致

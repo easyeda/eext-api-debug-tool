@@ -212,14 +212,14 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 
 	const row2 = document.createElement('div');
 	row2.className = 'cs-edit-row';
-	const labelParams = document.createElement('label');
-	labelParams.textContent = '参数:';
-	const inputParams = document.createElement('input');
-	inputParams.className = 'cs-edit-input';
-	inputParams.value = (rec.params || []).join(', ');
-	inputParams.placeholder = '逗号分隔，如: a, b, c（留空则无括号）';
-	row2.appendChild(labelParams);
-	row2.appendChild(inputParams);
+	const labelValue = document.createElement('label');
+	labelValue.textContent = '补全值:';
+	const inputValue = document.createElement('input');
+	inputValue.className = 'cs-edit-input';
+	inputValue.value = rec.value;
+	inputValue.placeholder = '选中补全后插入的完整内容';
+	row2.appendChild(labelValue);
+	row2.appendChild(inputValue);
 	form.appendChild(row2);
 
 	const row3 = document.createElement('div');
@@ -229,7 +229,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const inputDesc = document.createElement('input');
 	inputDesc.className = 'cs-edit-input';
 	inputDesc.value = rec.description || '';
-	inputDesc.placeholder = '补全提示说明';
+	inputDesc.placeholder = '补全提示说明（可通过描述触发补全）';
 	row3.appendChild(labelDesc);
 	row3.appendChild(inputDesc);
 	form.appendChild(row3);
@@ -242,21 +242,21 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	saveBtn.textContent = '保存';
 	saveBtn.onclick = async () => {
 		const newCaption = inputCaption.value.trim();
-		const newParams = inputParams.value.trim()
-			? inputParams.value
-					.split(',')
-					.map((s) => s.trim())
-					.filter(Boolean)
-			: [];
+		const newValue = inputValue.value.trim();
 		const newDescription = inputDesc.value.trim();
 
 		if (!newCaption) {
 			_toast('名称不能为空', 'warn', 2);
 			return;
 		}
+		if (!newValue) {
+			_toast('补全值不能为空', 'warn', 2);
+			return;
+		}
 
-		// 根据名称和参数自动重建补全值
-		const newValue = newParams.length > 0 ? newCaption + '(' + newParams.join(', ') + ')' : newCaption + '()';
+		// 从补全值中自动提取参数
+		const parsed = _parseLineForCompletion(newValue);
+		const newParams = parsed ? parsed.params : [];
 
 		saveBtn.textContent = '保存中...';
 		saveBtn.disabled = true;

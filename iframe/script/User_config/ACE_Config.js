@@ -1268,6 +1268,7 @@ function UserCompleterStore_Init() {
  */
 function _parseLineForCompletion(lineText) {
 	const trimmed = lineText.trim();
+	if (!trimmed) return null;
 	// 匹配函数调用: 捕获函数名(含点号路径)和括号内参数
 	const funcMatch = trimmed.match(/([\w$.]+)\s*\(([^)]*)\)/);
 	if (funcMatch) {
@@ -1275,18 +1276,17 @@ function _parseLineForCompletion(lineText) {
 		const rawParams = funcMatch[2].trim();
 		const params = rawParams
 			? rawParams.split(',').map((p) => {
-					// 提取纯参数名：去掉默认值、类型注解、前后空白
 					const clean = p.trim().split('=')[0].split(':')[0].trim();
 					return clean;
 				})
 			: [];
-		const value = params.length > 0 ? caption + '(' + params.join(', ') + ')' : caption + '()';
-		return { caption, value, params };
+		// 整行作为补全值
+		return { caption, value: trimmed, params };
 	}
-	// 非函数调用：取第一个标识符路径
+	// 非函数调用：取第一个标识符路径，整行作为补全值
 	const idMatch = trimmed.match(/([\w$.]+)/);
 	if (idMatch) {
-		return { caption: idMatch[1], value: idMatch[1], params: [] };
+		return { caption: idMatch[1], value: trimmed, params: [] };
 	}
 	return null;
 }
@@ -1362,7 +1362,7 @@ function _registerUserCompleters(editor, records) {
 
 	for (const rec of records) {
 		// 避免重复添加
-		if (userCompleter._items.some((it) => it.caption === rec.caption)) continue;
+		if (userCompleter._items.some((it) => it.caption === rec.caption && it._srcType === 'caption')) continue;
 
 		const docLines = [];
 		if (rec.description) docLines.push(rec.description);
@@ -1370,15 +1370,31 @@ function _registerUserCompleters(editor, records) {
 		if (rec.params && rec.params.length > 0) {
 			docLines.push('参数: ' + rec.params.join(', '));
 		}
+		const docText = docLines.join('\n');
 
+		// 主条目：按函数名匹配
 		userCompleter._items.push({
 			caption: rec.caption,
 			value: rec.value,
 			score: 900,
 			meta: rec.description || 'custom',
-			docText: docLines.join('\n'),
+			docText: docText,
 			_lc: rec.caption.toLowerCase(),
+			_srcType: 'caption',
 		});
+
+		// 描述条目：按描述文字匹配（仅当描述非空时注册）
+		if (rec.description) {
+			userCompleter._items.push({
+				caption: rec.description,
+				value: rec.value,
+				score: 899,
+				meta: rec.caption,
+				docText: docText,
+				_lc: rec.description.toLowerCase(),
+				_srcType: 'desc',
+			});
+		}
 	}
 }
 
