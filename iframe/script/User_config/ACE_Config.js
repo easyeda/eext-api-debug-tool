@@ -963,6 +963,13 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			}),
 		);
 
+		// 3. 添加到补全
+		menu.appendChild(
+			createMenuItem('添加到补全', true, () => {
+				UserCompleter_Add(editor, lineText);
+			}),
+		);
+
 		document.body.appendChild(menu);
 
 		// 关闭菜单函数
@@ -1233,6 +1240,162 @@ async function generateTestCase(editor, methodPath) {
 	} catch (error) {
 		console.error('生成测试用例失败:', error);
 		_toast(`生成失败: ${error.message}`, 'error', 3);
+	}
+}
+
+// ==========================
+// 用户自定义补全 - IndexedDB 存储
+// ==========================
+function UserCompleterStore_Init() {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('UserCompleterStore', 1);
+		request.onupgradeneeded = (e) => {
+			const db = e.target.result;
+			if (!db.objectStoreNames.contains('completions')) {
+				const store = db.createObjectStore('completions', { keyPath: 'id', autoIncrement: true });
+				store.createIndex('caption', 'caption', { unique: true });
+			}
+		};
+		request.onsuccess = (e) => resolve(e.target.result);
+		request.onerror = (e) => reject(e.target.error);
+	});
+}
+
+/**
+ * 解析一行代码，智能提取函数名和参数
+ * 支持: funcName(a, b, c) / obj.method(x, y) / 普通标识符
+ * @returns {{ caption: string, value: string, params: string[] }}
+ */
+function _parseLineForCompletion(lineText) {
+	const trimmed = lineText.trim();
+	// 匹配函数调用: 捕获函数名(含点号路径)和括号内参数
+	const funcMatch = trimmed.match(/([\w$.]+)\s*\(([^)]*)\)/);
+	if (funcMatch) {
+		const caption = funcMatch[1];
+		const rawParams = funcMatch[2].trim();
+		const params = rawParams
+			? rawParams.split(',').map((p) => {
+					// 提取纯参数名：去掉默认值、类型注解、前后空白
+					const clean = p.trim().split('=')[0].split(':')[0].trim();
+					return clean;
+				})
+			: [];
+		const value = params.length > 0 ? caption + '(' + params.join(', ') + ')' : caption + '()';
+		return { caption, value, params };
+	}
+	// 非函数调用：取第一个标识符路径
+	const idMatch = trimmed.match(/([\w$.]+)/);
+	if (idMatch) {
+		return { caption: idMatch[1], value: idMatch[1], params: [] };
+	}
+	return null;
+}
+
+/**
+ * 将当前行添加到自定义补全库，并立即注册到编辑器
+ */
+async function UserCompleter_Add(editor, lineText) {
+	const parsed = _parseLineForCompletion(lineText);
+	if (!parsed) {
+		_toast('当前行无法识别为有效的补全项', 'warn', 2);
+		return;
+	}
+
+	try {
+		const db = await UserCompleterStore_Init();
+		const tx = db.transaction(['completions'], 'readwrite');
+		const store = tx.objectStore('completions');
+
+		// 检查重复
+		const existing = await new Promise((res) => {
+			const req = store.index('caption').get(parsed.caption);
+			req.onsuccess = () => res(!!req.result);
+		});
+		if (existing) {
+			_toast(`"${parsed.caption}" 已存在于自定义补全中`, 'info', 2);
+			return;
+		}
+
+		const record = {
+			caption: parsed.caption,
+			value: parsed.value,
+			params: parsed.params,
+			createdAt: new Date().toISOString(),
+		};
+
+		await new Promise((resolve, reject) => {
+			const req = store.add(record);
+			req.onsuccess = resolve;
+			req.onerror = reject;
+		});
+
+		// 立即注册到编辑器
+		_registerUserCompleters(editor, [record]);
+		_toast(`已添加补全: ${parsed.caption}`, 'success', 2);
+	} catch (err) {
+		console.error('添加自定义补全失败:', err);
+		_toast(`添加失败: ${err.message}`, 'error', 2);
+	}
+}
+
+/**
+ * 将自定义补全记录注册到编辑器（追加到已有的用户补全器）
+ */
+function _registerUserCompleters(editor, records) {
+	// 查找已有的用户自定义补全器
+	let userCompleter = editor.completers.find((c) => c._isUserCompleter);
+	if (!userCompleter) {
+		userCompleter = {
+			_isUserCompleter: true,
+			_items: [],
+			identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
+			getCompletions: function (_editor, session, pos, prefix, callback) {
+				if (prefix.length < 2) return callback(null, []);
+				const lc = prefix.toLowerCase();
+				const matches = this._items.filter((item) => item._lc.includes(lc));
+				callback(null, matches);
+			},
+		};
+		editor.completers.push(userCompleter);
+	}
+
+	for (const rec of records) {
+		// 避免重复添加
+		if (userCompleter._items.some((it) => it.caption === rec.caption)) continue;
+
+		const docLines = [`自定义补全: ${rec.caption}`];
+		if (rec.params && rec.params.length > 0) {
+			docLines.push('参数: ' + rec.params.join(', '));
+		}
+
+		userCompleter._items.push({
+			caption: rec.caption,
+			value: rec.value,
+			score: 900,
+			meta: 'custom',
+			docText: docLines.join('\n'),
+			_lc: rec.caption.toLowerCase(),
+		});
+	}
+}
+
+/**
+ * 启动时从 IndexedDB 加载所有自定义补全并注册
+ */
+async function UserCompleter_LoadAll(editor) {
+	try {
+		const db = await UserCompleterStore_Init();
+		const records = await new Promise((resolve, reject) => {
+			const tx = db.transaction(['completions'], 'readonly');
+			const req = tx.objectStore('completions').getAll();
+			req.onsuccess = () => resolve(req.result || []);
+			req.onerror = reject;
+		});
+		if (records.length > 0) {
+			_registerUserCompleters(editor, records);
+		}
+	} catch (err) {
+		console.error('加载自定义补全失败:', err);
 	}
 }
 

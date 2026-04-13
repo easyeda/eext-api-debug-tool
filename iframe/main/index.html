@@ -21,6 +21,7 @@
 					<li><button id="setting-btn">切换主题</button></li>
 					<li><button id="SaveinLeft-btn">保存到列表</button></li>
 					<li><button id="Ext-btn">插件管理</button></li>
+					<li><button id="completer-store-btn">补全仓库</button></li>
 					<li><button id="ai-btn">AI编程</button></li>
 				</ul>
 			</div>
@@ -97,6 +98,7 @@
 		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 		<script src="/iframe/script/User_config/Ai_Chat.js"></script>
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
+		<script src="/iframe/script/User_config/Completer_Store.js"></script>
 		<script src="/iframe/script/User_config/Code_Config.js"></script>
 		<script>
 			// document.title = 'Ace Editor - EDA' + eda.sys_Storage.getExtensionUserConfig('version'); 暂时失效 等解决
@@ -115,6 +117,9 @@
 
 			// 注册 EDA 智能补全
 			ACE_CodingForEDA(editor, edcode);
+
+			// 加载用户自定义补全
+			UserCompleter_LoadAll(editor);
 
 			// 自动缓存编辑器内容
 			editor.session.on('change', function () {
@@ -172,6 +177,9 @@
 			});
 			document.getElementById('Ext-btn').addEventListener('click', () => {
 				showPluginManagerModal(editor);
+			});
+			document.getElementById('completer-store-btn').addEventListener('click', () => {
+				showCompleterStoreModal(editor);
 			});
 
 			// 快捷键绑定
