@@ -10,6 +10,10 @@
 
 ![alt text](images/example.gif)
 
+## API自动区分PCB和原理图
+
+![alt text](images/分区.png)
+
 ## 特性
 
 - **Monokai 主题**：护眼暗色风格，与开发者习惯一致
