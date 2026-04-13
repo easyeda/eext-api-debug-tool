@@ -145,8 +145,8 @@ function ACE_CodingForEDA(editor, edcode) {
 		_isEdaCompleter: true,
 		identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
 		getCompletions: function (editor, session, pos, prefix, callback) {
-			// 前缀少于 2 个字符时不触发，减少无效过滤
-			if (prefix.length < 2) return callback(null, []);
+			// 前缀少于 1 个字符时不触发
+			if (prefix.length < 1) return callback(null, []);
 
 			const { row, column } = pos;
 			const tokens = session.getTokens(row);
@@ -1320,6 +1320,7 @@ async function UserCompleter_Add(editor, lineText) {
 			caption: parsed.caption,
 			value: parsed.value,
 			params: parsed.params,
+			description: '',
 			createdAt: new Date().toISOString(),
 		};
 
@@ -1350,7 +1351,7 @@ function _registerUserCompleters(editor, records) {
 			_items: [],
 			identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
 			getCompletions: function (_editor, session, pos, prefix, callback) {
-				if (prefix.length < 2) return callback(null, []);
+				if (prefix.length < 1) return callback(null, []);
 				const lc = prefix.toLowerCase();
 				const matches = this._items.filter((item) => item._lc.includes(lc));
 				callback(null, matches);
@@ -1363,7 +1364,9 @@ function _registerUserCompleters(editor, records) {
 		// 避免重复添加
 		if (userCompleter._items.some((it) => it.caption === rec.caption)) continue;
 
-		const docLines = [`自定义补全: ${rec.caption}`];
+		const docLines = [];
+		if (rec.description) docLines.push(rec.description);
+		docLines.push('补全值: ' + rec.value);
 		if (rec.params && rec.params.length > 0) {
 			docLines.push('参数: ' + rec.params.join(', '));
 		}
@@ -1372,7 +1375,7 @@ function _registerUserCompleters(editor, records) {
 			caption: rec.caption,
 			value: rec.value,
 			score: 900,
-			meta: 'custom',
+			meta: rec.description || 'custom',
 			docText: docLines.join('\n'),
 			_lc: rec.caption.toLowerCase(),
 		});

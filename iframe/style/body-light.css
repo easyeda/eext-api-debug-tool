@@ -1305,6 +1305,15 @@ body.dark-theme .ai-message-bubble pre .code-copy-btn:hover {
 	color: #888888;
 }
 
+.cs-item-desc {
+	font-size: 12px;
+	color: #795548;
+	width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 .cs-item-actions {
 	display: flex;
 	gap: 6px;
