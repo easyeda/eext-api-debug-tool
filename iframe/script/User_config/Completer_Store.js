@@ -5,8 +5,9 @@
 /**
  * 打开补全仓库模态框
  * @param {Object} editor - ACE 编辑器实例
+ * @param {Function} onBackCallback - 返回回调函数
  */
-async function showCompleterStoreModal(editor) {
+async function showCompleterStoreModal(editor, onBackCallback) {
 	if (document.getElementById('completer-store-modal')) return;
 
 	// 遮罩层
@@ -45,8 +46,11 @@ async function showCompleterStoreModal(editor) {
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'cs-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = '关闭';
-	closeBtn.onclick = () => modal.remove();
+	closeBtn.title = onBackCallback ? '返回' : '关闭';
+	closeBtn.onclick = () => {
+		modal.remove();
+		if (onBackCallback) onBackCallback();
+	};
 	headerRight.appendChild(closeBtn);
 	header.appendChild(headerRight);
 	container.appendChild(header);
@@ -90,13 +94,17 @@ async function showCompleterStoreModal(editor) {
 
 	// 点击遮罩关闭
 	modal.onclick = (e) => {
-		if (e.target === modal) modal.remove();
+		if (e.target === modal) {
+			modal.remove();
+			if (onBackCallback) onBackCallback();
+		}
 	};
 
 	// ESC 关闭
 	const escHandler = (e) => {
 		if (e.key === 'Escape') {
 			modal.remove();
+			if (onBackCallback) onBackCallback();
 			document.removeEventListener('keydown', escHandler);
 		}
 	};

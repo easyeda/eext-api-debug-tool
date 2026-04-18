@@ -48,6 +48,7 @@ async function SetTheme(editor, light_theme, dark_theme) {
 		theme = 'light';
 	}
 	await eda.sys_Message.showToastMessage('当前主题已切换为' + theme, 'info', 1);
+	return theme;
 }
 
 // 注册ACE补全
@@ -599,7 +600,7 @@ async function ExtStore_GetExtList() {
 // ==========================
 // 显示插件管理模态框 (重构版 - 使用 CSS 类)
 // ==========================
-async function showPluginManagerModal(editor) {
+async function showPluginManagerModal(editor, onBackCallback) {
 	if (document.getElementById('plugin-manager-modal')) return;
 	// 1. 创建遮罩层
 	const modal = document.createElement('div');
@@ -615,9 +616,10 @@ async function showPluginManagerModal(editor) {
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'plugin-manager-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = '关闭';
+	closeBtn.title = onBackCallback ? '返回' : '关闭';
 	closeBtn.onclick = () => {
 		if (modal.parentNode) modal.parentNode.removeChild(modal);
+		if (onBackCallback) onBackCallback();
 	};
 	header.appendChild(closeBtn);
 	container.appendChild(header);
@@ -725,6 +727,7 @@ async function showPluginManagerModal(editor) {
 	modal.onclick = (e) => {
 		if (e.target === modal) {
 			if (modal.parentNode) modal.parentNode.removeChild(modal);
+			if (onBackCallback) onBackCallback();
 		}
 	};
 	// 组装 DOM
@@ -737,6 +740,7 @@ async function showPluginManagerModal(editor) {
 		if (e.key === 'Escape') {
 			if (modal.parentNode) {
 				modal.parentNode.removeChild(modal);
+				if (onBackCallback) onBackCallback();
 				document.removeEventListener('keydown', escHandler);
 			}
 		}
