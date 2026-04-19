@@ -340,12 +340,12 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const height = heightInput.value.trim();
 
 			if (!width || !height) {
-				alert('请输入宽度和高度');
+				eda.sys_Message.showToastMessage('请输入宽度和高度', 'warn', 2);
 				return;
 			}
 
 			if (parseInt(width) < 400 || parseInt(height) < 300) {
-				alert('窗口尺寸过小，最小宽度400，最小高度300');
+				eda.sys_Message.showToastMessage('窗口尺寸过小，最小宽度400，最小高度300', 'warn', 2);
 				return;
 			}
 
@@ -367,7 +367,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				});
 			} catch (error) {
 				console.error('应用窗口尺寸失败:', error);
-				alert('应用失败: ' + error.message);
+				eda.sys_Message.showToastMessage('应用失败: ' + error.message, 'error', 3);
 				applyBtn.textContent = '应用';
 				applyBtn.disabled = false;
 			}
@@ -517,10 +517,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	document.body.appendChild(overlay);
 
 	document.getElementById('settings-modal-close').onclick = () => overlay.remove();
-
-	overlay.onclick = (e) => {
-		if (e.target === overlay) overlay.remove();
-	};
 
 	const escHandler = (e) => {
 		if (e.key === 'Escape') {
