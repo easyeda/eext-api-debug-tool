@@ -134,6 +134,20 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		const moonIcon = document.getElementById('theme-icon-moon');
 		const slider = document.getElementById('theme-slider');
 		const sliderBg = document.getElementById('theme-slider-bg');
+		const sizeLabel = document.getElementById('size-label');
+		const sizeContainer = document.getElementById('size-container');
+		const widthLabel = document.getElementById('ui-width-label');
+		const heightLabel = document.getElementById('ui-height-label');
+		const widthInput = document.getElementById('ui-width-input');
+		const heightInput = document.getElementById('ui-height-input');
+		const applyBtn = document.getElementById('ui-apply-btn');
+		const completionLabel = document.getElementById('completion-label');
+		const completionSwitch = document.getElementById('completion-switch');
+		const completionText = document.getElementById('completion-text');
+		const completionSlider = document.getElementById('completion-slider');
+		const completionSliderBg = document.getElementById('completion-slider-bg');
+		const completionIconOff = document.getElementById('completion-icon-off');
+		const completionIconOn = document.getElementById('completion-icon-on');
 
 		if (themeLabel) themeLabel.style.color = colors.textColor;
 		if (themeSwitch) {
@@ -141,6 +155,33 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			themeSwitch.style.borderColor = colors.modalBorder;
 		}
 		if (themeText) themeText.style.color = colors.secondaryText;
+		if (sizeLabel) sizeLabel.style.color = colors.textColor;
+		if (sizeContainer) {
+			sizeContainer.style.background = colors.itemBg;
+			sizeContainer.style.borderColor = colors.modalBorder;
+		}
+		if (widthLabel) widthLabel.style.color = colors.textColor;
+		if (heightLabel) heightLabel.style.color = colors.textColor;
+		if (widthInput) {
+			widthInput.style.background = colors.modalBg;
+			widthInput.style.color = colors.textColor;
+			widthInput.style.borderColor = colors.modalBorder;
+		}
+		if (heightInput) {
+			heightInput.style.background = colors.modalBg;
+			heightInput.style.color = colors.textColor;
+			heightInput.style.borderColor = colors.modalBorder;
+		}
+		if (applyBtn) {
+			applyBtn.style.background = isDark ? '#333430' : '#5588ff';
+			applyBtn.style.color = '#ffffff';
+		}
+		if (completionLabel) completionLabel.style.color = colors.textColor;
+		if (completionSwitch) {
+			completionSwitch.style.background = colors.itemBg;
+			completionSwitch.style.borderColor = colors.modalBorder;
+		}
+		if (completionText) completionText.style.color = colors.secondaryText;
 
 		const newTheme = isDark ? 'dark' : 'light';
 		if (sunIcon) {
@@ -233,16 +274,19 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		sizeSettings.style.cssText = `display:flex;flex-direction:column;gap:12px;`;
 
 		const sizeLabel = document.createElement('div');
+		sizeLabel.id = 'size-label';
 		sizeLabel.textContent = '窗口尺寸';
 		sizeLabel.style.cssText = `font-size:14px;font-weight:500;color:${colors.textColor};transition:color 0.3s ease;`;
 
 		const sizeContainer = document.createElement('div');
+		sizeContainer.id = 'size-container';
 		sizeContainer.style.cssText = `background:${colors.itemBg};border:1px solid ${colors.modalBorder};border-radius:8px;padding:12px 16px;transition:all 0.3s ease;`;
 
 		const inputRow = document.createElement('div');
-		inputRow.style.cssText = `display:flex;gap:8px;align-items:center;margin-bottom:12px;`;
+		inputRow.style.cssText = `display:flex;gap:8px;align-items:center;`;
 
 		const widthLabel = document.createElement('span');
+		widthLabel.id = 'ui-width-label';
 		widthLabel.textContent = '宽:';
 		widthLabel.style.cssText = `font-size:13px;color:${colors.textColor};min-width:28px;`;
 
@@ -255,6 +299,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		widthInput.onblur = () => (widthInput.style.borderColor = colors.modalBorder);
 
 		const heightLabel = document.createElement('span');
+		heightLabel.id = 'ui-height-label';
 		heightLabel.textContent = '高:';
 		heightLabel.style.cssText = `font-size:13px;color:${colors.textColor};min-width:28px;margin-left:8px;`;
 
@@ -275,8 +320,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		})();
 
 		const applyBtn = document.createElement('button');
+		applyBtn.id = 'ui-apply-btn';
 		applyBtn.textContent = '应用';
-		applyBtn.style.cssText = `padding:8px 16px;background:${isDark ? '#66d9ef' : '#0969da'};color:${isDark ? '#272822' : '#ffffff'};border:none;border-radius:4px;font-size:13px;cursor:pointer;transition:all 0.2s ease;font-weight:500;`;
+		applyBtn.style.cssText = `padding:8px 16px;background:${isDark ? '#333430' : '#5588ff'};color:#ffffff;border:none;border-radius:4px;font-size:13px;cursor:pointer;transition:all 0.2s ease;font-weight:500;`;
 		applyBtn.onmouseenter = () => (applyBtn.style.opacity = '0.85');
 		applyBtn.onmouseleave = () => (applyBtn.style.opacity = '1');
 		applyBtn.onclick = async () => {
@@ -321,11 +367,96 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		inputRow.appendChild(widthInput);
 		inputRow.appendChild(heightLabel);
 		inputRow.appendChild(heightInput);
+		inputRow.appendChild(applyBtn);
 		sizeContainer.appendChild(inputRow);
-		sizeContainer.appendChild(applyBtn);
 		sizeSettings.appendChild(sizeLabel);
 		sizeSettings.appendChild(sizeContainer);
 		body.appendChild(sizeSettings);
+
+		// 补全模式设置
+		const completionSettings = document.createElement('div');
+		completionSettings.style.cssText = `display:flex;flex-direction:column;gap:12px;`;
+
+		const completionLabel = document.createElement('div');
+		completionLabel.id = 'completion-label';
+		completionLabel.textContent = '补全模式';
+		completionLabel.style.cssText = `font-size:14px;font-weight:500;color:${colors.textColor};transition:color 0.3s ease;`;
+
+		const completionSwitch = document.createElement('div');
+		completionSwitch.id = 'completion-switch';
+		completionSwitch.style.cssText = `display:flex;align-items:center;justify-content:space-between;background:${colors.itemBg};border:1px solid ${colors.modalBorder};border-radius:8px;padding:12px 16px;cursor:pointer;transition:all 0.3s ease;`;
+
+		// 加载当前设置
+		let completionWithComment = false;
+		(async () => {
+			const saved = await eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
+			completionWithComment = saved === 'true' || saved === true;
+			updateCompletionSwitch();
+		})();
+
+		function updateCompletionSwitch() {
+			completionSwitch.innerHTML = `
+				<div style="display:flex;align-items:center;gap:12px;">
+					<svg id="completion-icon-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${completionWithComment ? '#75715e' : '#f59e0b'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke 0.4s ease,transform 0.4s ease;transform:${completionWithComment ? 'scale(1) rotate(-30deg)' : 'scale(1.1)'};">
+						<polyline points="16 18 22 12 16 6"></polyline>
+						<polyline points="8 6 2 12 8 18"></polyline>
+					</svg>
+					<div id="completion-slider-bg" style="position:relative;width:50px;height:26px;background:${completionWithComment ? '#66d9ef' : '#d1d5db'};border-radius:13px;transition:background 0.4s ease;box-shadow:inset 0 2px 4px rgba(0,0,0,0.1);">
+						<div id="completion-slider" style="position:absolute;top:3px;left:${completionWithComment ? '27px' : '3px'};width:20px;height:20px;background:white;border-radius:50%;transition:left 0.4s cubic-bezier(0.4,0,0.2,1),transform 0.2s ease;box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>
+					</div>
+					<svg id="completion-icon-on" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${completionWithComment ? '#66d9ef' : '#75715e'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke 0.4s ease,transform 0.4s ease;transform:${completionWithComment ? 'scale(1.1)' : 'scale(1) rotate(30deg)'};">
+						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+					</svg>
+				</div>
+				<span id="completion-text" style="font-size:13px;color:${colors.secondaryText};transition:color 0.3s ease;">${completionWithComment ? '带注释' : '普通模式'}</span>
+			`;
+		}
+
+		completionSwitch.onmouseenter = () => {
+			completionSwitch.style.backgroundColor = colors.itemHoverBg;
+			const slider = document.getElementById('completion-slider');
+			if (slider) slider.style.transform = 'scale(1.1)';
+		};
+		completionSwitch.onmouseleave = () => {
+			completionSwitch.style.backgroundColor = colors.itemBg;
+			const slider = document.getElementById('completion-slider');
+			if (slider) slider.style.transform = 'scale(1)';
+		};
+
+		completionSwitch.onclick = async () => {
+			const slider = document.getElementById('completion-slider');
+			const sliderBg = document.getElementById('completion-slider-bg');
+			const iconOff = document.getElementById('completion-icon-off');
+			const iconOn = document.getElementById('completion-icon-on');
+			const text = document.getElementById('completion-text');
+
+			if (slider) {
+				slider.style.transform = 'scale(0.9)';
+				setTimeout(() => {
+					slider.style.transform = 'scale(1)';
+				}, 150);
+			}
+
+			completionWithComment = !completionWithComment;
+			await eda.sys_Storage.setExtensionUserConfig('completion_with_comment', completionWithComment.toString());
+
+			// Smooth transition
+			if (sliderBg) sliderBg.style.background = completionWithComment ? '#66d9ef' : '#d1d5db';
+			if (slider) slider.style.left = completionWithComment ? '27px' : '3px';
+			if (iconOff) {
+				iconOff.style.stroke = completionWithComment ? '#75715e' : '#f59e0b';
+				iconOff.style.transform = completionWithComment ? 'scale(1) rotate(-30deg)' : 'scale(1.1) rotate(0deg)';
+			}
+			if (iconOn) {
+				iconOn.style.stroke = completionWithComment ? '#66d9ef' : '#75715e';
+				iconOn.style.transform = completionWithComment ? 'scale(1.1) rotate(0deg)' : 'scale(1) rotate(30deg)';
+			}
+			if (text) text.textContent = completionWithComment ? '带注释' : '普通模式';
+		};
+
+		completionSettings.appendChild(completionLabel);
+		completionSettings.appendChild(completionSwitch);
+		body.appendChild(completionSettings);
 
 		const settingsItems = [
 			{

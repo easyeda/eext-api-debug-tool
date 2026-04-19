@@ -14,6 +14,18 @@ function ACE_Init(editor) {
 	});
 }
 
+function _shouldCompleteWithComment() {
+	const value = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
+	return value === 'true' || value === true;
+}
+
+function _buildCompletionInsertText(item) {
+	if (!_shouldCompleteWithComment() || !item.description) {
+		return item.value;
+	}
+	return `// ${item.description}\n${item.value}`;
+}
+
 // 获取编辑器主题
 async function GetTheme(editor, light_theme, dark_theme) {
 	const theme = eda.sys_Storage.getExtensionUserConfig('theme');
@@ -68,6 +80,23 @@ function ACE_CodingForEDA(editor, edcode) {
 					meta: 'enum',
 					docText: doc,
 					_lc: e.methodPath.toLowerCase(),
+					description: e.description,
+					completer: {
+						insertMatch: function (editor, data) {
+							const pos = editor.getCursorPosition();
+							const line = editor.session.getLine(pos.row);
+							const prefix = line.substring(0, pos.column);
+							const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
+							const startCol = match ? pos.column - match[0].length : pos.column;
+							editor.session.replace(
+								{
+									start: { row: pos.row, column: startCol },
+									end: pos,
+								},
+								_buildCompletionInsertText(data),
+							);
+						},
+					},
 				},
 			];
 			if (e.description) {
@@ -78,6 +107,23 @@ function ACE_CodingForEDA(editor, edcode) {
 					meta: 'enum',
 					docText: doc,
 					_lc: e.description.toLowerCase(),
+					description: e.description,
+					completer: {
+						insertMatch: function (editor, data) {
+							const pos = editor.getCursorPosition();
+							const line = editor.session.getLine(pos.row);
+							const prefix = line.substring(0, pos.column);
+							const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
+							const startCol = match ? pos.column - match[0].length : pos.column;
+							editor.session.replace(
+								{
+									start: { row: pos.row, column: startCol },
+									end: pos,
+								},
+								_buildCompletionInsertText(data),
+							);
+						},
+					},
 				});
 			}
 			return entries;
@@ -94,6 +140,23 @@ function ACE_CodingForEDA(editor, edcode) {
 					meta: 'enum',
 					docText: doc,
 					_lc: e.methodPath.toLowerCase(),
+					description: e.description,
+					completer: {
+						insertMatch: function (editor, data) {
+							const pos = editor.getCursorPosition();
+							const line = editor.session.getLine(pos.row);
+							const prefix = line.substring(0, pos.column);
+							const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
+							const startCol = match ? pos.column - match[0].length : pos.column;
+							editor.session.replace(
+								{
+									start: { row: pos.row, column: startCol },
+									end: pos,
+								},
+								_buildCompletionInsertText(data),
+							);
+						},
+					},
 				},
 			];
 			if (e.description) {
@@ -104,6 +167,23 @@ function ACE_CodingForEDA(editor, edcode) {
 					meta: 'enum',
 					docText: doc,
 					_lc: e.description.toLowerCase(),
+					description: e.description,
+					completer: {
+						insertMatch: function (editor, data) {
+							const pos = editor.getCursorPosition();
+							const line = editor.session.getLine(pos.row);
+							const prefix = line.substring(0, pos.column);
+							const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
+							const startCol = match ? pos.column - match[0].length : pos.column;
+							editor.session.replace(
+								{
+									start: { row: pos.row, column: startCol },
+									end: pos,
+								},
+								_buildCompletionInsertText(data),
+							);
+						},
+					},
 				});
 			}
 			return entries;
@@ -124,6 +204,23 @@ function ACE_CodingForEDA(editor, edcode) {
 				meta: 'method',
 				docText: doc,
 				_lc: e.methodPath.toLowerCase(),
+				description: e.description,
+				completer: {
+					insertMatch: function (editor, data) {
+						const pos = editor.getCursorPosition();
+						const line = editor.session.getLine(pos.row);
+						const prefix = line.substring(0, pos.column);
+						const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
+						const startCol = match ? pos.column - match[0].length : pos.column;
+						editor.session.replace(
+							{
+								start: { row: pos.row, column: startCol },
+								end: pos,
+							},
+							_buildCompletionInsertText(data),
+						);
+					},
+				},
 			},
 		];
 		if (e.description) {
@@ -134,6 +231,23 @@ function ACE_CodingForEDA(editor, edcode) {
 				meta: 'desc',
 				docText: doc,
 				_lc: e.description.toLowerCase(),
+				description: e.description,
+				completer: {
+					insertMatch: function (editor, data) {
+						const pos = editor.getCursorPosition();
+						const line = editor.session.getLine(pos.row);
+						const prefix = line.substring(0, pos.column);
+						const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
+						const startCol = match ? pos.column - match[0].length : pos.column;
+						editor.session.replace(
+							{
+								start: { row: pos.row, column: startCol },
+								end: pos,
+							},
+							_buildCompletionInsertText(data),
+						);
+					},
+				},
 			});
 		}
 		return entries;
