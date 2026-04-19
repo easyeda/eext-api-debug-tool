@@ -294,9 +294,13 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		widthInput.type = 'number';
 		widthInput.placeholder = '1200';
 		widthInput.id = 'ui-width-input';
-		widthInput.style.cssText = `width:80px;padding:6px 8px;background:${colors.modalBg};color:${colors.textColor};border:1px solid ${colors.modalBorder};border-radius:4px;font-size:13px;outline:none;transition:all 0.2s ease;`;
-		widthInput.onfocus = () => (widthInput.style.borderColor = isDark ? '#66d9ef' : '#0969da');
-		widthInput.onblur = () => (widthInput.style.borderColor = colors.modalBorder);
+		widthInput.style.cssText = `width:80px;padding:6px 8px;background:${colors.modalBg};color:${colors.textColor};border:1px solid ${colors.modalBorder};border-radius:4px;font-size:13px;outline:none;transition:all 0.2s ease;-moz-appearance:textfield;`;
+		widthInput.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+		widthInput.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+				e.preventDefault();
+			}
+		});
 
 		const heightLabel = document.createElement('span');
 		heightLabel.id = 'ui-height-label';
@@ -307,9 +311,15 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		heightInput.type = 'number';
 		heightInput.placeholder = '700';
 		heightInput.id = 'ui-height-input';
-		heightInput.style.cssText = `width:80px;padding:6px 8px;background:${colors.modalBg};color:${colors.textColor};border:1px solid ${colors.modalBorder};border-radius:4px;font-size:13px;outline:none;transition:all 0.2s ease;`;
+		heightInput.style.cssText = `width:80px;padding:6px 8px;background:${colors.modalBg};color:${colors.textColor};border:1px solid ${colors.modalBorder};border-radius:4px;font-size:13px;outline:none;transition:all 0.2s ease;-moz-appearance:textfield;`;
 		heightInput.onfocus = () => (heightInput.style.borderColor = isDark ? '#66d9ef' : '#0969da');
 		heightInput.onblur = () => (heightInput.style.borderColor = colors.modalBorder);
+		heightInput.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+		heightInput.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+				e.preventDefault();
+			}
+		});
 
 		// 加载当前设置
 		(async () => {
@@ -408,7 +418,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
 					</svg>
 				</div>
-				<span id="completion-text" style="font-size:13px;color:${colors.secondaryText};transition:color 0.3s ease;">${completionWithComment ? '带注释' : '普通模式'}</span>
+				<span id="completion-text" style="font-size:13px;color:${colors.secondaryText};transition:color 0.3s ease;">${completionWithComment ? '带注释补全' : '正常补全'}</span>
 			`;
 		}
 
@@ -451,7 +461,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				iconOn.style.stroke = completionWithComment ? '#66d9ef' : '#75715e';
 				iconOn.style.transform = completionWithComment ? 'scale(1.1) rotate(0deg)' : 'scale(1) rotate(30deg)';
 			}
-			if (text) text.textContent = completionWithComment ? '带注释' : '普通模式';
+			if (text) text.textContent = completionWithComment ? '带注释补全' : '正常补全';
 		};
 
 		completionSettings.appendChild(completionLabel);
