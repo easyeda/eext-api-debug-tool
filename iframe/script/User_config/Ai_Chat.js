@@ -313,7 +313,7 @@ function initAiChat() {
 			bubble.classList.add('streaming-cursor');
 			bubble.style.whiteSpace = 'pre-wrap';
 		} else {
-			if (role === 'system' && typeof marked !== 'undefined') {
+			if ((role === 'system' || role === 'assistant') && typeof marked !== 'undefined') {
 				bubble.innerHTML = marked.parse(text);
 				if (typeof hljs !== 'undefined') {
 					bubble.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
