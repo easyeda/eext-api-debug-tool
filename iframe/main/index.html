@@ -103,6 +103,7 @@
 		<script src="/iframe/script/eext_tool/marked.min.js"></script>
 		<!-- 应用逻辑 -->
 		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
+		<script src="/iframe/script/User_config/Keyboard_Config.js"></script>
 		<script src="/iframe/script/User_config/Menu_Config.js"></script>
 		<script src="/iframe/script/User_config/Ai_Chat.js"></script>
 		<script src="/iframe/script/User_config/ACE_Config.js"></script>
@@ -113,6 +114,7 @@
 			// console.log(eda.sys_Storage.getExtensionUserConfig('version'))
 
 			const editor = ace.edit('editor');
+			window.editor = editor; // Expose to global scope for AI chat tools
 			ACE_Init(editor);
 
 			// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
@@ -204,31 +206,74 @@
 				});
 			}
 
-			// 快捷键绑定
-			// 移除 ACE 编辑器的 Ctrl+K 默认绑定
-			editor.commands.removeCommand('gotoline');
-			editor.commands.removeCommand('find');
+			// 快捷键绑定 - 使用配置系统
+			(async function initKeyboardShortcuts() {
+				const shortcuts = await loadShortcuts();
+				const platform = getPlatform();
 
-			// 添加格式化代码快捷键 Ctrl+K
-			editor.commands.addCommand({
-				name: 'formatCode',
-				bindKey: { win: 'Ctrl-K', mac: 'Command-K' },
-				exec: function (editor) {
-					formatEditorCode(editor);
-				},
-			});
+				// 移除 ACE 编辑器的默认绑定
+				editor.commands.removeCommand('gotoline');
+				editor.commands.removeCommand('find');
 
-			document.addEventListener('keydown', function (event) {
-				if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-					ACE_RunCode(editor);
-				}
-			});
-			document.addEventListener('keydown', function (e) {
-				if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-					e.preventDefault();
-					Code_SaveCode(editor);
-				}
-			});
+				// 格式化代码快捷键
+				const formatKey = shortcuts.format[platform].replace(/\+/g, '-');
+				editor.commands.addCommand({
+					name: 'formatCode',
+					bindKey: { win: shortcuts.format.win.replace(/\+/g, '-'), mac: shortcuts.format.mac.replace(/\+/g, '-') },
+					exec: function (editor) {
+						// 检查快捷键设置模态框是否打开
+						if (window.keyboardShortcutsModalOpen) return;
+						formatEditorCode(editor);
+					},
+				});
+
+				// 全局快捷键监听
+				document.addEventListener('keydown', function (e) {
+					// 如果快捷键设置模态框打开，禁用所有快捷键
+					if (window.keyboardShortcutsModalOpen) return;
+
+					// 运行代码
+					if (matchesShortcut(e, shortcuts.run[platform])) {
+						e.preventDefault();
+						ACE_RunCode(editor);
+					}
+					// 保存代码
+					else if (matchesShortcut(e, shortcuts.save[platform])) {
+						e.preventDefault();
+						Code_SaveCode(editor);
+					}
+					// 导入文件
+					else if (matchesShortcut(e, shortcuts.import[platform])) {
+						e.preventDefault();
+						ImportFile(editor);
+					}
+					// 导出文件
+					else if (matchesShortcut(e, shortcuts.export[platform])) {
+						e.preventDefault();
+						ExportFileForJs(editor.getValue(), Date() + '_script.js');
+					}
+					// 加载代码
+					else if (matchesShortcut(e, shortcuts.load[platform])) {
+						e.preventDefault();
+						Code_OpenLoadWindow(editor);
+					}
+					// 删除代码
+					else if (matchesShortcut(e, shortcuts.delete[platform])) {
+						e.preventDefault();
+						Code_OpenDeleteWindow(editor);
+					}
+					// 保存到列表
+					else if (matchesShortcut(e, shortcuts.saveToList[platform])) {
+						e.preventDefault();
+						Code_SaveToBtnList(editor);
+					}
+					// 保存为插件
+					else if (matchesShortcut(e, shortcuts.saveAsPlugin[platform])) {
+						e.preventDefault();
+						ExtStore_SavePlugin(editor);
+					}
+				});
+			})();
 		</script>
 	</body>
 </html>

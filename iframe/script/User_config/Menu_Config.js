@@ -470,6 +470,15 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 		const settingsItems = [
 			{
+				text: '快捷键设置',
+				action: () => {
+					overlay.style.display = 'none';
+					showKeyboardShortcutsModal(editor, () => {
+						overlay.style.display = 'flex';
+					});
+				},
+			},
+			{
 				text: '插件管理',
 				action: () => {
 					overlay.style.display = 'none';
