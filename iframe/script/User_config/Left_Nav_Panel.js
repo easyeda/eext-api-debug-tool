@@ -281,9 +281,6 @@ class LeftNavPanel {
 				cancelButtonText: '取消',
 				inputValidator: (value) => {
 					if (!value) return '请输入项目名称';
-					if (this.projects.some(p => p.projectName === value)) {
-						return '项目名称已存在';
-					}
 				},
 			});
 
@@ -293,6 +290,33 @@ class LeftNavPanel {
 			}
 
 			const projectName = result.value;
+			const existingProject = this.projects.find(p => p.projectName === projectName);
+
+			// 如果项目名称已存在，询问是否覆盖
+			if (existingProject) {
+				const overwriteResult = await Swal.fire({
+					title: '项目名称冲突',
+					text: `项目 "${projectName}" 已存在，是否覆盖更新？`,
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonText: '覆盖',
+					cancelButtonText: '取消',
+					confirmButtonColor: '#d33',
+				});
+
+				if (!overwriteResult.isConfirmed) {
+					document.body.removeChild(input);
+					return;
+				}
+
+				try {
+					await window.projectManager.deleteProject(existingProject.id);
+				} catch (error) {
+					eda.sys_Message.showToastMessage('删除旧项目失败: ' + error.message, 'error', 3);
+					document.body.removeChild(input);
+					return;
+				}
+			}
 
 			try {
 				// 创建项目
