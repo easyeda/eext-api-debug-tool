@@ -203,3 +203,43 @@ body.dark-theme .file-tree-empty,
 #file-tree.dark .file-tree-empty {
 	color: #75715e;
 }
+
+/* 文件树滚动条样式 - 亮色主题 */
+#file-tree::-webkit-scrollbar,
+.file-tree-list::-webkit-scrollbar {
+	width: 8px;
+}
+
+#file-tree::-webkit-scrollbar-track,
+.file-tree-list::-webkit-scrollbar-track {
+	background: #f6f8fa;
+	border-radius: 4px;
+}
+
+#file-tree::-webkit-scrollbar-thumb,
+.file-tree-list::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 4px;
+	transition: background 0.2s;
+}
+
+#file-tree::-webkit-scrollbar-thumb:hover,
+.file-tree-list::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
+}
+
+/* 文件树滚动条样式 - 暗色主题 */
+body.dark-theme #file-tree::-webkit-scrollbar-track,
+body.dark-theme .file-tree-list::-webkit-scrollbar-track {
+	background: #1e1f1c;
+}
+
+body.dark-theme #file-tree::-webkit-scrollbar-thumb,
+body.dark-theme .file-tree-list::-webkit-scrollbar-thumb {
+	background: #49483e;
+}
+
+body.dark-theme #file-tree::-webkit-scrollbar-thumb:hover,
+body.dark-theme .file-tree-list::-webkit-scrollbar-thumb:hover {
+	background: #66d9ef;
+}

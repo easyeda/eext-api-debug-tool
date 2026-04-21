@@ -88,7 +88,10 @@ body.dark-theme #left-content-area {
 }
 
 .project-list-header {
+	display: flex;
+	align-items: center;
 	padding: 12px;
+	gap: 8px;
 	border-bottom: 1px solid #d0d7de;
 	background: #ffffff;
 	flex-shrink: 0;
@@ -130,6 +133,39 @@ body.dark-theme .project-search-box:focus {
 	overflow-y: auto;
 	overflow-x: hidden;
 	padding: 8px;
+}
+
+/* 项目列表滚动条样式 - 亮色主题 */
+.project-list-content::-webkit-scrollbar {
+	width: 8px;
+}
+
+.project-list-content::-webkit-scrollbar-track {
+	background: #f6f8fa;
+	border-radius: 4px;
+}
+
+.project-list-content::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 4px;
+	transition: background 0.2s;
+}
+
+.project-list-content::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
+}
+
+/* 项目列表滚动条样式 - 暗色主题 */
+body.dark-theme .project-list-content::-webkit-scrollbar-track {
+	background: #1e1f1c;
+}
+
+body.dark-theme .project-list-content::-webkit-scrollbar-thumb {
+	background: #49483e;
+}
+
+body.dark-theme .project-list-content::-webkit-scrollbar-thumb:hover {
+	background: #66d9ef;
 }
 
 .project-item {
@@ -203,6 +239,36 @@ body.dark-theme .project-item-info {
 
 body.dark-theme .project-list-empty {
 	color: #8b949e;
+}
+
+.import-project-btn {
+	padding: 8px 16px;
+	background: #0969da;
+	color: #ffffff;
+	border: 1px solid #0969da;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 500;
+	transition: all 0.2s;
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+
+.import-project-btn:hover {
+	background: #0860ca;
+	border-color: #0860ca;
+}
+
+body.dark-theme .import-project-btn {
+	background: #1e1f1c;
+	color: #66d9ef;
+	border-color: #66d9ef;
+}
+
+body.dark-theme .import-project-btn:hover {
+	background: #2d2e27;
+	border-color: #66d9ef;
 }
 
 .project-list-empty p {

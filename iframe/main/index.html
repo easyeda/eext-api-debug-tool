@@ -32,6 +32,7 @@
 					<div id="project-list-view" style="display: flex;">
 						<div class="project-list-header">
 							<input type="text" class="project-search-box" id="project-search-input" placeholder="搜索项目..." />
+							<button class="import-project-btn" id="import-project-btn" title="导入项目">导入</button>
 						</div>
 						<div class="project-list-content" id="project-list-content"></div>
 					</div>
@@ -141,6 +142,26 @@
 					window.editor = editor; // Expose to global scope for AI chat tools
 					ACE_Init(editor);
 
+					// Inject eda bridge into HTML preview content
+					function injectEdaBridge(html) {
+						const bridge = '<script>\n' +
+							'(function() {\n' +
+							'	var p = window.parent || window.top;\n' +
+							'	if (!p || p === window) return;\n' +
+							'	var names = Object.getOwnPropertyNames(p);\n' +
+							'	for (var i = 0; i < names.length; i++) {\n' +
+							'		var k = names[i];\n' +
+							'		if (k in window) continue;\n' +
+							'		try { window[k] = p[k]; } catch(e) {}\n' +
+							'	}\n' +
+							'	window.__parent = p;\n' +
+							'})();\n' +
+							'<\/script>';
+						if (/<head[^>]*>/i.test(html)) return html.replace(/(<head[^>]*>)/i, '$1\n' + bridge);
+						if (/<body[^>]*>/i.test(html)) return html.replace(/(<body[^>]*>)/i, '$1\n' + bridge);
+						return bridge + '\n' + html;
+					}
+
 					// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
 					const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
 					editor.setValue(HistoryCode || '', -1);
@@ -244,7 +265,8 @@
 										window.projectManager
 									) :
 									rawContent;
-								const blob = new Blob([content], { type: 'text/html' });
+								const finalContent = injectEdaBridge(content);
+								const blob = new Blob([finalContent], { type: 'text/html' });
 								const url = URL.createObjectURL(blob);
 
 								previewFrame.src = url;
@@ -282,7 +304,7 @@
 									);
 								}
 
-								const blob = new Blob([content], { type: 'text/html' });
+								const blob = new Blob([injectEdaBridge(content)], { type: 'text/html' });
 								const url = URL.createObjectURL(blob);
 
 								previewFrame.src = url;

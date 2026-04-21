@@ -43,6 +43,7 @@ class ProjectManager {
 		const project = {
 			projectName,
 			files: [{ fileName: 'main.js', content: '', createdAt: Date.now() }],
+			emptyFolders: [], // 存储空文件夹
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 		};
@@ -96,6 +97,10 @@ class ProjectManager {
 	async saveProject(project) {
 		if (!this.db) await this.initDB();
 		project.updatedAt = Date.now();
+		// 同步 FileTreeUI 的空文件夹到项目
+		if (window.fileTreeUI && window.fileTreeUI.emptyFolders) {
+			project.emptyFolders = Array.from(window.fileTreeUI.emptyFolders);
+		}
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readwrite');
@@ -118,6 +123,39 @@ class ProjectManager {
 
 			request.onsuccess = () => resolve();
 			request.onerror = () => reject(request.error);
+		});
+	}
+
+	// 重命名项目
+	async renameProject(projectId, newName) {
+		if (!this.db) await this.initDB();
+
+		return new Promise((resolve, reject) => {
+			const transaction = this.db.transaction([STORE_NAME], 'readwrite');
+			const store = transaction.objectStore(STORE_NAME);
+			const getRequest = store.get(projectId);
+
+			getRequest.onsuccess = () => {
+				const project = getRequest.result;
+				if (!project) {
+					reject(new Error('Project not found'));
+					return;
+				}
+
+				project.projectName = newName;
+				project.updatedAt = Date.now();
+
+				const putRequest = store.put(project);
+				putRequest.onsuccess = () => {
+					if (this.currentProject && this.currentProject.id === projectId) {
+						this.currentProject.projectName = newName;
+					}
+					resolve(project);
+				};
+				putRequest.onerror = () => reject(putRequest.error);
+			};
+
+			getRequest.onerror = () => reject(getRequest.error);
 		});
 	}
 
@@ -164,6 +202,38 @@ class ProjectManager {
 			file.content = content;
 			await this.saveProject(this.currentProject);
 		}
+	}
+
+	// 复制文件到目标文件夹
+	async copyFiles(fileNames, destFolder) {
+		for (const fileName of fileNames) {
+			const file = this.currentProject.files.find((f) => f.fileName === fileName);
+			if (!file) continue;
+			const baseName = fileName.split('/').pop();
+			let newPath = destFolder ? `${destFolder}/${baseName}` : baseName;
+			let counter = 1;
+			while (this.currentProject.files.some((f) => f.fileName === newPath)) {
+				const dot = baseName.lastIndexOf('.');
+				const name = dot >= 0 ? baseName.slice(0, dot) : baseName;
+				const ext = dot >= 0 ? baseName.slice(dot) : '';
+				newPath = destFolder ? `${destFolder}/${name}_${counter}${ext}` : `${name}_${counter}${ext}`;
+				counter++;
+			}
+			this.currentProject.files.push({ fileName: newPath, content: file.content, createdAt: Date.now() });
+		}
+		await this.saveProject(this.currentProject);
+	}
+
+	// 移动文件到目标文件夹
+	async moveFiles(fileNames, destFolder) {
+		for (const fileName of fileNames) {
+			const file = this.currentProject.files.find((f) => f.fileName === fileName);
+			if (!file) continue;
+			const baseName = fileName.split('/').pop();
+			const newPath = destFolder ? `${destFolder}/${baseName}` : baseName;
+			if (newPath !== fileName) file.fileName = newPath;
+		}
+		await this.saveProject(this.currentProject);
 	}
 
 	// 获取文件内容

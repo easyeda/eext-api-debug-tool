@@ -113,29 +113,33 @@ body {
 }
 
 /* === Ace 编辑器滚动条样式 - 暗色主题 === */
-#editor .ace_scrollbar-v {
-	opacity: 1 !important;
-	pointer-events: auto !important;
-	width: 12px !important;
-	background: #1e1f1c !important;
-	right: 0 !important;
+/* 编辑器滚动条样式 */
+#editor::-webkit-scrollbar,
+#editor .ace_scrollbar-v::-webkit-scrollbar,
+#editor .ace_scrollbar-h::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
 }
 
-#editor .ace_scrollbar-v .ace_scrollbar-inner {
-	background: #49483e !important;
-	border-radius: 6px !important;
-	margin: 2px !important;
-	width: 8px !important;
-	transition: background 0.2s ease;
+#editor::-webkit-scrollbar-track,
+#editor .ace_scrollbar-v::-webkit-scrollbar-track,
+#editor .ace_scrollbar-h::-webkit-scrollbar-track {
+	background: #1e1f1c;
+	border-radius: 4px;
 }
 
-#editor .ace_scrollbar-v:hover .ace_scrollbar-inner {
-	background: #66d9ef !important;
+#editor::-webkit-scrollbar-thumb,
+#editor .ace_scrollbar-v::-webkit-scrollbar-thumb,
+#editor .ace_scrollbar-h::-webkit-scrollbar-thumb {
+	background: #49483e;
+	border-radius: 4px;
+	transition: background 0.2s;
 }
 
-/* 隐藏水平滚动条 */
-#editor .ace_scrollbar-h {
-	display: none !important;
+#editor::-webkit-scrollbar-thumb:hover,
+#editor .ace_scrollbar-v::-webkit-scrollbar-thumb:hover,
+#editor .ace_scrollbar-h::-webkit-scrollbar-thumb:hover {
+	background: #66d9ef;
 }
 
 /* HTML 预览容器 */
