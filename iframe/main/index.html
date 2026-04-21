@@ -81,348 +81,347 @@
 					</div>
 				</div>
 			</div>
+			<body/>
+				<!-- Ace 核心 -->
+				<script src="/iframe/script/Ace_Editor/ace.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-language_tools.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-javascript.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-html.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-css.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-json.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-xml.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-markdown.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-typescript.js"></script>
+				<script src="/iframe/script/Ace_Editor/mode-text.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-searchbox.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-options.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-modelist.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-themelist.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-settings_menu.js"></script>
+				<script src="/iframe/script/Ace_Editor/ext-prompt.js"></script>
+				<!-- Ace 主题 -->
+				<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-ambiance.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-chaos.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-chrome.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-clouds.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-clouds_midnight.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-cobalt.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-crimson_editor.js"></script>
+				<script src="/iframe/script/Ace_Editor/theme-dreamweaver.js"></script>
+				<!-- 代码格式化 -->
+				<script src="/iframe/script/Js_beautify/beautify.min.js"></script>
+				<script src="/iframe/script/Js_beautify/beautify-css.min.js"></script>
+				<script src="/iframe/script/Js_beautify/beautify-html.min.js"></script>
+				<!-- SweetAlert2 模态框 -->
+				<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
+				<!-- 工具库 -->
+				<script src="/iframe/script/eext_tool/jszip.min.js"></script>
+				<script src="/iframe/script/eext_tool/highlight.min.js"></script>
+				<script src="/iframe/script/eext_tool/marked.min.js"></script>
+				<!-- 应用逻辑 -->
+				<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
+				<script src="/iframe/script/User_config/Project_Manager.js"></script>
+				<script src="/iframe/script/User_config/FileTree_UI.js"></script>
+				<script src="/iframe/script/User_config/HTML_Renderer.js"></script>
+				<script src="/iframe/script/User_config/Project_Completer.js"></script>
+				<script src="/iframe/script/User_config/Left_Nav_Panel.js"></script>
+				<script src="/iframe/script/User_config/Keyboard_Config.js"></script>
+				<script src="/iframe/script/User_config/Menu_Config.js"></script>
+				<script src="/iframe/script/User_config/Ai_Chat.js"></script>
+				<script src="/iframe/script/User_config/ACE_Config.js"></script>
+				<script src="/iframe/script/User_config/Completer_Store.js"></script>
+				<script src="/iframe/script/User_config/Code_Config.js"></script>
+				<script>
+					// document.title = 'Ace Editor - EDA' + eda.sys_Storage.getExtensionUserConfig('version'); 暂时失效 等解决
+					// console.log(eda.sys_Storage.getExtensionUserConfig('version'))
 
-			<!-- Ace 核心 -->
-			<script src="/iframe/script/Ace_Editor/ace.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-language_tools.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-javascript.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-html.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-css.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-json.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-xml.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-markdown.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-typescript.js"></script>
-			<script src="/iframe/script/Ace_Editor/mode-text.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-searchbox.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-options.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-modelist.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-themelist.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-settings_menu.js"></script>
-			<script src="/iframe/script/Ace_Editor/ext-prompt.js"></script>
-			<!-- Ace 主题 -->
-			<script src="/iframe/script/Ace_Editor/theme-monokai.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-github.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-ambiance.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-chaos.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-chrome.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-clouds.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-clouds_midnight.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-cobalt.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-crimson_editor.js"></script>
-			<script src="/iframe/script/Ace_Editor/theme-dreamweaver.js"></script>
-			<!-- 代码格式化 -->
-			<script src="/iframe/script/Js_beautify/beautify.min.js"></script>
-			<script src="/iframe/script/Js_beautify/beautify-css.min.js"></script>
-			<script src="/iframe/script/Js_beautify/beautify-html.min.js"></script>
-			<!-- SweetAlert2 模态框 -->
-			<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
-			<!-- 工具库 -->
-			<script src="/iframe/script/eext_tool/jszip.min.js"></script>
-			<script src="/iframe/script/eext_tool/highlight.min.js"></script>
-			<script src="/iframe/script/eext_tool/marked.min.js"></script>
-			<!-- 应用逻辑 -->
-			<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
-			<script src="/iframe/script/User_config/Project_Manager.js"></script>
-			<script src="/iframe/script/User_config/FileTree_UI.js"></script>
-			<script src="/iframe/script/User_config/HTML_Renderer.js"></script>
-			<script src="/iframe/script/User_config/Project_Completer.js"></script>
-			<script src="/iframe/script/User_config/Left_Nav_Panel.js"></script>
-			<script src="/iframe/script/User_config/Keyboard_Config.js"></script>
-			<script src="/iframe/script/User_config/Menu_Config.js"></script>
-			<script src="/iframe/script/User_config/Ai_Chat.js"></script>
-			<script src="/iframe/script/User_config/ACE_Config.js"></script>
-			<script src="/iframe/script/User_config/Completer_Store.js"></script>
-			<script src="/iframe/script/User_config/Code_Config.js"></script>
-			<script>
-				// document.title = 'Ace Editor - EDA' + eda.sys_Storage.getExtensionUserConfig('version'); 暂时失效 等解决
-				// console.log(eda.sys_Storage.getExtensionUserConfig('version'))
+					const editor = ace.edit('editor');
+					window.editor = editor; // Expose to global scope for AI chat tools
+					ACE_Init(editor);
 
-				const editor = ace.edit('editor');
-				window.editor = editor; // Expose to global scope for AI chat tools
-				ACE_Init(editor);
+					// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
+					const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
+					editor.setValue(HistoryCode || '', -1);
 
-				// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
-				const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
-				editor.setValue(HistoryCode || '', -1);
+					// 注册 Ctrl+滚轮缩放字体
+					let currentFontSize = 14;
+					ACE_ChangeCodeSize(editor, currentFontSize, showToast);
 
-				// 注册 Ctrl+滚轮缩放字体
-				let currentFontSize = 14;
-				ACE_ChangeCodeSize(editor, currentFontSize, showToast);
+					// 注册 EDA 智能补全
+					ACE_CodingForEDA(editor, edcode);
 
-				// 注册 EDA 智能补全
-				ACE_CodingForEDA(editor, edcode);
+					// 加载用户自定义补全
+					UserCompleter_LoadAll(editor);
 
-				// 加载用户自定义补全
-				UserCompleter_LoadAll(editor);
-
-				// 自动缓存编辑器内容
-				editor.session.on('change', function() {
-					eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
-				});
-
-				// 初始化主题
-				const light_theme = document.getElementById('theme-light');
-				const dark_theme = document.getElementById('theme-dark');
-				GetTheme(editor, light_theme, dark_theme);
-
-				// 初始化 AI 按钮状态
-				GetVibeCodingConfig();
-
-				// 加载并执行已保存插件
-				ExtStore_LoadAndRunAllPlugins();
-				// 加载快捷按钮列表
-				Code_LoadBtnListFromDB(editor);
-
-				// 初始化项目管理器
-				(async function initProjectManager() {
-					await window.projectManager.initDB();
-
-					// 初始化左侧导航面板
-					window.leftNavPanel = new LeftNavPanel(editor);
-
-					// 初始化文件树（但不显示，由导航面板控制）
-					window.fileTreeUI = new FileTreeUI('file-tree', editor);
-					await window.fileTreeUI.render();
-
-					// 初始化项目文件补全器
-					window.projectCompleter = new ProjectCompleter(editor);
-
-					// 自动保存文件内容
-					let saveTimeout;
+					// 自动缓存编辑器内容
 					editor.session.on('change', function() {
-						if (window.projectManager.currentFile) {
-							clearTimeout(saveTimeout);
-							saveTimeout = setTimeout(async () => {
-								await window.projectManager.saveFileContent(
-									window.projectManager.currentFile,
-									editor.getValue()
-								);
-							}, 1000);
-						}
+						eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
 					});
-				})();
 
-				// 注册右键跳转文档
-				const methodList = edcode.map((item) => item.methodPath);
-				injectContextMenuJumpToDocs(editor, methodList);
+					// 初始化主题
+					const light_theme = document.getElementById('theme-light');
+					const dark_theme = document.getElementById('theme-dark');
+					GetTheme(editor, light_theme, dark_theme);
 
-				// 按钮事件绑定
-				document.getElementById('SaveinLeft-btn')?.addEventListener('click', () => {
-					Code_SaveToBtnList(editor);
-				});
-				document.getElementById('run-btn').addEventListener('click', async () => {
-					const runBtn = document.getElementById('run-btn');
-					const editorDiv = document.getElementById('editor');
-					const previewContainer = document.getElementById('html-preview-container');
-					const previewFrame = document.getElementById('html-preview-frame');
+					// 初始化 AI 按钮状态
+					GetVibeCodingConfig();
 
-					// 检查是否正在预览模式
-					if (previewContainer.classList.contains('active')) {
-						// 停止预览，返回编辑器
-						previewContainer.classList.remove('active');
-						editorDiv.style.display = 'block';
-						runBtn.textContent = '运行';
+					// 加载并执行已保存插件
+					ExtStore_LoadAndRunAllPlugins();
+					// 加载快捷按钮列表
+					Code_LoadBtnListFromDB(editor);
 
-						// 清理 iframe
-						previewFrame.src = 'about:blank';
-						return;
-					}
+					// 初始化项目管理器
+					(async function initProjectManager() {
+						await window.projectManager.initDB();
 
-					// 检查当前文件类型
-					if (window.projectManager && window.projectManager.currentFile) {
-						const fileName = window.projectManager.currentFile;
-						const ext = fileName.split('.').pop().toLowerCase();
+						// 初始化左侧导航面板
+						window.leftNavPanel = new LeftNavPanel(editor);
 
-						if (ext === 'html') {
-							// HTML 文件：在编辑器位置预览（内联项目中引用的 JS/CSS）
-							const currentFile = window.projectManager.currentProject?.files?.find(
-								f => f.fileName === fileName
-							);
-							const rawContent = editor.getValue();
-							const content = (currentFile && window.htmlRenderer) ?
-								window.htmlRenderer.buildHTMLContent({ ...currentFile, content: rawContent },
-									window.projectManager
-								) :
-								rawContent;
-							const blob = new Blob([content], { type: 'text/html' });
-							const url = URL.createObjectURL(blob);
+						// 初始化文件树（但不显示，由导航面板控制）
+						window.fileTreeUI = new FileTreeUI('file-tree', editor);
+						await window.fileTreeUI.render();
 
-							previewFrame.src = url;
-							editorDiv.style.display = 'none';
-							previewContainer.classList.add('active');
-							runBtn.textContent = '停止';
+						// 初始化项目文件补全器
+						window.projectCompleter = new ProjectCompleter(editor);
 
-							eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
-
-							// 清理旧的 URL
-							previewFrame.addEventListener('load', () => {
-								URL.revokeObjectURL(url);
-							}, { once: true });
-						} else {
-							// 其他文件：运行 JS
-							ACE_RunCode(editor);
-						}
-					} else {
-						// 没有项目时，检测内容类型
-						const content = editor.getValue().trim();
-						// 检测是否为 HTML：必须在开头附近找到 DOCTYPE 或 <html 标签
-						const isHTML = /^\s*<!DOCTYPE\s+html/i.test(content) ||
-							/^\s*<html[\s>]/i.test(content) ||
-							(/<!DOCTYPE\s+html/i.test(content.substring(0, 200)) &&
-								/<html[\s>]/i.test(content.substring(0, 500)));
-
-						if (isHTML) {
-							// 内容是 HTML：在编辑器位置预览
-							// 检查是否有外部脚本引用
-							if (/<script[^>]+src=/i.test(content)) {
-								eda.sys_Message.showToastMessage(
-									'检测到外部脚本引用，但未在项目中。外部脚本将无法加载，请创建项目或内联脚本。',
-									'warn',
-									4
-								);
+						// 自动保存文件内容
+						let saveTimeout;
+						editor.session.on('change', function() {
+							if (window.projectManager.currentFile) {
+								clearTimeout(saveTimeout);
+								saveTimeout = setTimeout(async () => {
+									await window.projectManager.saveFileContent(
+										window.projectManager.currentFile,
+										editor.getValue()
+									);
+								}, 1000);
 							}
+						});
+					})();
 
-							const blob = new Blob([content], { type: 'text/html' });
-							const url = URL.createObjectURL(blob);
+					// 注册右键跳转文档
+					const methodList = edcode.map((item) => item.methodPath);
+					injectContextMenuJumpToDocs(editor, methodList);
 
-							previewFrame.src = url;
-							editorDiv.style.display = 'none';
-							previewContainer.classList.add('active');
-							runBtn.textContent = '停止';
-
-							eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
-
-							// 清理旧的 URL
-							previewFrame.addEventListener('load', () => {
-								URL.revokeObjectURL(url);
-							}, { once: true });
-						} else {
-							// 其他内容：运行 JS
-							ACE_RunCode(editor);
-						}
-					}
-				});
-				document.getElementById('ai-btn').addEventListener('click', () => {
-					SetVibeCodingConfig();
-				});
-				document.getElementById('save-btn')?.addEventListener('click', () => {
-					Code_SaveCode(editor);
-				});
-				document.getElementById('load-btn')?.addEventListener('click', () => {
-					Code_OpenLoadWindow(editor);
-				});
-				document.getElementById('theme-btn')?.addEventListener('click', () => {
-					SetTheme(editor, light_theme, dark_theme);
-				});
-				document.getElementById('delete-btn')?.addEventListener('click', () => {
-					eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
-					Code_OpenDeleteWindow(editor);
-				});
-				document.getElementById('import-btn')?.addEventListener('click', () => {
-					ImportFile(editor);
-				});
-				document.getElementById('export-btn')?.addEventListener('click', () => {
-					ExportFileForJs(editor.getValue(), Date() + '_script.js');
-				});
-				document.getElementById('Ext-btn')?.addEventListener('click', () => {
-					showPluginManagerModal(editor);
-				});
-				document.getElementById('completer-store-btn')?.addEventListener('click', () => {
-					showCompleterStoreModal(editor);
-				});
-
-				// 文件按钮 - 使用右键菜单
-				const fileBtn = document.getElementById('file-btn');
-				if (fileBtn) {
-					fileBtn.addEventListener('click', (e) => {
-						e.preventDefault();
-						showFileContextMenu(e, editor);
+					// 按钮事件绑定
+					document.getElementById('SaveinLeft-btn')?.addEventListener('click', () => {
+						Code_SaveToBtnList(editor);
 					});
-				}
+					document.getElementById('run-btn').addEventListener('click', async () => {
+						const runBtn = document.getElementById('run-btn');
+						const editorDiv = document.getElementById('editor');
+						const previewContainer = document.getElementById('html-preview-container');
+						const previewFrame = document.getElementById('html-preview-frame');
 
-				// 设置按钮 - 使用模态框
-				const settingsBtn = document.getElementById('settings-btn');
-				if (settingsBtn) {
-					settingsBtn.addEventListener('click', () => {
-						showSettingsModal(editor, light_theme, dark_theme);
-					});
-				}
+						// 检查是否正在预览模式
+						if (previewContainer.classList.contains('active')) {
+							// 停止预览，返回编辑器
+							previewContainer.classList.remove('active');
+							editorDiv.style.display = 'block';
+							runBtn.textContent = '运行';
 
-				// 快捷键绑定 - 使用配置系统
-				(async function initKeyboardShortcuts() {
-					const shortcuts = await loadShortcuts();
-					const platform = getPlatform();
-
-					// 移除 ACE 编辑器的默认绑定
-					editor.commands.removeCommand('gotoline');
-					// 不移除 find 命令，保留 Ace 编辑器的查找和替换功能
-					// editor.commands.removeCommand('find');
-
-					// 格式化代码快捷键
-					const formatKey = shortcuts.format[platform].replace(/\+/g, '-');
-					editor.commands.addCommand({
-						name: 'formatCode',
-						bindKey: { win: shortcuts.format.win.replace(/\+/g, '-'), mac: shortcuts.format.mac.replace(/\+/g, '-') },
-						exec: function(editor) {
-							// 检查快捷键设置模态框是否打开
-							if (window.keyboardShortcutsModalOpen) return;
-							formatEditorCode(editor);
-						},
-					});
-
-					// 全局快捷键监听
-					document.addEventListener('keydown', function(e) {
-						// 如果快捷键设置模态框打开，禁用所有快捷键
-						if (window.keyboardShortcutsModalOpen) return;
-
-						// 查找和替换 - 让 Ace 编辑器处理
-						if (matchesShortcut(e, shortcuts.find[platform]) || matchesShortcut(e, shortcuts.replace[platform])) {
-							// 不阻止默认行为，让 Ace 编辑器的查找/替换功能处理
+							// 清理 iframe
+							previewFrame.src = 'about:blank';
 							return;
 						}
 
-						// 运行代码
-						if (matchesShortcut(e, shortcuts.run[platform])) {
-							e.preventDefault();
-							ACE_RunCode(editor);
-						}
-						// 保存代码
-						else if (matchesShortcut(e, shortcuts.save[platform])) {
-							e.preventDefault();
-							Code_SaveCode(editor);
-						}
-						// 导入文件
-						else if (matchesShortcut(e, shortcuts.import[platform])) {
-							e.preventDefault();
-							ImportFile(editor);
-						}
-						// 导出文件
-						else if (matchesShortcut(e, shortcuts.export[platform])) {
-							e.preventDefault();
-							ExportFileForJs(editor.getValue(), Date() + '_script.js');
-						}
-						// 加载代码
-						else if (matchesShortcut(e, shortcuts.load[platform])) {
-							e.preventDefault();
-							Code_OpenLoadWindow(editor);
-						}
-						// 删除代码
-						else if (matchesShortcut(e, shortcuts.delete[platform])) {
-							e.preventDefault();
-							Code_OpenDeleteWindow(editor);
-						}
-						// 保存到列表
-						else if (matchesShortcut(e, shortcuts.saveToList[platform])) {
-							e.preventDefault();
-							Code_SaveToBtnList(editor);
-						}
-						// 保存为插件
-						else if (matchesShortcut(e, shortcuts.saveAsPlugin[platform])) {
-							e.preventDefault();
-							ExtStore_SavePlugin(editor);
+						// 检查当前文件类型
+						if (window.projectManager && window.projectManager.currentFile) {
+							const fileName = window.projectManager.currentFile;
+							const ext = fileName.split('.').pop().toLowerCase();
+
+							if (ext === 'html') {
+								// HTML 文件：在编辑器位置预览（内联项目中引用的 JS/CSS）
+								const currentFile = window.projectManager.currentProject?.files?.find(
+									f => f.fileName === fileName
+								);
+								const rawContent = editor.getValue();
+								const content = (currentFile && window.htmlRenderer) ?
+									window.htmlRenderer.buildHTMLContent({ ...currentFile, content: rawContent },
+										window.projectManager
+									) :
+									rawContent;
+								const blob = new Blob([content], { type: 'text/html' });
+								const url = URL.createObjectURL(blob);
+
+								previewFrame.src = url;
+								editorDiv.style.display = 'none';
+								previewContainer.classList.add('active');
+								runBtn.textContent = '停止';
+
+								eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
+
+								// 清理旧的 URL
+								previewFrame.addEventListener('load', () => {
+									URL.revokeObjectURL(url);
+								}, { once: true });
+							} else {
+								// 其他文件：运行 JS
+								ACE_RunCode(editor);
+							}
+						} else {
+							// 没有项目时，检测内容类型
+							const content = editor.getValue().trim();
+							// 检测是否为 HTML：必须在开头附近找到 DOCTYPE 或 <html 标签
+							const isHTML = /^\s*<!DOCTYPE\s+html/i.test(content) ||
+								/^\s*<html[\s>]/i.test(content) ||
+								(/<!DOCTYPE\s+html/i.test(content.substring(0, 200)) &&
+									/<html[\s>]/i.test(content.substring(0, 500)));
+
+							if (isHTML) {
+								// 内容是 HTML：在编辑器位置预览
+								// 检查是否有外部脚本引用
+								if (/<script[^>]+src=/i.test(content)) {
+									eda.sys_Message.showToastMessage(
+										'检测到外部脚本引用，但未在项目中。外部脚本将无法加载，请创建项目或内联脚本。',
+										'warn',
+										4
+									);
+								}
+
+								const blob = new Blob([content], { type: 'text/html' });
+								const url = URL.createObjectURL(blob);
+
+								previewFrame.src = url;
+								editorDiv.style.display = 'none';
+								previewContainer.classList.add('active');
+								runBtn.textContent = '停止';
+
+								eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
+
+								// 清理旧的 URL
+								previewFrame.addEventListener('load', () => {
+									URL.revokeObjectURL(url);
+								}, { once: true });
+							} else {
+								// 其他内容：运行 JS
+								ACE_RunCode(editor);
+							}
 						}
 					});
-				})();
-			</script>
-	</body>
+					document.getElementById('ai-btn').addEventListener('click', () => {
+						SetVibeCodingConfig();
+					});
+					document.getElementById('save-btn')?.addEventListener('click', () => {
+						Code_SaveCode(editor);
+					});
+					document.getElementById('load-btn')?.addEventListener('click', () => {
+						Code_OpenLoadWindow(editor);
+					});
+					document.getElementById('theme-btn')?.addEventListener('click', () => {
+						SetTheme(editor, light_theme, dark_theme);
+					});
+					document.getElementById('delete-btn')?.addEventListener('click', () => {
+						eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
+						Code_OpenDeleteWindow(editor);
+					});
+					document.getElementById('import-btn')?.addEventListener('click', () => {
+						ImportFile(editor);
+					});
+					document.getElementById('export-btn')?.addEventListener('click', () => {
+						ExportFileForJs(editor.getValue(), Date() + '_script.js');
+					});
+					document.getElementById('Ext-btn')?.addEventListener('click', () => {
+						showPluginManagerModal(editor);
+					});
+					document.getElementById('completer-store-btn')?.addEventListener('click', () => {
+						showCompleterStoreModal(editor);
+					});
+
+					// 文件按钮 - 使用右键菜单
+					const fileBtn = document.getElementById('file-btn');
+					if (fileBtn) {
+						fileBtn.addEventListener('click', (e) => {
+							e.preventDefault();
+							showFileContextMenu(e, editor);
+						});
+					}
+
+					// 设置按钮 - 使用模态框
+					const settingsBtn = document.getElementById('settings-btn');
+					if (settingsBtn) {
+						settingsBtn.addEventListener('click', () => {
+							showSettingsModal(editor, light_theme, dark_theme);
+						});
+					}
+
+					// 快捷键绑定 - 使用配置系统
+					(async function initKeyboardShortcuts() {
+						const shortcuts = await loadShortcuts();
+						const platform = getPlatform();
+
+						// 移除 ACE 编辑器的默认绑定
+						editor.commands.removeCommand('gotoline');
+						// 不移除 find 命令，保留 Ace 编辑器的查找和替换功能
+						// editor.commands.removeCommand('find');
+
+						// 格式化代码快捷键
+						const formatKey = shortcuts.format[platform].replace(/\+/g, '-');
+						editor.commands.addCommand({
+							name: 'formatCode',
+							bindKey: { win: shortcuts.format.win.replace(/\+/g, '-'), mac: shortcuts.format.mac.replace(/\+/g, '-') },
+							exec: function(editor) {
+								// 检查快捷键设置模态框是否打开
+								if (window.keyboardShortcutsModalOpen) return;
+								formatEditorCode(editor);
+							},
+						});
+
+						// 全局快捷键监听
+						document.addEventListener('keydown', function(e) {
+							// 如果快捷键设置模态框打开，禁用所有快捷键
+							if (window.keyboardShortcutsModalOpen) return;
+
+							// 查找和替换 - 让 Ace 编辑器处理
+							if (matchesShortcut(e, shortcuts.find[platform]) || matchesShortcut(e, shortcuts.replace[platform])) {
+								// 不阻止默认行为，让 Ace 编辑器的查找/替换功能处理
+								return;
+							}
+
+							// 运行代码
+							if (matchesShortcut(e, shortcuts.run[platform])) {
+								e.preventDefault();
+								ACE_RunCode(editor);
+							}
+							// 保存代码
+							else if (matchesShortcut(e, shortcuts.save[platform])) {
+								e.preventDefault();
+								Code_SaveCode(editor);
+							}
+							// 导入文件
+							else if (matchesShortcut(e, shortcuts.import[platform])) {
+								e.preventDefault();
+								ImportFile(editor);
+							}
+							// 导出文件
+							else if (matchesShortcut(e, shortcuts.export[platform])) {
+								e.preventDefault();
+								ExportFileForJs(editor.getValue(), Date() + '_script.js');
+							}
+							// 加载代码
+							else if (matchesShortcut(e, shortcuts.load[platform])) {
+								e.preventDefault();
+								Code_OpenLoadWindow(editor);
+							}
+							// 删除代码
+							else if (matchesShortcut(e, shortcuts.delete[platform])) {
+								e.preventDefault();
+								Code_OpenDeleteWindow(editor);
+							}
+							// 保存到列表
+							else if (matchesShortcut(e, shortcuts.saveToList[platform])) {
+								e.preventDefault();
+								Code_SaveToBtnList(editor);
+							}
+							// 保存为插件
+							else if (matchesShortcut(e, shortcuts.saveAsPlugin[platform])) {
+								e.preventDefault();
+								ExtStore_SavePlugin(editor);
+							}
+						});
+					})();
+				</script>
 </html>
