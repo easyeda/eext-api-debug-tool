@@ -32,6 +32,10 @@ function showFileContextMenu(e, editor) {
 	`;
 
 	const menuItems = [
+		{ text: '新建项目', action: () => showNewProjectDialog(editor) },
+		{ text: '打开项目', action: () => showOpenProjectDialog(editor) },
+		{ text: '删除项目', action: () => showDeleteProjectDialog(editor) },
+		{ text: '---', action: null },
 		{ text: '导入', action: () => ImportFile(editor) },
 		{ text: '导出', action: () => ExportFileForJs(editor.getValue(), Date() + '_script.js') },
 		{ text: '加载', action: () => Code_OpenLoadWindow(editor) },
@@ -48,6 +52,12 @@ function showFileContextMenu(e, editor) {
 
 	menu.innerHTML = '';
 	menuItems.forEach((item) => {
+		if (item.text === '---') {
+			const separator = document.createElement('div');
+			separator.style.cssText = `height:1px;background:${menuBorder};margin:4px 0;`;
+			menu.appendChild(separator);
+			return;
+		}
 		const menuItem = document.createElement('div');
 		menuItem.textContent = item.text;
 		menuItem.style.cssText = `padding:8px 16px;cursor:pointer;color:${textColor};user-select:none;transition:background 0.2s;`;
@@ -55,7 +65,7 @@ function showFileContextMenu(e, editor) {
 		menuItem.onmouseleave = () => (menuItem.style.backgroundColor = '');
 		menuItem.onclick = () => {
 			menu.style.display = 'none';
-			item.action();
+			if (item.action) item.action();
 		};
 		menu.appendChild(menuItem);
 	});
@@ -534,4 +544,210 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		}
 	};
 	document.addEventListener('keydown', escHandler);
+}
+
+/**
+ * 显示新建项目对话框
+ */
+async function showNewProjectDialog(editor) {
+	const result = await Swal.fire({
+		title: '新建项目',
+		input: 'text',
+		inputLabel: '项目名称',
+		inputPlaceholder: '例如: MyProject',
+		showCancelButton: true,
+		confirmButtonText: '创建',
+		cancelButtonText: '取消',
+		inputValidator: (value) => {
+			if (!value) return '请输入项目名称';
+			if (value.length < 2) return '项目名称至少2个字符';
+		},
+	});
+
+	if (result.isConfirmed) {
+		try {
+			const project = await window.projectManager.createProject(result.value);
+			window.fileTreeUI = new FileTreeUI('file-tree', editor);
+			await window.fileTreeUI.render();
+
+			// 初始化项目补全器
+			if (window.projectCompleter) {
+				window.projectCompleter.clear();
+				window.projectCompleter.updateFiles();
+			}
+
+			if (project.files.length > 0) {
+				const firstFile = project.files[0];
+				editor.setValue(firstFile.content, -1);
+				window.projectManager.currentFile = firstFile.fileName;
+			}
+
+			// 刷新左侧导航面板并切换到项目设计视图
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadProjectList();
+				window.leftNavPanel.switchView('project-design');
+			}
+
+			eda.sys_Message.showToastMessage('项目创建成功', 'success', 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage('项目创建失败: ' + error.message, 'error', 3);
+		}
+	}
+}
+
+/**
+ * 显示打开项目对话框
+ */
+async function showOpenProjectDialog(editor) {
+	try {
+		const projects = await window.projectManager.getAllProjects();
+
+		if (projects.length === 0) {
+			eda.sys_Message.showToastMessage('没有可用的项目，请先创建一个', 'info', 2);
+			return;
+		}
+
+		const options = {};
+		projects.forEach((p) => {
+			const date = new Date(p.updatedAt).toLocaleString('zh-CN');
+			options[p.id] = `${p.projectName} (${p.files.length} 文件, 更新于 ${date})`;
+		});
+
+		const result = await Swal.fire({
+			title: '打开项目',
+			input: 'select',
+			inputOptions: options,
+			inputPlaceholder: '选择一个项目',
+			showCancelButton: true,
+			confirmButtonText: '打开',
+			cancelButtonText: '取消',
+			inputValidator: (value) => {
+				if (!value) return '请选择一个项目';
+			},
+		});
+
+		if (result.isConfirmed) {
+			// 保存当前文件
+			if (window.projectManager.currentFile) {
+				await window.projectManager.saveFileContent(window.projectManager.currentFile, editor.getValue());
+			}
+
+			// 清除旧项目的补全器
+			if (window.projectCompleter) {
+				window.projectCompleter.clear();
+			}
+
+			// 加载新项目
+			const project = await window.projectManager.loadProject(parseInt(result.value));
+			window.fileTreeUI = new FileTreeUI('file-tree', editor);
+			await window.fileTreeUI.render();
+
+			// 更新项目补全器
+			if (window.projectCompleter) {
+				window.projectCompleter.updateFiles();
+			}
+
+			if (project.files.length > 0) {
+				const firstFile = project.files[0];
+				editor.setValue(firstFile.content, -1);
+				window.projectManager.currentFile = firstFile.fileName;
+			}
+
+			// 刷新左侧导航面板并切换到项目设计视图
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadProjectList();
+				window.leftNavPanel.switchView('project-design');
+			}
+
+			eda.sys_Message.showToastMessage('项目加载成功', 'success', 2);
+		}
+	} catch (error) {
+		eda.sys_Message.showToastMessage('项目加载失败: ' + error.message, 'error', 3);
+	}
+}
+
+/**
+ * 显示删除项目对话框
+ */
+async function showDeleteProjectDialog(editor) {
+	try {
+		const projects = await window.projectManager.getAllProjects();
+
+		if (projects.length === 0) {
+			eda.sys_Message.showToastMessage('没有可用的项目', 'info', 2);
+			return;
+		}
+
+		const options = {};
+		projects.forEach((p) => {
+			const date = new Date(p.updatedAt).toLocaleString('zh-CN');
+			options[p.id] = `${p.projectName} (${p.files.length} 文件, 更新于 ${date})`;
+		});
+
+		const result = await Swal.fire({
+			title: '删除项目',
+			input: 'select',
+			inputOptions: options,
+			inputPlaceholder: '选择要删除的项目',
+			showCancelButton: true,
+			confirmButtonText: '删除',
+			cancelButtonText: '取消',
+			confirmButtonColor: '#d33',
+			inputValidator: (value) => {
+				if (!value) return '请选择一个项目';
+			},
+		});
+
+		if (result.isConfirmed) {
+			const projectId = parseInt(result.value);
+			const project = projects.find((p) => p.id === projectId);
+
+			// 二次确认
+			const confirmResult = await Swal.fire({
+				title: '确认删除',
+				html: `确定要删除项目 "<strong>${project.projectName}</strong>" 吗？<br><br>这将删除项目中的 <strong>${project.files.length}</strong> 个文件。<br><br><span style="color: #d33;">此操作不可恢复！</span>`,
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonText: '确认删除',
+				cancelButtonText: '取消',
+				confirmButtonColor: '#d33',
+			});
+
+			if (confirmResult.isConfirmed) {
+				// 删除项目
+				await window.projectManager.deleteProject(projectId);
+
+				// 如果删除的是当前项目，清空编辑器和文件树
+				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
+					window.projectManager.currentProject = null;
+					window.projectManager.currentFile = null;
+					editor.setValue('', -1);
+
+					// 清除项目补全器
+					if (window.projectCompleter) {
+						window.projectCompleter.clear();
+					}
+
+					// 重新渲染文件树
+					if (window.fileTreeUI) {
+						await window.fileTreeUI.render();
+					}
+
+					// 切换到所有项目视图
+					if (window.leftNavPanel) {
+						window.leftNavPanel.switchView('all-projects');
+					}
+				}
+
+				// 刷新左侧导航面板
+				if (window.leftNavPanel) {
+					await window.leftNavPanel.loadProjectList();
+				}
+
+				eda.sys_Message.showToastMessage('项目删除成功', 'success', 2);
+			}
+		}
+	} catch (error) {
+		eda.sys_Message.showToastMessage('项目删除失败: ' + error.message, 'error', 3);
+	}
 }

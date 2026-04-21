@@ -35,10 +35,14 @@ async function GetTheme(editor, light_theme, dark_theme) {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
 		editor.setTheme('ace/theme/github');
+		document.body.classList.remove('dark-theme');
+		document.body.classList.add('light-theme');
 	} else {
 		light_theme.disabled = true;
 		dark_theme.disabled = false;
 		editor.setTheme('ace/theme/monokai');
+		document.body.classList.remove('light-theme');
+		document.body.classList.add('dark-theme');
 	}
 	// console.log('当前主题', theme);
 }
@@ -52,13 +56,24 @@ async function SetTheme(editor, light_theme, dark_theme) {
 		editor.setTheme('ace/theme/monokai');
 		await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
 		theme = 'dark';
+		// 先切换关键可见区域的类名，让 CSS 立即生效
+		document.body.classList.remove('light-theme');
+		document.body.classList.add('dark-theme');
 	} else {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
 		editor.setTheme('ace/theme/github');
 		await eda.sys_Storage.setExtensionUserConfig('theme', 'light');
 		theme = 'light';
+		document.body.classList.remove('dark-theme');
+		document.body.classList.add('light-theme');
 	}
+
+	// 刷新文件树主题
+	if (window.fileTreeUI) {
+		window.fileTreeUI.applyTheme();
+	}
+
 	await eda.sys_Message.showToastMessage('当前主题已切换为' + theme, 'info', 1);
 	return theme;
 }
@@ -1450,6 +1465,12 @@ async function UserCompleter_Add(editor, lineText) {
 
 		// 立即注册到编辑器
 		_registerUserCompleters(editor, [record]);
+
+		// 刷新左侧导航面板的常用代码视图
+		if (window.leftNavPanel) {
+			await window.leftNavPanel.loadCompleterStore();
+		}
+
 		_toast(`已添加补全: ${parsed.caption}`, 'success', 2);
 	} catch (err) {
 		console.error('添加自定义补全失败:', err);

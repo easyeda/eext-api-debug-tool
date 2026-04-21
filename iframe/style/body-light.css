@@ -13,62 +13,46 @@ body {
 
 #app {
 	display: flex;
+	flex-direction: column;
 	height: 100vh;
 }
 
-/* 左侧侧边栏 —— 浅色，隐藏滚动条 */
-#sidebar {
-	width: 120px;
+/* 顶部工具栏 */
+#toolbar {
+	height: 48px;
 	background: #f6f8fa;
-	color: #24292f;
+	border-bottom: 1px solid #d0d7de;
 	display: flex;
-	flex-direction: column;
 	align-items: center;
-	padding-top: 16px;
-	border-right: 1px solid #d0d7de;
-	overflow-y: auto;
-
-	/* 隐藏滚动条 */
-	scrollbar-width: none; /* Firefox */
-	-ms-overflow-style: none; /* IE/Edge */
+	padding: 0 12px;
+	gap: 8px;
+	flex-shrink: 0;
 }
 
-#sidebar::-webkit-scrollbar {
-	display: none; /* WebKit */
-}
-
-/* 列表与按钮 */
-#sidebar ul {
-	list-style: none;
-	width: 100%;
-	padding: 0;
-}
-
-#sidebar li {
-	width: 100%;
-	display: flex;
-	justify-content: center;
-	padding: 8px 0;
-	position: relative;
-}
-
-#sidebar button {
-	width: 80px;
-	height: 36px;
-	background: #5588ff;
-	color: #ffffff;
+#toolbar button {
+	height: 32px;
+	padding: 0 16px;
+	background: #ffffff;
+	color: #24292f;
 	border: 1px solid #d0d7de;
-	border-radius: 4px;
+	border-radius: 6px;
 	font-size: 14px;
 	cursor: pointer;
-	transition:
-		background 0.2s,
-		border-color 0.2s;
+	transition: all 0.2s;
+	font-weight: 500;
 }
 
-#sidebar button:hover {
-	background: #eaeef5;
-	border-color: #8c959e;
+#toolbar button:hover {
+	background: #f6f8fa;
+	border-color: #0969da;
+	color: #0969da;
+}
+
+/* 主内容区 */
+#main-content {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
 }
 
 /* 下拉菜单容器 */
@@ -128,20 +112,50 @@ body {
 	width: 100%;
 }
 
-/* 隐藏 Ace 编辑器滚动条 */
-#editor .ace_scrollbar {
-	opacity: 0 !important;
-	pointer-events: none !important;
+/* === Ace 编辑器滚动条样式 - 亮色主题 === */
+#editor .ace_scrollbar-v {
+	opacity: 1 !important;
+	pointer-events: auto !important;
+	width: 12px !important;
+	background: #f6f8fa !important;
+	right: 0 !important;
 }
-#editor,
-#editor .ace_scroller {
-	scrollbar-width: none !important;
-	-ms-overflow-style: none !important;
+
+#editor .ace_scrollbar-v .ace_scrollbar-inner {
+	background: #c1c1c1 !important;
+	border-radius: 6px !important;
+	margin: 2px !important;
+	width: 8px !important;
+	transition: background 0.2s ease;
 }
-#editor::-webkit-scrollbar,
-#editor .ace_scroller::-webkit-scrollbar,
-#editor .ace_scrollbar::-webkit-scrollbar {
+
+#editor .ace_scrollbar-v:hover .ace_scrollbar-inner {
+	background: #0969da !important;
+}
+
+/* 隐藏水平滚动条 */
+#editor .ace_scrollbar-h {
 	display: none !important;
+}
+
+/* HTML 预览容器 */
+#html-preview-container {
+	display: none;
+	width: 100%;
+	height: 100%;
+	position: relative;
+	background: #ffffff;
+}
+
+#html-preview-container.active {
+	display: block;
+}
+
+#html-preview-frame {
+	width: 100%;
+	height: 100%;
+	border: none;
+	background: #ffffff;
 }
 
 /* --- 代码加载窗 --- */

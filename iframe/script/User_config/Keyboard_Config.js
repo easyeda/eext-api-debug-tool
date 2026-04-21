@@ -8,6 +8,8 @@ const DEFAULT_SHORTCUTS = {
 	run: { win: 'Ctrl+Enter', mac: 'Command+Enter', description: '运行代码' },
 	save: { win: 'Ctrl+S', mac: 'Command+S', description: '保存代码' },
 	format: { win: 'Ctrl+K', mac: 'Command+K', description: '格式化代码' },
+	find: { win: 'Ctrl+F', mac: 'Command+F', description: '查找' },
+	replace: { win: 'Ctrl+H', mac: 'Command+H', description: '替换' },
 	import: { win: 'Ctrl+O', mac: 'Command+O', description: '导入文件' },
 	export: { win: 'Ctrl+E', mac: 'Command+E', description: '导出文件' },
 	load: { win: 'Ctrl+L', mac: 'Command+L', description: '加载代码' },

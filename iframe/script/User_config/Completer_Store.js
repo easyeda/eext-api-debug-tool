@@ -36,6 +36,12 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 			await _clearAllCompleters();
 			_removeUserCompleterFromEditor(editor);
 			await renderList(listEl);
+
+			// 刷新左侧导航面板的常用代码视图
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadCompleterStore();
+			}
+
 			_toast('已清空所有自定义补全', 'success', 2);
 		} catch (err) {
 			_toast('清空失败: ' + err.message, 'error', 2);
@@ -184,6 +190,12 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 			});
 			if (all.length > 0) _registerUserCompleters(editor, all);
 			await renderList(listEl);
+
+			// 刷新左侧导航面板的常用代码视图
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadCompleterStore();
+			}
+
 			_toast('已删除: ' + rec.caption, 'success', 2);
 		} catch (err) {
 			_toast('删除失败: ' + err.message, 'error', 2);
@@ -286,6 +298,12 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 			});
 			if (all.length > 0) _registerUserCompleters(editor, all);
 			await renderList(listEl);
+
+			// 刷新左侧导航面板的常用代码视图
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadCompleterStore();
+			}
+
 			_toast('已更新: ' + newCaption, 'success', 2);
 		} catch (err) {
 			_toast('更新失败: ' + err.message, 'error', 2);
