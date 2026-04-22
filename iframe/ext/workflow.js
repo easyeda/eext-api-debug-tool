@@ -18,6 +18,7 @@ const state = {
     nextId: 1,
     editingBlock: null,
     mouse: { x: 0, y: 0, wx: 0, wy: 0 },
+    placingBlock: null,
 };
 
 const PORT_RADIUS = 8;
@@ -133,6 +134,73 @@ function portDesc(port) {
     return typeof port === 'string' ? '' : (port.description || '');
 }
 
+function truncateText(text, maxWidth) {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    const ellipsis = '...';
+    const ellipsisW = ctx.measureText(ellipsis).width;
+    let end = text.length;
+    while (end > 0 && ctx.measureText(text.slice(0, end)).width + ellipsisW > maxWidth) end--;
+    return text.slice(0, end) + ellipsis;
+}
+
+const portTooltip = document.createElement('div');
+portTooltip.style.cssText = 'position:fixed;background:#1e1f1c;color:#f8f8f2;border:1px solid #49483e;border-radius:4px;padding:6px 10px;font:12px sans-serif;max-width:360px;word-wrap:break-word;pointer-events:none;z-index:9999;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.5);';
+document.body.appendChild(portTooltip);
+
+function findTruncatedPortText(wx, wy) {
+    for (let bi = state.blocks.length - 1; bi >= 0; bi--) {
+        const block = state.blocks[bi];
+        const halfW = block.w / 2 - PORT_RADIUS - 10;
+        const lp = unrotatePoint(wx, wy, block);
+        const hasDesc = block.description && block.description.length > 0;
+        const descOffset = hasDesc ? BLOCK_DESC_H : 0;
+        const startY = BLOCK_HEADER_H + descOffset + 12;
+
+        for (let i = 0; i < block.inputs.length; i++) {
+            const py = block.y + startY + i * BLOCK_PORT_H + BLOCK_PORT_H / 2;
+            const left = block.x + PORT_RADIUS + 6;
+
+            ctx.font = '11px sans-serif';
+            const name = portName(block.inputs[i]);
+            if (ctx.measureText(name).width > halfW &&
+                lp.x >= left && lp.x <= left + halfW && lp.y >= py - 14 && lp.y <= py) {
+                return name;
+            }
+
+            const desc = portDesc(block.inputs[i]);
+            if (desc) {
+                ctx.font = '9px sans-serif';
+                if (ctx.measureText(desc).width > halfW &&
+                    lp.x >= left && lp.x <= left + halfW && lp.y >= py && lp.y <= py + 14) {
+                    return desc;
+                }
+            }
+        }
+
+        for (let i = 0; i < block.outputs.length; i++) {
+            const py = block.y + startY + i * BLOCK_PORT_H + BLOCK_PORT_H / 2;
+            const right = block.x + block.w - PORT_RADIUS - 6;
+
+            ctx.font = '11px sans-serif';
+            const name = portName(block.outputs[i]);
+            if (ctx.measureText(name).width > halfW &&
+                lp.x >= right - halfW && lp.x <= right && lp.y >= py - 14 && lp.y <= py) {
+                return name;
+            }
+
+            const desc = portDesc(block.outputs[i]);
+            if (desc) {
+                ctx.font = '9px sans-serif';
+                if (ctx.measureText(desc).width > halfW &&
+                    lp.x >= right - halfW && lp.x <= right && lp.y >= py && lp.y <= py + 14) {
+                    return desc;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 function screenToWorld(sx, sy) {
     return {
         x: (sx - state.camera.x) / state.camera.scale,
@@ -146,13 +214,37 @@ function getBlockHeight(block) {
     return BLOCK_HEADER_H + Math.max(ports, 1) * BLOCK_PORT_H + 12 + (hasDesc ? BLOCK_DESC_H : 0);
 }
 
+function getBlockCenter(block) {
+    const h = getBlockHeight(block);
+    return { x: block.x + block.w / 2, y: block.y + h / 2 };
+}
+
+function rotatePoint(px, py, cx, cy, angle) {
+    const rad = angle * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const dx = px - cx;
+    const dy = py - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+}
+
+function unrotatePoint(px, py, block) {
+    const rot = block.rotation || 0;
+    if (rot === 0) return { x: px, y: py };
+    const c = getBlockCenter(block);
+    return rotatePoint(px, py, c.x, c.y, -rot);
+}
+
 function getPortPos(block, side, index) {
     const hasDesc = block.description && block.description.length > 0;
     const descOffset = hasDesc ? BLOCK_DESC_H : 0;
     const startY = BLOCK_HEADER_H + descOffset + 12;
     const py = block.y + startY + index * BLOCK_PORT_H + BLOCK_PORT_H / 2;
     const px = side === 'input' ? block.x : block.x + block.w;
-    return { x: px, y: py };
+    const rot = block.rotation || 0;
+    if (rot === 0) return { x: px, y: py };
+    const c = getBlockCenter(block);
+    return rotatePoint(px, py, c.x, c.y, rot);
 }
 
 function hitTestPort(mx, my) {
@@ -177,7 +269,8 @@ function hitTestBlock(mx, my) {
     for (let i = state.blocks.length - 1; i >= 0; i--) {
         const b = state.blocks[i];
         const h = getBlockHeight(b);
-        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + h) {
+        const lp = unrotatePoint(mx, my, b);
+        if (lp.x >= b.x && lp.x <= b.x + b.w && lp.y >= b.y && lp.y <= b.y + h) {
             return b;
         }
     }
@@ -185,9 +278,10 @@ function hitTestBlock(mx, my) {
 }
 
 function hitTestDeleteBtn(mx, my, block) {
+    const lp = unrotatePoint(mx, my, block);
     const bx = block.x + block.w - 24;
     const by = block.y + 8;
-    return mx >= bx && mx <= bx + 20 && my >= by && my <= by + 20;
+    return lp.x >= bx && lp.x <= bx + 20 && lp.y >= by && lp.y <= by + 20;
 }
 
 function measureBlockWidth(block) {
@@ -245,6 +339,7 @@ function addBlock(type) {
         code: def.code,
         description: def.description || '',
         value: def.value !== undefined ? def.value : undefined,
+        rotation: 0,
     };
     block.w = measureBlockWidth(block);
     state.blocks.push(block);
@@ -268,6 +363,7 @@ function copyBlock(blockId) {
         code: original.code,
         description: original.description || '',
         value: original.value !== undefined ? original.value : undefined,
+        rotation: original.rotation || 0,
     };
     block.w = measureBlockWidth(block);
     state.blocks.push(block);
@@ -278,6 +374,76 @@ function removeBlock(blockId) {
     state.blocks = state.blocks.filter((b) => b.id !== blockId);
     state.connections = state.connections.filter((c) => c.fromId !== blockId && c.toId !== blockId);
     if (state.selected === blockId) state.selected = null;
+}
+
+function createBlockFromMethod(methodPath, edcodeItem) {
+    const blockId = methodPath.replace(/\./g, '_');
+
+    if (!BLOCK_DEFS[blockId]) {
+        const parts = methodPath.split('.');
+        const category = parts[1] || 'custom';
+        const methodName = parts.slice(2).join('.') || methodPath;
+        const params = (edcodeItem && edcodeItem.parameters) || [];
+        const hasReturn = edcodeItem && edcodeItem.returns && edcodeItem.returns !== 'void';
+
+        BLOCK_DEFS[blockId] = {
+            title: methodName,
+            fullPath: methodPath,
+            color: getCategoryColor(category),
+            inputs: params.map(p => ({ name: p.name, description: p.description || '' })),
+            outputs: hasReturn ? [{ name: 'result', description: edcodeItem.returns || '' }] : [],
+            code: generateBlockCode(methodPath, params.map(p => p.name), hasReturn),
+            category: category,
+            description: (edcodeItem && edcodeItem.description) || ''
+        };
+
+        if (!BLOCK_CATEGORIES[category]) BLOCK_CATEGORIES[category] = [];
+        if (!BLOCK_CATEGORIES[category].includes(blockId)) BLOCK_CATEGORIES[category].push(blockId);
+    }
+
+    startBlockPlacement(blockId);
+}
+
+function startBlockPlacement(blockId) {
+    const def = BLOCK_DEFS[blockId];
+    if (!def) return;
+
+    if (state.placingBlock) state.placingBlock = null;
+
+    const block = {
+        id: -1,
+        type: blockId,
+        title: def.title,
+        color: def.color,
+        x: state.mouse.wx - BLOCK_MIN_W / 2,
+        y: state.mouse.wy - 20,
+        w: BLOCK_MIN_W,
+        inputs: [...def.inputs],
+        outputs: [...def.outputs],
+        code: def.code,
+        description: def.description || '',
+        value: def.value !== undefined ? def.value : undefined,
+        rotation: 0,
+    };
+    block.w = measureBlockWidth(block);
+
+    state.placingBlock = block;
+    canvas.style.cursor = 'crosshair';
+}
+
+function finalizePlacement() {
+    if (!state.placingBlock) return;
+    const block = state.placingBlock;
+    block.id = state.nextId++;
+    state.blocks.push(block);
+    state.selected = block.id;
+    state.placingBlock = null;
+    canvas.style.cursor = 'default';
+}
+
+function cancelPlacement() {
+    state.placingBlock = null;
+    canvas.style.cursor = 'default';
 }
 
 function roundedRect(x, y, w, h, r) {
@@ -328,8 +494,18 @@ function drawBlock(block) {
     const hasDesc = block.description && block.description.length > 0;
     const isVariable = block.type === 'variable';
     const hasValue = isVariable && block.value !== undefined && block.value !== null;
+    const rot = block.rotation || 0;
 
     ctx.save();
+
+    // Apply rotation transform
+    if (rot !== 0) {
+        const c = getBlockCenter(block);
+        ctx.translate(c.x, c.y);
+        ctx.rotate(rot * Math.PI / 180);
+        ctx.translate(-c.x, -c.y);
+    }
+
     roundedRect(block.x, block.y, block.w, h, 8);
     ctx.fillStyle = '#2d2e27';
     ctx.fill();
@@ -377,7 +553,16 @@ function drawBlock(block) {
         contentY += 16;
     }
 
+    const halfW = block.w / 2 - PORT_RADIUS - 10;
+
+    // Restore to unrotated canvas state before drawing ports
+    // Ports are drawn at world-space positions (getPortPos handles rotation)
+    // so text labels stay upright regardless of block rotation
+    ctx.restore();
+    ctx.save();
+
     ctx.font = '11px sans-serif';
+    ctx.textBaseline = 'middle';
     for (let i = 0; i < block.inputs.length; i++) {
         const p = getPortPos(block, 'input', i);
         const inputName = portName(block.inputs[i]);
@@ -392,13 +577,12 @@ function drawBlock(block) {
         ctx.stroke();
         ctx.fillStyle = '#f8f8f2';
         ctx.textAlign = 'left';
-        ctx.fillText(inputName, p.x + PORT_RADIUS + 6, p.y - 6);
+        ctx.fillText(truncateText(inputName, halfW), p.x + PORT_RADIUS + 6, p.y - 6);
 
-        // Show complete parameter description
         if (inputDesc) {
             ctx.fillStyle = '#75715e';
             ctx.font = '9px sans-serif';
-            ctx.fillText(inputDesc, p.x + PORT_RADIUS + 6, p.y + 6);
+            ctx.fillText(truncateText(inputDesc, halfW), p.x + PORT_RADIUS + 6, p.y + 6);
             ctx.font = '11px sans-serif';
         }
     }
@@ -417,12 +601,12 @@ function drawBlock(block) {
         ctx.stroke();
         ctx.fillStyle = '#f8f8f2';
         ctx.textAlign = 'right';
-        ctx.fillText(outputName, p.x - PORT_RADIUS - 6, p.y - 6);
+        ctx.fillText(truncateText(outputName, halfW), p.x - PORT_RADIUS - 6, p.y - 6);
 
         if (outputDesc) {
             ctx.fillStyle = '#75715e';
             ctx.font = '9px sans-serif';
-            ctx.fillText(outputDesc, p.x - PORT_RADIUS - 6, p.y + 6);
+            ctx.fillText(truncateText(outputDesc, halfW), p.x - PORT_RADIUS - 6, p.y + 6);
             ctx.font = '11px sans-serif';
         }
     }
@@ -459,6 +643,12 @@ function render() {
 
     for (const b of state.blocks) drawBlock(b);
 
+    if (state.placingBlock) {
+        ctx.globalAlpha = 0.6;
+        drawBlock(state.placingBlock);
+        ctx.globalAlpha = 1;
+    }
+
     ctx.restore();
     requestAnimationFrame(render);
 }
@@ -468,6 +658,7 @@ function resize() {
     canvas.height = canvas.clientHeight;
 }
 window.addEventListener('resize', resize);
+canvas.addEventListener('mouseleave', () => { portTooltip.style.display = 'none'; });
 resize();
 
 canvas.addEventListener('contextmenu', (e) => {
@@ -479,6 +670,11 @@ canvas.addEventListener('mousedown', (e) => {
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const w = screenToWorld(sx, sy);
+
+    if (state.placingBlock && e.button === 0) {
+        finalizePlacement();
+        return;
+    }
 
     if (e.button === 1 || e.button === 2 || (e.button === 0 && state.spaceDown)) {
         state.panning = true;
@@ -523,6 +719,7 @@ canvas.addEventListener('mousemove', (e) => {
     if (state.panning) {
         state.camera.x = sx - state.panStart.x;
         state.camera.y = sy - state.panStart.y;
+        portTooltip.style.display = 'none';
         return;
     }
 
@@ -532,6 +729,26 @@ canvas.addEventListener('mousemove', (e) => {
             block.x = w.x - state.dragging.offsetX;
             block.y = w.y - state.dragging.offsetY;
         }
+        portTooltip.style.display = 'none';
+        return;
+    }
+
+    if (state.placingBlock) {
+        state.placingBlock.x = w.x - state.placingBlock.w / 2;
+        state.placingBlock.y = w.y - getBlockHeight(state.placingBlock) / 2;
+        portTooltip.style.display = 'none';
+        return;
+    }
+
+    // Show tooltip for truncated port text
+    const fullText = findTruncatedPortText(w.x, w.y);
+    if (fullText) {
+        portTooltip.textContent = fullText;
+        portTooltip.style.display = 'block';
+        portTooltip.style.left = (e.clientX + 12) + 'px';
+        portTooltip.style.top = (e.clientY + 12) + 'px';
+    } else {
+        portTooltip.style.display = 'none';
     }
 });
 
@@ -590,10 +807,21 @@ canvas.addEventListener('dblclick', (e) => {
 });
 
 window.addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && state.placingBlock) {
+        cancelPlacement();
+        return;
+    }
     if (e.code === 'Space' && !state.editingBlock) {
-        state.spaceDown = true;
-        canvas.style.cursor = 'grab';
         e.preventDefault();
+        if (state.selected) {
+            const block = state.blocks.find(b => b.id === state.selected);
+            if (block) {
+                block.rotation = ((block.rotation || 0) + 90) % 360;
+            }
+        } else {
+            state.spaceDown = true;
+            canvas.style.cursor = 'grab';
+        }
     }
     if (e.code === 'Delete' && state.selected && !state.editingBlock) {
         removeBlock(state.selected);
@@ -1386,7 +1614,8 @@ document.getElementById('export').addEventListener('click', () => {
             outputs: b.outputs,
             code: b.code,
             description: b.description,
-            value: b.value
+            value: b.value,
+            rotation: b.rotation || 0
         })),
         connections: state.connections,
         nextId: state.nextId
@@ -1460,3 +1689,38 @@ document.getElementById('import').addEventListener('click', () => {
 initBlockDefs();
 populateBlockMenu();
 requestAnimationFrame(render);
+
+// Listen for editor changes to detect API method insertions from common code panel
+if (typeof editor !== 'undefined' && editor.session) {
+    editor.session.on('change', function(delta) {
+        if (delta.action === 'insert' && delta.lines && delta.lines.length > 0) {
+            const text = delta.lines.join('\n');
+            // Match pattern like eda.xxx.xxx or eda.xxx
+            const match = text.match(/^eda\.[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*$/);
+            if (match) {
+                const methodPath = match[0];
+                // Find the edcode item for this method
+                const edcodeItem = window.edcode && window.edcode.find(item => item.methodPath === methodPath);
+                if (edcodeItem) {
+                    // Remove the inserted text from editor
+                    const Range = ace.require('ace/range').Range;
+                    const range = new Range(
+                        delta.start.row,
+                        delta.start.column,
+                        delta.end.row,
+                        delta.end.column
+                    );
+                    editor.session.remove(range);
+
+                    // Create block from method
+                    createBlockFromMethod(methodPath, edcodeItem);
+                }
+            }
+        }
+    });
+}
+
+// Expose API for parent window (optional, for future use)
+window.workflowCanvas = {
+    createBlockFromMethod: createBlockFromMethod
+};
