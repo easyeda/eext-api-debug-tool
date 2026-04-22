@@ -31,20 +31,26 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 	clearBtn.className = 'cs-btn cs-btn-danger';
 	clearBtn.textContent = '清空全部';
 	clearBtn.onclick = async () => {
-		if (!confirm('确定清空所有自定义补全项？此操作不可撤销。')) return;
-		try {
-			await _clearAllCompleters();
-			_removeUserCompleterFromEditor(editor);
-			await renderList(listEl);
+		eda.sys_Dialog.showConfirmationMessage(
+			'确定清空所有自定义补全项？此操作不可撤销。',
+			'确认清空',
+			'清空',
+			'取消',
+			async (confirmed) => {
+				if (!confirmed) return;
+				try {
+					await _clearAllCompleters();
+					_removeUserCompleterFromEditor(editor);
+					await renderList(listEl);
 
-			// 刷新左侧导航面板的常用代码视图
-			if (window.leftNavPanel) {
-				await window.leftNavPanel.loadCompleterStore();
-			}
+					// 刷新左侧导航面板的常用代码视图
+					if (window.leftNavPanel) {
+						await window.leftNavPanel.loadCompleterStore();
+					}
 
-			_toast('已清空所有自定义补全', 'success', 2);
-		} catch (err) {
-			_toast('清空失败: ' + err.message, 'error', 2);
+					_toast('已清空所有自定义补全', 'success', 2);
+				} catch (err) {
+					_toast('清空失败: ' + err.message, 'error', 2);
 		}
 	};
 	headerRight.appendChild(clearBtn);

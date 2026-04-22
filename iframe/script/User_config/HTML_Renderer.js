@@ -228,17 +228,23 @@ class HTMLRenderer {
 		`;
 		iframe.sandbox = 'allow-scripts allow-same-origin allow-forms';
 
+		// 添加时间戳作为缓存破坏参数，确保每次都是全新加载
+		iframe.src = 'about:blank?t=' + Date.now();
+
 		iframeContainer.appendChild(iframe);
 		modal.appendChild(header);
 		modal.appendChild(iframeContainer);
 		overlay.appendChild(modal);
 		document.body.appendChild(overlay);
 
-		// 写入 HTML 内容（注入 eda 桥接）
-		const bridgedContent = this.injectEdaBridge(htmlContent);
-		iframe.contentDocument.open();
-		iframe.contentDocument.write(bridgedContent);
-		iframe.contentDocument.close();
+		// 等待 iframe 加载完成后写入内容
+		iframe.onload = () => {
+			// 写入 HTML 内容（注入 eda 桥接）
+			const bridgedContent = this.injectEdaBridge(htmlContent);
+			iframe.contentDocument.open();
+			iframe.contentDocument.write(bridgedContent);
+			iframe.contentDocument.close();
+		};
 
 		// ESC 键关闭
 		const escHandler = (e) => {

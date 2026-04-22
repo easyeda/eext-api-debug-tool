@@ -82,6 +82,17 @@ function initBlockDefs() {
     };
     BLOCK_CATEGORIES['自定义'] = ['custom'];
 
+    BLOCK_DEFS.function = {
+        title: '函数',
+        color: '#fd971f',
+        inputs: [{ name: 'input', description: '输入值' }],
+        outputs: [{ name: 'result', description: '函数输出' }],
+        code: 'const result1 = input;\n\nreturn result1;',
+        category: '自定义',
+        description: ''
+    };
+    BLOCK_CATEGORIES['自定义'].push('function');
+
     BLOCK_DEFS.variable = {
         title: '变量',
         color: '#e6db74',
@@ -612,6 +623,111 @@ const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modal-title');
 const codeEditor = document.getElementById('code-editor');
 const variableEditor = document.getElementById('variable-editor');
+const functionEditor = document.getElementById('function-editor');
+const functionNameEditor = document.getElementById('function-name-editor');
+const paramsScroll = document.getElementById('params-scroll');
+const paramAddBtn = document.getElementById('param-add-btn');
+const functionOutputEditor = document.getElementById('function-output-editor');
+
+const functionDescEditor = document.getElementById('function-desc-editor');
+
+let currentParams = [];
+let lastGeneratedCode = '';
+
+function createParamChip(paramName = '') {
+    const chip = document.createElement('div');
+    chip.className = 'param-chip';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = paramName;
+    input.placeholder = 'param';
+    input.addEventListener('input', (e) => {
+        const width = Math.max(40, Math.min(150, e.target.value.length * 8 + 20));
+        e.target.style.width = width + 'px';
+        syncCodeWithParams();
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'param-remove';
+    removeBtn.textContent = '×';
+    removeBtn.onclick = () => {
+        chip.remove();
+        syncCodeWithParams();
+    };
+
+    chip.appendChild(input);
+    chip.appendChild(removeBtn);
+
+    if (paramName) {
+        const width = Math.max(40, Math.min(150, paramName.length * 8 + 20));
+        input.style.width = width + 'px';
+    }
+
+    return chip;
+}
+
+function addParam() {
+    const chip = createParamChip();
+    paramsScroll.appendChild(chip);
+    chip.querySelector('input').focus();
+    paramsScroll.scrollLeft = paramsScroll.scrollWidth;
+    syncCodeWithParams();
+}
+
+function getParamNames() {
+    const inputs = paramsScroll.querySelectorAll('.param-chip input');
+    return Array.from(inputs).map(input => input.value.trim()).filter(Boolean);
+}
+
+function buildCodeFromParams(params) {
+    const outputName = functionOutputEditor.value.trim() || 'result';
+    let code = '';
+    params.forEach((p, i) => {
+        code += `const ${outputName}${i + 1} = ${p};\n`;
+    });
+    code += `\nreturn ${outputName}1;`;
+    return code;
+}
+
+function syncCodeWithParams() {
+    if (!state.editingBlock || state.editingBlock.type !== 'function') return;
+    const params = getParamNames();
+    if (params.length === 0) return;
+
+    const newCode = buildCodeFromParams(params);
+    const current = codeEditor.value;
+
+    if (!current || current === lastGeneratedCode) {
+        codeEditor.value = newCode;
+        lastGeneratedCode = newCode;
+    }
+}
+
+function parseFunctionInputs() {
+    const names = getParamNames();
+    if (names.length === 0) throw new Error('至少需要一个输入参数');
+
+    const seen = new Set();
+    return names.map((name) => {
+        if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) throw new Error(`无效的输入名称: ${name}`);
+        if (seen.has(name)) throw new Error(`重复的输入名称: ${name}`);
+        seen.add(name);
+        return { name, description: '' };
+    });
+}
+
+function parseFunctionOutput(rawValue) {
+    const name = (rawValue || '').trim() || 'result';
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) throw new Error(`无效的输出名称: ${name}`);
+    return { name, description: '函数输出' };
+}
+
+paramAddBtn.addEventListener('click', addParam);
+
+functionOutputEditor.addEventListener('input', () => {
+    syncCodeWithParams();
+});
 
 function openModal(block, type) {
     state.editingBlock = block;
@@ -620,12 +736,30 @@ function openModal(block, type) {
         modalTitle.textContent = '编辑变量值';
         codeEditor.style.display = 'none';
         variableEditor.style.display = 'block';
+        functionEditor.style.display = 'none';
         variableEditor.value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
         variableEditor.focus();
     } else {
-        modalTitle.textContent = '编辑自定义代码';
+        modalTitle.textContent = block.type === 'function' ? '编辑函数模块' : '编辑代码模块';
         codeEditor.style.display = 'block';
         variableEditor.style.display = 'none';
+        functionEditor.style.display = block.type === 'function' ? 'block' : 'none';
+
+        if (block.type === 'function') {
+            functionNameEditor.value = block.title || '';
+            functionDescEditor.value = block.description || '';
+            functionOutputEditor.value = portName(block.outputs[0] || { name: 'result' });
+
+            paramsScroll.innerHTML = '';
+            const params = block.inputs.map(portName);
+            if (params.length === 0) params.push('input');
+            params.forEach(param => {
+                paramsScroll.appendChild(createParamChip(param));
+            });
+
+            lastGeneratedCode = buildCodeFromParams(params);
+        }
+
         codeEditor.value = block.code;
         codeEditor.focus();
     }
@@ -662,12 +796,36 @@ document.getElementById('modal-save').addEventListener('click', () => {
                 state.editingBlock.code = `const value = ${JSON.stringify(state.editingBlock.value)};\nreturn value;`;
                 state.editingBlock.w = measureBlockWidth(state.editingBlock);
             } catch (e) {
-                alert('无效的值格式: ' + e.message);
+                eda.sys_Message.showToastMessage('无效的值格式: ' + e.message, 'info', 1);
                 return;
             }
         } else {
+            if (state.editingBlock.type === 'function') {
+                try {
+                    const nextTitle = functionNameEditor.value.trim() || '函数';
+                    const nextInputs = parseFunctionInputs();
+                    const nextOutput = parseFunctionOutput(functionOutputEditor.value);
+
+                    state.editingBlock.title = nextTitle;
+                    state.editingBlock.inputs = nextInputs;
+                    state.editingBlock.outputs = [nextOutput];
+                    state.editingBlock.description = functionDescEditor.value.trim();
+
+                    state.connections = state.connections.filter((conn) => {
+                        if (conn.toId === state.editingBlock.id && conn.toPort >= nextInputs.length) {
+                            return false;
+                        }
+                        return !(conn.fromId === state.editingBlock.id && conn.fromPort >= 1);
+                    });
+                } catch (e) {
+                    eda.sys_Message.showToastMessage(e.message, 'info', 1);
+                    return;
+                }
+            }
+
             // Saving custom code
             state.editingBlock.code = codeEditor.value;
+            state.editingBlock.w = measureBlockWidth(state.editingBlock);
         }
     }
     modal.classList.remove('show');
@@ -793,12 +951,20 @@ document.getElementById('zoom-reset').addEventListener('click', () => {
 });
 
 document.getElementById('clear').addEventListener('click', () => {
-    if (confirm('确定清空所有模块？')) {
-        state.blocks = [];
-        state.connections = [];
-        state.selected = null;
-        state.nextId = 1;
-    }
+    eda.sys_Dialog.showConfirmationMessage(
+        '确定清空所有模块？',
+        '确认清空',
+        '确定',
+        '取消',
+        (confirmed) => {
+            if (confirmed) {
+                state.blocks = [];
+                state.connections = [];
+                state.selected = null;
+                state.nextId = 1;
+            }
+        }
+    );
 });
 
 function topoSort() {
@@ -822,13 +988,83 @@ function topoSort() {
 
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 
-document.getElementById('run').addEventListener('click', async () => {
-    const order = topoSort();
-    const outputs = new Map();
+const executionState = {
+    running: false,
+    order: [],
+    outputs: new Map(),
+    outputPaths: new Map(),
+    currentIndex: 0,
+    pendingArraySelection: null
+};
 
-    for (const id of order) {
+function isThenable(value) {
+    return value && (typeof value === 'object' || typeof value === 'function') && typeof value.then === 'function';
+}
+
+async function resolveExecutionValue(value) {
+    return isThenable(value) ? await value : value;
+}
+
+function getValueAtPath(obj, path) {
+    if (!path || path === '$') return obj;
+    const parts = path.replace(/^\$\.?/, '').split(/\.|\[|\]/).filter(p => p !== '');
+    let current = obj;
+    for (const part of parts) {
+        if (current === null || current === undefined) return undefined;
+        current = current[part];
+    }
+    return current;
+}
+
+function stringifyForDisplay(value, space = 0) {
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'function') return '[Function]';
+    try {
+        const json = JSON.stringify(value, null, space);
+        return json === undefined ? String(value) : json;
+    } catch (err) {
+        return `[Unserializable: ${err.message}]`;
+    }
+}
+
+function pathToAccessor(path) {
+    if (!path || path === '$') return '';
+    return path.replace(/^\$/, '');
+}
+
+function getOutputExpression(blockId, portIndex = 0) {
+    const base = `block_${blockId}_${portIndex}`;
+    const outputPaths = executionState.outputPaths.get(blockId) || [];
+    const selectedPath = outputPaths[portIndex] || '$';
+    return `${base}${pathToAccessor(selectedPath)}`;
+}
+
+document.getElementById('run').addEventListener('click', async () => {
+    if (executionState.running) {
+        eda.sys_Message.showToastMessage('工作流正在运行中...', 'info', 1);
+        return;
+    }
+
+    executionState.running = true;
+    executionState.order = topoSort();
+    executionState.outputs = new Map();
+    executionState.outputPaths = new Map();
+    executionState.currentIndex = 0;
+    executionState.pendingArraySelection = null;
+
+    await executeWorkflow();
+});
+
+async function executeWorkflow() {
+    // Single-pass execution: each block runs only after upstream values are fully resolved.
+    while (executionState.currentIndex < executionState.order.length) {
+        const id = executionState.order[executionState.currentIndex];
         const block = state.blocks.find((b) => b.id === id);
-        if (!block) continue;
+
+        if (!block) {
+            executionState.currentIndex++;
+            continue;
+        }
 
         const args = {};
         const inputNames = block.inputs.map(portName);
@@ -836,8 +1072,16 @@ document.getElementById('run').addEventListener('click', async () => {
         for (let i = 0; i < block.inputs.length; i++) {
             const conn = state.connections.find((c) => c.toId === id && c.toPort === i);
             if (conn) {
-                const fromOutputs = outputs.get(conn.fromId) || [];
-                args[inputNames[i]] = fromOutputs[conn.fromPort];
+                if (!executionState.outputs.has(conn.fromId)) {
+                    throw new Error(`Upstream block ${conn.fromId} has not finished yet`);
+                }
+
+                const fromOutputs = executionState.outputs.get(conn.fromId) || [];
+                if (conn.fromPort >= fromOutputs.length) {
+                    throw new Error(`Upstream output port ${conn.fromPort} has no data`);
+                }
+
+                args[inputNames[i]] = await resolveExecutionValue(fromOutputs[conn.fromPort]);
             } else {
                 args[inputNames[i]] = undefined;
             }
@@ -846,14 +1090,224 @@ document.getElementById('run').addEventListener('click', async () => {
         try {
             const fn = new AsyncFunction(...inputNames, block.code);
             const result = await fn(...inputNames.map((k) => args[k]));
-            outputs.set(id, block.outputs.length ? [result] : []);
+            executionState.outputs.set(id, block.outputs.length ? [result] : []);
+            executionState.outputPaths.set(id, block.outputs.length ? ['$'] : []);
+
+            if ((Array.isArray(result) || (result && typeof result === 'object')) && hasDownstreamDependents(id)) {
+                executionState.pendingArraySelection = {
+                    blockId: id,
+                    blockTitle: block.title,
+                    data: result,
+                    selectedPath: '$'
+                };
+                showArraySelectionModal();
+                return;
+            }
+
+            executionState.currentIndex++;
         } catch (err) {
             console.error(`Block "${block.title}" error:`, err);
-            alert(`模块 "${block.title}" 出错: ${err.message}`);
-            break;
+            eda.sys_Message.showToastMessage(`模块 "${block.title}" 出错: ${err.message}`, 'info', 1);
+            executionState.running = false;
+            return;
         }
     }
+
+    showExecutionConfirmModal();
+}
+
+function generateExecutableCode() {
+    const order = executionState.order;
+    let code = '// 最终执行代码 - 所有变量已替换为实际值\n';
+    code += '(async function() {\n';
+
+    for (const id of order) {
+        const block = state.blocks.find(b => b.id === id);
+        if (!block) continue;
+
+        code += `\n  // Block: ${block.title}\n`;
+        const inputNames = block.inputs.map(portName);
+
+        let blockCode = block.code;
+        for (const inputName of inputNames) {
+            const inputIndex = inputNames.indexOf(inputName);
+            const conn = state.connections.find(c => c.toId === id && c.toPort === inputIndex);
+            let replacement = 'undefined';
+            if (conn) {
+                replacement = getOutputExpression(conn.fromId, conn.fromPort);
+            }
+            const regex = new RegExp(`\\b${inputName}\\b`, 'g');
+            blockCode = blockCode.replace(regex, replacement);
+        }
+
+        const indentedCode = blockCode.split('\n').map(line => '  ' + line).join('\n');
+        if (block.outputs.length > 0) {
+            const outputVar = `block_${id}_0`;
+            code += `  const ${outputVar} = await (async function() {\n`;
+            code += indentedCode + '\n';
+            code += '  })();\n';
+        } else {
+            code += `  await (async function() {\n`;
+            code += indentedCode + '\n';
+            code += '  })();\n';
+        }
+    }
+
+    code += '})();\n';
+    return code;
+}
+
+function showExecutionConfirmModal() {
+    const modal = document.getElementById('execution-confirm-modal');
+    const editor = document.getElementById('execution-code-editor');
+
+    const finalCode = generateExecutableCode();
+    editor.value = finalCode;
+    executionState.finalCode = finalCode;
+
+    modal.classList.add('show');
+}
+
+function hasDownstreamDependents(blockId) {
+    return state.connections.some(c => c.fromId === blockId);
+}
+
+function renderTreeNode(value, path, parentEl, depth = 0) {
+    const nodeDiv = document.createElement('div');
+    nodeDiv.style.marginLeft = (depth * 16) + 'px';
+
+    const isObject = value && typeof value === 'object' && !Array.isArray(value);
+    const isArray = Array.isArray(value);
+    const isLeaf = !isObject && !isArray;
+
+    const nodeHeader = document.createElement('div');
+    nodeHeader.style.cssText = 'display: flex; align-items: center; padding: 4px 6px; cursor: pointer; border-radius: 4px; transition: background 0.15s; user-select: none;';
+
+    const isSelected = executionState.pendingArraySelection.selectedPath === path;
+    if (isSelected) {
+        nodeHeader.style.background = '#3e3d32';
+        nodeHeader.style.color = '#66d9ef';
+        nodeHeader.style.fontWeight = 'bold';
+    }
+
+    nodeHeader.addEventListener('mouseenter', () => {
+        if (!isSelected) nodeHeader.style.background = '#31322c';
+    });
+    nodeHeader.addEventListener('mouseleave', () => {
+        if (!isSelected) nodeHeader.style.background = 'transparent';
+    });
+
+    nodeHeader.addEventListener('click', (e) => {
+        e.stopPropagation();
+        executionState.pendingArraySelection.selectedPath = path;
+        showArraySelectionModal();
+    });
+
+    let label = '';
+    if (isArray) {
+        label = `<span style="color: #ae81ff;">Array[${value.length}]</span>`;
+    } else if (isObject) {
+        const keys = Object.keys(value);
+        label = `<span style="color: #66d9ef;">Object{${keys.length}}</span>`;
+    } else {
+        const valStr = stringifyForDisplay(value);
+        const preview = valStr.length > 40 ? valStr.substring(0, 40) + '...' : valStr;
+        label = `<span style="color: #a6e22e;">${preview}</span>`;
+    }
+
+    const pathParts = path.split(/\.|\[/).filter(p => p && p !== '$');
+    const nodeName = pathParts[pathParts.length - 1]?.replace(']', '') || '$';
+
+    nodeHeader.innerHTML = `<span style="color: #f8f8f2; margin-right: 6px;">${nodeName}:</span> ${label}`;
+    nodeDiv.appendChild(nodeHeader);
+
+    if (isArray || isObject) {
+        const childrenDiv = document.createElement('div');
+        const entries = isArray ? value.map((v, i) => [i, v]) : Object.entries(value);
+
+        entries.forEach(([key, val]) => {
+            const childPath = isArray ? `${path}[${key}]` : `${path}.${key}`;
+            renderTreeNode(val, childPath, childrenDiv, depth + 1);
+        });
+
+        nodeDiv.appendChild(childrenDiv);
+    }
+
+    parentEl.appendChild(nodeDiv);
+}
+
+function showArraySelectionModal() {
+    const modal = document.getElementById('array-selection-modal');
+    const title = document.getElementById('array-selection-title');
+    const tree = document.getElementById('array-selection-tree');
+    const preview = document.getElementById('array-selection-preview');
+    const pathDisplay = document.getElementById('array-selection-path');
+
+    const { blockTitle, data, selectedPath } = executionState.pendingArraySelection;
+
+    title.textContent = `选择要传递的值 - ${blockTitle}`;
+    pathDisplay.textContent = selectedPath;
+
+    tree.innerHTML = '';
+    renderTreeNode(data, '$', tree, 0);
+
+    const selectedValue = getValueAtPath(data, selectedPath);
+    preview.value = stringifyForDisplay(selectedValue, 2);
+    modal.classList.add('show');
+}
+
+const arraySelectionModal = document.getElementById('array-selection-modal');
+
+document.getElementById('array-selection-confirm').addEventListener('click', async () => {
+    if (!executionState.pendingArraySelection) return;
+
+    const { blockId, data, selectedPath } = executionState.pendingArraySelection;
+    const selectedValue = getValueAtPath(data, selectedPath);
+    executionState.outputs.set(blockId, [selectedValue]);
+    executionState.outputPaths.set(blockId, [selectedPath]);
+
+    arraySelectionModal.classList.remove('show');
+    executionState.pendingArraySelection = null;
+    executionState.currentIndex++;
+
+    await executeWorkflow();
+});
+
+document.getElementById('array-selection-cancel').addEventListener('click', () => {
+    arraySelectionModal.classList.remove('show');
+    executionState.running = false;
+    executionState.pendingArraySelection = null;
+    console.log('Workflow execution cancelled');
+});
+
+arraySelectionModal.addEventListener('click', (e) => {
+    if (e.target === arraySelectionModal) {
+        arraySelectionModal.classList.remove('show');
+        executionState.running = false;
+        executionState.pendingArraySelection = null;
+    }
+});
+
+// Execution Confirm Modal
+const executionConfirmModal = document.getElementById('execution-confirm-modal');
+
+document.getElementById('execution-confirm').addEventListener('click', async () => {
+    executionConfirmModal.classList.remove('show');
+    executionState.running = false;
     console.log('Execution complete');
+    eda.sys_Message.showToastMessage('工作流执行完成', 'info', 1);
+});
+
+document.getElementById('execution-cancel').addEventListener('click', () => {
+    executionConfirmModal.classList.remove('show');
+    executionState.running = false;
+});
+
+executionConfirmModal.addEventListener('click', (e) => {
+    if (e.target === executionConfirmModal) {
+        executionConfirmModal.classList.remove('show');
+        executionState.running = false;
+    }
 });
 
 // Code View
@@ -893,7 +1347,7 @@ function generateWorkflowCode() {
 
 document.getElementById('view-code').addEventListener('click', () => {
     if (state.blocks.length === 0) {
-        alert('没有模块可以生成代码');
+        eda.sys_Message.showToastMessage('没有模块可以生成代码', 'info', 1);
         return;
     }
     codeViewEditor.value = generateWorkflowCode();
@@ -907,7 +1361,7 @@ document.getElementById('code-view-close').addEventListener('click', () => {
 document.getElementById('code-view-copy').addEventListener('click', () => {
     codeViewEditor.select();
     document.execCommand('copy');
-    alert('代码已复制到剪贴板');
+    eda.sys_Message.showToastMessage('代码已复制到剪贴板', 'info', 1);
 });
 
 codeViewModal.addEventListener('click', (e) => {
@@ -963,25 +1417,39 @@ document.getElementById('import').addEventListener('click', () => {
                 const data = JSON.parse(event.target.result);
 
                 if (!data.version || !data.blocks || !data.connections) {
-                    alert('无效的工作流文件格式');
+                    eda.sys_Message.showToastMessage('无效的工作流文件格式', 'info', 1);
                     return;
                 }
 
                 if (state.blocks.length > 0) {
-                    if (!confirm('导入将清空当前工作流，是否继续？')) {
-                        return;
-                    }
+                    eda.sys_Dialog.showConfirmationMessage(
+                        '导入将清空当前工作流，是否继续？',
+                        '确认导入',
+                        '继续',
+                        '取消',
+                        (confirmed) => {
+                            if (confirmed) {
+                                state.blocks = data.blocks;
+                                state.connections = data.connections;
+                                state.nextId = data.nextId || state.blocks.length + 1;
+                                state.selected = null;
+                                state.camera = { x: 0, y: 0, scale: 1 };
+
+                                eda.sys_Message.showToastMessage('工作流导入成功', 'info', 1);
+                            }
+                        }
+                    );
+                } else {
+                    state.blocks = data.blocks;
+                    state.connections = data.connections;
+                    state.nextId = data.nextId || state.blocks.length + 1;
+                    state.selected = null;
+                    state.camera = { x: 0, y: 0, scale: 1 };
+
+                    eda.sys_Message.showToastMessage('工作流导入成功', 'info', 1);
                 }
-
-                state.blocks = data.blocks;
-                state.connections = data.connections;
-                state.nextId = data.nextId || state.blocks.length + 1;
-                state.selected = null;
-                state.camera = { x: 0, y: 0, scale: 1 };
-
-                alert('工作流导入成功');
             } catch (err) {
-                alert('导入失败: ' + err.message);
+                eda.sys_Message.showToastMessage('导入失败: ' + err.message, 'info', 1);
             }
         };
         reader.readAsText(file);
