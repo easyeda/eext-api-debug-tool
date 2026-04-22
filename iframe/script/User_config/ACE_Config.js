@@ -1103,9 +1103,9 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			}),
 		);
 
-		// 3. 添加到补全
+		// 3. 添加到常用代码
 		menu.appendChild(
-			createMenuItem('添加到补全', true, () => {
+			createMenuItem('添加到常用代码', true, () => {
 				UserCompleter_Add(editor, lineText);
 			}),
 		);
