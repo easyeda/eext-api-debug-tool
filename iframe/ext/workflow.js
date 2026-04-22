@@ -106,6 +106,19 @@ function initBlockDefs() {
     };
     if (!BLOCK_CATEGORIES['基础']) BLOCK_CATEGORIES['基础'] = [];
     BLOCK_CATEGORIES['基础'].unshift('variable');
+
+    BLOCK_DEFS.loop = {
+        title: '循环',
+        color: '#ae81ff',
+        inputs: [],
+        outputs: [{ name: 'index', description: '当前循环索引 (从0开始)' }],
+        code: 'return index;',
+        category: '基础',
+        description: '循环 3 次',
+        loopCount: 3,
+        loopDelay: 0
+    };
+    BLOCK_CATEGORIES['基础'].push('loop');
 }
 
 function getCategoryColor(category) {
@@ -339,6 +352,8 @@ function addBlock(type) {
         code: def.code,
         description: def.description || '',
         value: def.value !== undefined ? def.value : undefined,
+        loopCount: def.loopCount !== undefined ? def.loopCount : undefined,
+        loopDelay: def.loopDelay !== undefined ? def.loopDelay : undefined,
         rotation: 0,
         savedPath: undefined,
     };
@@ -364,6 +379,8 @@ function copyBlock(blockId) {
         code: original.code,
         description: original.description || '',
         value: original.value !== undefined ? original.value : undefined,
+        loopCount: original.loopCount !== undefined ? original.loopCount : undefined,
+        loopDelay: original.loopDelay !== undefined ? original.loopDelay : undefined,
         rotation: original.rotation || 0,
         savedPath: original.savedPath,
     };
@@ -425,6 +442,8 @@ function startBlockPlacement(blockId) {
         code: def.code,
         description: def.description || '',
         value: def.value !== undefined ? def.value : undefined,
+        loopCount: def.loopCount !== undefined ? def.loopCount : undefined,
+        loopDelay: def.loopDelay !== undefined ? def.loopDelay : undefined,
         rotation: 0,
     };
     block.w = measureBlockWidth(block);
@@ -631,8 +650,14 @@ function render() {
         const toBlock = state.blocks.find((b) => b.id === c.toId);
         if (!fromBlock || !toBlock) continue;
         const from = getPortPos(fromBlock, 'output', c.fromPort);
-        const to = getPortPos(toBlock, 'input', c.toPort);
-        drawConnection(from, to);
+        let to;
+        if (c.toPort === -1) {
+            const h = getBlockHeight(toBlock);
+            to = { x: toBlock.x, y: toBlock.y + h / 2 };
+        } else {
+            to = getPortPos(toBlock, 'input', c.toPort);
+        }
+        drawConnection(from, to, c.toPort === -1 ? '#ae81ff' : undefined);
     }
 
     if (state.connecting) {
@@ -761,6 +786,8 @@ canvas.addEventListener('mouseup', (e) => {
         const sy = e.clientY - rect.top;
         const w = screenToWorld(sx, sy);
         const port = hitTestPort(w.x, w.y);
+        const fromBlock = state.blocks.find(b => b.id === state.connecting.fromId);
+
         if (port && port.side === 'input' && port.blockId !== state.connecting.fromId) {
             const exists = state.connections.some(
                 (c) => c.toId === port.blockId && c.toPort === port.index
@@ -772,6 +799,21 @@ canvas.addEventListener('mouseup', (e) => {
                     toId: port.blockId,
                     toPort: port.index,
                 });
+            }
+        } else if (fromBlock && fromBlock.type === 'loop') {
+            const targetBlock = hitTestBlock(w.x, w.y);
+            if (targetBlock && targetBlock.id !== fromBlock.id) {
+                const exists = state.connections.some(
+                    (c) => c.fromId === fromBlock.id && c.toId === targetBlock.id && c.toPort === -1
+                );
+                if (!exists) {
+                    state.connections.push({
+                        fromId: fromBlock.id,
+                        fromPort: state.connecting.fromPort,
+                        toId: targetBlock.id,
+                        toPort: -1,
+                    });
+                }
             }
         }
         state.connecting = null;
@@ -800,7 +842,9 @@ canvas.addEventListener('dblclick', (e) => {
     const w = screenToWorld(sx, sy);
     const block = hitTestBlock(w.x, w.y);
     if (block) {
-        if (block.type === 'variable') {
+        if (block.type === 'loop') {
+            openModal(block, 'loop');
+        } else if (block.type === 'variable') {
             openModal(block, 'variable');
         } else if (block.savedPath) {
             openModal(block, 'state');
@@ -862,6 +906,9 @@ const paramAddBtn = document.getElementById('param-add-btn');
 const functionOutputEditor = document.getElementById('function-output-editor');
 
 const functionDescEditor = document.getElementById('function-desc-editor');
+const loopEditor = document.getElementById('loop-editor');
+const loopCountEditor = document.getElementById('loop-count-editor');
+const loopDelayEditor = document.getElementById('loop-delay-editor');
 
 let currentParams = [];
 let lastGeneratedCode = '';
@@ -967,12 +1014,27 @@ function openModal(block, type) {
 
     const stateEditor = document.getElementById('state-editor');
 
-    if (type === 'state') {
+    if (type === 'loop') {
+        modalTitle.textContent = '编辑循环模块';
+        codeEditor.style.display = 'none';
+        variableEditor.style.display = 'none';
+        functionEditor.style.display = 'none';
+        stateEditor.style.display = 'none';
+        if (loopEditor) loopEditor.style.display = 'block';
+        if (loopCountEditor) {
+            loopCountEditor.value = block.loopCount || 3;
+            loopCountEditor.focus();
+        }
+        if (loopDelayEditor) {
+            loopDelayEditor.value = block.loopDelay || 0;
+        }
+    } else if (type === 'state') {
         modalTitle.textContent = '查看/编辑选择状态 - ' + block.title;
         codeEditor.style.display = 'none';
         variableEditor.style.display = 'none';
         functionEditor.style.display = 'none';
         stateEditor.style.display = 'block';
+        if (loopEditor) loopEditor.style.display = 'none';
         document.getElementById('state-path-editor').value = block.savedPath || '(未设置)';
     } else if (type === 'variable') {
         modalTitle.textContent = '编辑变量值';
@@ -980,6 +1042,7 @@ function openModal(block, type) {
         variableEditor.style.display = 'block';
         functionEditor.style.display = 'none';
         stateEditor.style.display = 'none';
+        if (loopEditor) loopEditor.style.display = 'none';
         variableEditor.value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
         variableEditor.focus();
     } else {
@@ -988,6 +1051,7 @@ function openModal(block, type) {
         variableEditor.style.display = 'none';
         functionEditor.style.display = block.type === 'function' ? 'block' : 'none';
         stateEditor.style.display = 'none';
+        if (loopEditor) loopEditor.style.display = 'none';
 
         if (block.type === 'function') {
             functionNameEditor.value = block.title || '';
@@ -1031,6 +1095,22 @@ modal.addEventListener('click', (e) => {
 document.getElementById('modal-save').addEventListener('click', () => {
     if (state.editingBlock) {
         if (state.editingModalType === 'state') {
+            modal.classList.remove('show');
+            state.editingBlock = null;
+            state.editingModalType = null;
+            return;
+        }
+        if (state.editingModalType === 'loop') {
+            const n = parseInt(loopCountEditor ? loopCountEditor.value : '0', 10);
+            if (isNaN(n) || n < 1) {
+                eda.sys_Message.showToastMessage('循环次数必须为正整数', 'info', 1);
+                return;
+            }
+            const delay = parseInt(loopDelayEditor ? loopDelayEditor.value : '0', 10) || 0;
+            state.editingBlock.loopCount = n;
+            state.editingBlock.loopDelay = delay;
+            state.editingBlock.description = delay > 0 ? `循环 ${n} 次, 间隔 ${delay}ms` : `循环 ${n} 次`;
+            state.editingBlock.w = measureBlockWidth(state.editingBlock);
             modal.classList.remove('show');
             state.editingBlock = null;
             state.editingModalType = null;
@@ -1094,12 +1174,6 @@ document.getElementById('modal-save').addEventListener('click', () => {
     state.editingBlock = null;
 });
 
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.remove('show');
-        state.editingBlock = null;
-    }
-});
 
 const addBlockSelect = document.getElementById('add-block');
 const searchInput = document.getElementById('search-blocks');
@@ -1319,14 +1393,105 @@ document.getElementById('run').addEventListener('click', async () => {
     await executeWorkflow();
 });
 
+function getDownstreamIds(startId) {
+    const visited = new Set();
+    const queue = [startId];
+    while (queue.length) {
+        const id = queue.shift();
+        for (const c of state.connections) {
+            if (c.fromId === id && !visited.has(c.toId)) {
+                visited.add(c.toId);
+                queue.push(c.toId);
+            }
+        }
+    }
+    return visited;
+}
+
 async function executeWorkflow() {
-    // Single-pass execution: each block runs only after upstream values are fully resolved.
     while (executionState.currentIndex < executionState.order.length) {
         const id = executionState.order[executionState.currentIndex];
         const block = state.blocks.find((b) => b.id === id);
 
         if (!block) {
             executionState.currentIndex++;
+            continue;
+        }
+
+        if (block.type === 'loop') {
+            const loopCount = block.loopCount || 3;
+            const loopDelay = block.loopDelay || 0;
+            const downstreamIds = getDownstreamIds(block.id);
+            const downstreamOrder = executionState.order.filter(oid => downstreamIds.has(oid));
+
+            const cachedArgs = new Map();
+
+            for (let i = 0; i < loopCount; i++) {
+                if (i > 0) {
+                    await new Promise(r => setTimeout(r, loopDelay > 0 ? loopDelay : 0));
+                }
+                executionState.outputs.set(block.id, [i]);
+                executionState.outputPaths.set(block.id, ['$']);
+
+                for (const did of downstreamOrder) {
+                    const dBlock = state.blocks.find(b => b.id === did);
+                    if (!dBlock) continue;
+
+                    const args = {};
+                    const inputNames = dBlock.inputs.map(portName);
+
+                    for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+                        const conn = state.connections.find(c => c.toId === did && c.toPort === pi);
+                        if (!conn) {
+                            args[inputNames[pi]] = undefined;
+                            continue;
+                        }
+                        const fromInLoop = conn.fromId === block.id || downstreamIds.has(conn.fromId);
+                        if (fromInLoop) {
+                            const fromOutputs = executionState.outputs.get(conn.fromId) || [];
+                            if (conn.fromPort < fromOutputs.length) {
+                                args[inputNames[pi]] = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+                            } else {
+                                args[inputNames[pi]] = undefined;
+                            }
+                        } else {
+                            if (i === 0) {
+                                const fromOutputs = executionState.outputs.get(conn.fromId) || [];
+                                if (conn.fromPort < fromOutputs.length) {
+                                    const val = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+                                    if (!cachedArgs.has(did)) cachedArgs.set(did, {});
+                                    cachedArgs.get(did)[inputNames[pi]] = val;
+                                    args[inputNames[pi]] = val;
+                                } else {
+                                    args[inputNames[pi]] = undefined;
+                                }
+                            } else {
+                                const cached = cachedArgs.get(did);
+                                args[inputNames[pi]] = cached ? cached[inputNames[pi]] : undefined;
+                            }
+                        }
+                    }
+
+                    try {
+                        const fn = new AsyncFunction(...inputNames, dBlock.code);
+                        const result = await fn(...inputNames.map(k => args[k]));
+                        executionState.outputs.set(did, dBlock.outputs.length ? [result] : []);
+                        executionState.outputPaths.set(did, dBlock.outputs.length ? ['$'] : []);
+                    } catch (err) {
+                        console.error(`Block "${dBlock.title}" error (loop ${i + 1}/${loopCount}):`, err);
+                        eda.sys_Message.showToastMessage(`模块 "${dBlock.title}" 出错 (循环 ${i + 1}/${loopCount}): ${err.message}`, 'info', 1);
+                        executionState.running = false;
+                        return;
+                    }
+                }
+            }
+
+            // Skip all downstream blocks in the main order since we already executed them
+            executionState.currentIndex++;
+            while (executionState.currentIndex < executionState.order.length &&
+                   downstreamIds.has(executionState.order[executionState.currentIndex])) {
+                executionState.currentIndex++;
+            }
             continue;
         }
 
@@ -1602,13 +1767,6 @@ document.addEventListener('click', async (e) => {
     }
 });
 
-arraySelectionModal.addEventListener('click', (e) => {
-    if (e.target === arraySelectionModal) {
-        arraySelectionModal.classList.remove('show');
-        executionState.running = false;
-        executionState.pendingArraySelection = null;
-    }
-});
 
 // Code View
 const codeViewModal = document.getElementById('code-view-modal');
@@ -1619,14 +1777,38 @@ function generateWorkflowCode() {
     let code = '// Generated Workflow Code\n';
     code += '(async function() {\n';
 
+    const processed = new Set();
+
     for (const id of order) {
+        if (processed.has(id)) continue;
         const block = state.blocks.find(b => b.id === id);
         if (!block) continue;
+
+        if (block.type === 'loop') {
+            const loopCount = block.loopCount || 3;
+            const downstreamIds = getDownstreamIds(block.id);
+            const downstreamOrder = order.filter(oid => downstreamIds.has(oid));
+
+            code += `\n  // Loop: ${block.title} (${loopCount} 次)\n`;
+            code += `  for (let index = 0; index < ${loopCount}; index++) {\n`;
+
+            for (const did of downstreamOrder) {
+                const dBlock = state.blocks.find(b => b.id === did);
+                if (!dBlock) continue;
+                processed.add(did);
+
+                code += `\n    // Block: ${dBlock.title}\n`;
+                const blockCode = dBlock.code.split('\n').map(line => '    ' + line).join('\n');
+                code += blockCode + '\n';
+            }
+
+            code += '  }\n';
+            continue;
+        }
 
         code += `\n  // Block: ${block.title}\n`;
         const inputNames = block.inputs.map(portName);
 
-        // Generate variable declarations for inputs
         for (let i = 0; i < block.inputs.length; i++) {
             const conn = state.connections.find(c => c.toId === id && c.toPort === i);
             if (conn) {
@@ -1636,7 +1818,6 @@ function generateWorkflowCode() {
             }
         }
 
-        // Add block code
         const blockCode = block.code.split('\n').map(line => '  ' + line).join('\n');
         code += blockCode + '\n';
     }
@@ -1664,11 +1845,6 @@ document.getElementById('code-view-copy').addEventListener('click', () => {
     eda.sys_Message.showToastMessage('代码已复制到剪贴板', 'info', 1);
 });
 
-codeViewModal.addEventListener('click', (e) => {
-    if (e.target === codeViewModal) {
-        codeViewModal.classList.remove('show');
-    }
-});
 
 // Export
 document.getElementById('export').addEventListener('click', () => {
@@ -1687,6 +1863,8 @@ document.getElementById('export').addEventListener('click', () => {
             code: b.code,
             description: b.description,
             value: b.value,
+            loopCount: b.loopCount,
+            loopDelay: b.loopDelay,
             rotation: b.rotation || 0,
             savedPath: b.savedPath
         })),

@@ -85,7 +85,7 @@ select {
     border: 1px solid #444;
     border-radius: 8px;
     padding: 20px;
-    width: 600px;
+    width: 300px;
     max-height: 85vh;
     overflow-y: auto;
     overflow-x: hidden;
@@ -135,6 +135,16 @@ textarea {
     border-radius: 4px;
     padding: 0 12px;
     font-size: 13px;
+}
+
+#loop-editor .text-input {
+    -moz-appearance: textfield;
+}
+
+#loop-editor .text-input::-webkit-inner-spin-button,
+#loop-editor .text-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .modal-footer {
