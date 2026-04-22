@@ -1304,18 +1304,38 @@ document.getElementById('clear').addEventListener('click', () => {
 });
 
 function topoSort() {
+    const edges = [];
+    for (const c of state.connections) {
+        if (c.toPort === -1) continue;
+        edges.push({ from: c.fromId, to: c.toId });
+    }
+    for (const lb of state.blocks.filter(b => b.type === 'loop')) {
+        const downstreamIds = getDownstreamIds(lb.id);
+        const externalSources = new Set();
+        for (const did of downstreamIds) {
+            edges.push({ from: lb.id, to: did });
+            for (const c of state.connections) {
+                if (c.toId === did && c.toPort !== -1 && c.fromId !== lb.id && !downstreamIds.has(c.fromId)) {
+                    externalSources.add(c.fromId);
+                }
+            }
+        }
+        for (const srcId of externalSources) {
+            edges.push({ from: srcId, to: lb.id });
+        }
+    }
     const inDeg = new Map(state.blocks.map((b) => [b.id, 0]));
-    for (const c of state.connections) inDeg.set(c.toId, (inDeg.get(c.toId) || 0) + 1);
+    for (const e of edges) inDeg.set(e.to, (inDeg.get(e.to) || 0) + 1);
     const queue = state.blocks.filter((b) => inDeg.get(b.id) === 0).map((b) => b.id);
     const order = [];
     while (queue.length) {
         const id = queue.shift();
         order.push(id);
-        for (const c of state.connections) {
-            if (c.fromId === id) {
-                const deg = inDeg.get(c.toId) - 1;
-                inDeg.set(c.toId, deg);
-                if (deg === 0) queue.push(c.toId);
+        for (const e of edges) {
+            if (e.from === id) {
+                const deg = inDeg.get(e.to) - 1;
+                inDeg.set(e.to, deg);
+                if (deg === 0) queue.push(e.to);
             }
         }
     }
@@ -1424,7 +1444,26 @@ async function executeWorkflow() {
             const downstreamIds = getDownstreamIds(block.id);
             const downstreamOrder = executionState.order.filter(oid => downstreamIds.has(oid));
 
+            // Pre-cache all external (pre-module) inputs before the loop starts
             const cachedArgs = new Map();
+            for (const did of downstreamOrder) {
+                const dBlock = state.blocks.find(b => b.id === did);
+                if (!dBlock) continue;
+                const inputNames = dBlock.inputs.map(portName);
+                for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+                    const conn = state.connections.find(c => c.toId === did && c.toPort === pi);
+                    if (!conn) continue;
+                    const fromInLoop = conn.fromId === block.id || downstreamIds.has(conn.fromId);
+                    if (!fromInLoop) {
+                        const fromOutputs = executionState.outputs.get(conn.fromId) || [];
+                        if (conn.fromPort < fromOutputs.length) {
+                            const val = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+                            if (!cachedArgs.has(did)) cachedArgs.set(did, {});
+                            cachedArgs.get(did)[inputNames[pi]] = val;
+                        }
+                    }
+                }
+            }
 
             for (let i = 0; i < loopCount; i++) {
                 if (i > 0) {
@@ -1455,20 +1494,8 @@ async function executeWorkflow() {
                                 args[inputNames[pi]] = undefined;
                             }
                         } else {
-                            if (i === 0) {
-                                const fromOutputs = executionState.outputs.get(conn.fromId) || [];
-                                if (conn.fromPort < fromOutputs.length) {
-                                    const val = await resolveExecutionValue(fromOutputs[conn.fromPort]);
-                                    if (!cachedArgs.has(did)) cachedArgs.set(did, {});
-                                    cachedArgs.get(did)[inputNames[pi]] = val;
-                                    args[inputNames[pi]] = val;
-                                } else {
-                                    args[inputNames[pi]] = undefined;
-                                }
-                            } else {
-                                const cached = cachedArgs.get(did);
-                                args[inputNames[pi]] = cached ? cached[inputNames[pi]] : undefined;
-                            }
+                            const cached = cachedArgs.get(did);
+                            args[inputNames[pi]] = cached ? cached[inputNames[pi]] : undefined;
                         }
                     }
 
