@@ -1403,12 +1403,15 @@ function hasDownstreamDependents(blockId) {
 function renderTreeNode(value, path, parentEl, depth = 0) {
     const nodeDiv = document.createElement('div');
     nodeDiv.style.marginLeft = (depth * 16) + 'px';
+    nodeDiv.setAttribute('data-tree-node', '');
+    nodeDiv.setAttribute('data-path', path);
 
     const isObject = value && typeof value === 'object' && !Array.isArray(value);
     const isArray = Array.isArray(value);
     const isLeaf = !isObject && !isArray;
 
     const nodeHeader = document.createElement('div');
+    nodeHeader.setAttribute('data-node-header', '');
     nodeHeader.style.cssText = 'display: flex; align-items: center; padding: 4px 6px; cursor: pointer; border-radius: 4px; transition: background 0.15s; user-select: none;';
 
     const isSelected = executionState.pendingArraySelection.selectedPath === path;
@@ -1425,18 +1428,15 @@ function renderTreeNode(value, path, parentEl, depth = 0) {
         if (!isSelected) nodeHeader.style.background = 'transparent';
     });
 
-    nodeHeader.addEventListener('click', (e) => {
-        e.stopPropagation();
-        executionState.pendingArraySelection.selectedPath = path;
-        showArraySelectionModal();
-    });
-
     let label = '';
+    let expandIcon = '';
     if (isArray) {
         label = `<span style="color: #ae81ff;">Array[${value.length}]</span>`;
+        expandIcon = '<span style="margin-right: 4px; color: #75715e; font-size: 10px;">▶</span>';
     } else if (isObject) {
         const keys = Object.keys(value);
         label = `<span style="color: #66d9ef;">Object{${keys.length}}</span>`;
+        expandIcon = '<span style="margin-right: 4px; color: #75715e; font-size: 10px;">▶</span>';
     } else {
         const valStr = stringifyForDisplay(value);
         const preview = valStr.length > 40 ? valStr.substring(0, 40) + '...' : valStr;
@@ -1446,22 +1446,79 @@ function renderTreeNode(value, path, parentEl, depth = 0) {
     const pathParts = path.split(/\.|\[/).filter(p => p && p !== '$');
     const nodeName = pathParts[pathParts.length - 1]?.replace(']', '') || '$';
 
-    nodeHeader.innerHTML = `<span style="color: #f8f8f2; margin-right: 6px;">${nodeName}:</span> ${label}`;
+    nodeHeader.innerHTML = `${expandIcon}<span style="color: #f8f8f2; margin-right: 6px;">${nodeName}:</span> ${label}`;
     nodeDiv.appendChild(nodeHeader);
 
     if (isArray || isObject) {
         const childrenDiv = document.createElement('div');
-        const entries = isArray ? value.map((v, i) => [i, v]) : Object.entries(value);
+        childrenDiv.style.display = 'none';
+        let isExpanded = false;
+        let childrenRendered = false;
 
-        entries.forEach(([key, val]) => {
-            const childPath = isArray ? `${path}[${key}]` : `${path}.${key}`;
-            renderTreeNode(val, childPath, childrenDiv, depth + 1);
+        const expandIconEl = nodeHeader.querySelector('span:first-child');
+
+        expandIconEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isExpanded = !isExpanded;
+            childrenDiv.style.display = isExpanded ? 'block' : 'none';
+            expandIconEl.textContent = isExpanded ? '▼' : '▶';
+
+            if (isExpanded && !childrenRendered) {
+                const entries = isArray ? value.map((v, i) => [i, v]) : Object.entries(value);
+                entries.forEach(([key, val]) => {
+                    const childPath = isArray ? `${path}[${key}]` : `${path}.${key}`;
+                    renderTreeNode(val, childPath, childrenDiv, depth + 1);
+                });
+                childrenRendered = true;
+            }
+        });
+
+        nodeHeader.addEventListener('click', (e) => {
+            if (e.target === expandIconEl || expandIconEl.contains(e.target)) {
+                return;
+            }
+            e.stopPropagation();
+            updateArraySelection(path);
         });
 
         nodeDiv.appendChild(childrenDiv);
+    } else {
+        nodeHeader.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateArraySelection(path);
+        });
     }
 
     parentEl.appendChild(nodeDiv);
+}
+
+function updateArraySelection(path) {
+    const preview = document.getElementById('array-selection-preview');
+    const pathDisplay = document.getElementById('array-selection-path');
+    const tree = document.getElementById('array-selection-tree');
+
+    executionState.pendingArraySelection.selectedPath = path;
+    pathDisplay.textContent = path;
+
+    const { data } = executionState.pendingArraySelection;
+    const selectedValue = getValueAtPath(data, path);
+    preview.value = stringifyForDisplay(selectedValue, 2);
+
+    tree.querySelectorAll('[data-tree-node]').forEach(node => {
+        const nodeHeader = node.querySelector('[data-node-header]');
+        if (nodeHeader) {
+            const nodePath = node.getAttribute('data-path');
+            if (nodePath === path) {
+                nodeHeader.style.background = '#3e3d32';
+                nodeHeader.style.color = '#66d9ef';
+                nodeHeader.style.fontWeight = 'bold';
+            } else {
+                nodeHeader.style.background = 'transparent';
+                nodeHeader.style.color = '';
+                nodeHeader.style.fontWeight = '';
+            }
+        }
+    });
 }
 
 function showArraySelectionModal() {
