@@ -73,6 +73,7 @@ select {
     z-index: 1000;
     justify-content: center;
     align-items: center;
+    overflow: hidden;
 }
 
 .modal.show {

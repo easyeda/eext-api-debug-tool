@@ -51,6 +51,13 @@
                     <input type="text" id="function-output-editor" class="text-input" placeholder="例如：result">
                 </div>
             </div>
+            <div id="state-editor" style="display:none;">
+                <div class="form-field">
+                    <label for="state-path-editor">已保存的选择路径</label>
+                    <input type="text" id="state-path-editor" class="text-input" readonly>
+                </div>
+                <button id="clear-saved-path" style="background: #f92672; border-color: #f92672;">清除保存的路径</button>
+            </div>
             <textarea id="code-editor" placeholder="在此编写 JavaScript 代码...&#10;可用变量取决于上方的输入参数&#10;使用 return 输出值"></textarea>
             <input type="text" id="variable-editor" placeholder="输入值 (字符串、数字、true/false、null 或 JSON)">
             <div class="modal-footer">
@@ -71,20 +78,6 @@
         </div>
     </div>
 
-    <div id="execution-confirm-modal" class="modal">
-        <div class="modal-content" style="width: 800px; max-height: 90vh;">
-            <div class="modal-header">确认执行代码</div>
-            <div style="margin-bottom: 12px; color: #f8f8f2; font-size: 13px;">
-                以下是即将执行的完整代码。您可以先检查，再确认流程是否符合预期。
-            </div>
-            <textarea id="execution-code-editor" style="height: 500px; font-family: 'Courier New', monospace; font-size: 12px;"></textarea>
-            <div class="modal-footer">
-                <button id="execution-cancel">取消</button>
-                <button id="execution-confirm" style="background: #a6e22e; color: #272822;">确认执行</button>
-            </div>
-        </div>
-    </div>
-
     <div id="array-selection-modal" class="modal">
         <div class="modal-content" style="width: 760px; max-height: 85vh;">
             <div class="modal-header" id="array-selection-title">选择要传递的值</div>
@@ -99,6 +92,7 @@
                 <textarea id="array-selection-preview" readonly style="width: 260px; min-height: 380px; cursor: text;"></textarea>
             </div>
             <div class="modal-footer">
+                <button id="array-selection-back" style="margin-right: auto;">← 返回上一步</button>
                 <button id="array-selection-cancel">取消运行</button>
                 <button id="array-selection-confirm">确认并继续</button>
             </div>

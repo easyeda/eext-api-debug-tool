@@ -340,6 +340,7 @@ function addBlock(type) {
         description: def.description || '',
         value: def.value !== undefined ? def.value : undefined,
         rotation: 0,
+        savedPath: undefined,
     };
     block.w = measureBlockWidth(block);
     state.blocks.push(block);
@@ -364,6 +365,7 @@ function copyBlock(blockId) {
         description: original.description || '',
         value: original.value !== undefined ? original.value : undefined,
         rotation: original.rotation || 0,
+        savedPath: original.savedPath,
     };
     block.w = measureBlockWidth(block);
     state.blocks.push(block);
@@ -800,6 +802,8 @@ canvas.addEventListener('dblclick', (e) => {
     if (block) {
         if (block.type === 'variable') {
             openModal(block, 'variable');
+        } else if (block.savedPath) {
+            openModal(block, 'state');
         } else {
             openModal(block, 'code');
         }
@@ -959,12 +963,23 @@ functionOutputEditor.addEventListener('input', () => {
 
 function openModal(block, type) {
     state.editingBlock = block;
+    state.editingModalType = type;
 
-    if (type === 'variable') {
+    const stateEditor = document.getElementById('state-editor');
+
+    if (type === 'state') {
+        modalTitle.textContent = '查看/编辑选择状态 - ' + block.title;
+        codeEditor.style.display = 'none';
+        variableEditor.style.display = 'none';
+        functionEditor.style.display = 'none';
+        stateEditor.style.display = 'block';
+        document.getElementById('state-path-editor').value = block.savedPath || '(未设置)';
+    } else if (type === 'variable') {
         modalTitle.textContent = '编辑变量值';
         codeEditor.style.display = 'none';
         variableEditor.style.display = 'block';
         functionEditor.style.display = 'none';
+        stateEditor.style.display = 'none';
         variableEditor.value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
         variableEditor.focus();
     } else {
@@ -972,6 +987,7 @@ function openModal(block, type) {
         codeEditor.style.display = 'block';
         variableEditor.style.display = 'none';
         functionEditor.style.display = block.type === 'function' ? 'block' : 'none';
+        stateEditor.style.display = 'none';
 
         if (block.type === 'function') {
             functionNameEditor.value = block.title || '';
@@ -998,10 +1014,28 @@ function openModal(block, type) {
 document.getElementById('modal-cancel').addEventListener('click', () => {
     modal.classList.remove('show');
     state.editingBlock = null;
+    state.editingModalType = null;
+});
+
+modal.addEventListener('click', (e) => {
+    if (e.target.id === 'clear-saved-path') {
+        if (state.editingBlock) {
+            state.editingBlock.savedPath = undefined;
+            modal.classList.remove('show');
+            state.editingBlock = null;
+            state.editingModalType = null;
+        }
+    }
 });
 
 document.getElementById('modal-save').addEventListener('click', () => {
     if (state.editingBlock) {
+        if (state.editingModalType === 'state') {
+            modal.classList.remove('show');
+            state.editingBlock = null;
+            state.editingModalType = null;
+            return;
+        }
         if (variableEditor.style.display !== 'none') {
             // Saving variable value
             const input = variableEditor.value.trim();
@@ -1222,7 +1256,8 @@ const executionState = {
     outputs: new Map(),
     outputPaths: new Map(),
     currentIndex: 0,
-    pendingArraySelection: null
+    pendingArraySelection: null,
+    selectionHistory: []
 };
 
 function isThenable(value) {
@@ -1279,6 +1314,7 @@ document.getElementById('run').addEventListener('click', async () => {
     executionState.outputPaths = new Map();
     executionState.currentIndex = 0;
     executionState.pendingArraySelection = null;
+    executionState.selectionHistory = [];
 
     await executeWorkflow();
 });
@@ -1322,6 +1358,19 @@ async function executeWorkflow() {
             executionState.outputPaths.set(id, block.outputs.length ? ['$'] : []);
 
             if ((Array.isArray(result) || (result && typeof result === 'object')) && hasDownstreamDependents(id)) {
+                if (block.savedPath) {
+                    const selectedValue = getValueAtPath(result, block.savedPath);
+                    executionState.outputs.set(id, [selectedValue]);
+                    executionState.outputPaths.set(id, [block.savedPath]);
+                    executionState.selectionHistory.push({
+                        blockId: id,
+                        blockTitle: block.title,
+                        data: result,
+                        previousPath: block.savedPath
+                    });
+                    executionState.currentIndex++;
+                    continue;
+                }
                 executionState.pendingArraySelection = {
                     blockId: id,
                     blockTitle: block.title,
@@ -1341,59 +1390,8 @@ async function executeWorkflow() {
         }
     }
 
-    showExecutionConfirmModal();
-}
-
-function generateExecutableCode() {
-    const order = executionState.order;
-    let code = '// 最终执行代码 - 所有变量已替换为实际值\n';
-    code += '(async function() {\n';
-
-    for (const id of order) {
-        const block = state.blocks.find(b => b.id === id);
-        if (!block) continue;
-
-        code += `\n  // Block: ${block.title}\n`;
-        const inputNames = block.inputs.map(portName);
-
-        let blockCode = block.code;
-        for (const inputName of inputNames) {
-            const inputIndex = inputNames.indexOf(inputName);
-            const conn = state.connections.find(c => c.toId === id && c.toPort === inputIndex);
-            let replacement = 'undefined';
-            if (conn) {
-                replacement = getOutputExpression(conn.fromId, conn.fromPort);
-            }
-            const regex = new RegExp(`\\b${inputName}\\b`, 'g');
-            blockCode = blockCode.replace(regex, replacement);
-        }
-
-        const indentedCode = blockCode.split('\n').map(line => '  ' + line).join('\n');
-        if (block.outputs.length > 0) {
-            const outputVar = `block_${id}_0`;
-            code += `  const ${outputVar} = await (async function() {\n`;
-            code += indentedCode + '\n';
-            code += '  })();\n';
-        } else {
-            code += `  await (async function() {\n`;
-            code += indentedCode + '\n';
-            code += '  })();\n';
-        }
-    }
-
-    code += '})();\n';
-    return code;
-}
-
-function showExecutionConfirmModal() {
-    const modal = document.getElementById('execution-confirm-modal');
-    const editor = document.getElementById('execution-code-editor');
-
-    const finalCode = generateExecutableCode();
-    editor.value = finalCode;
-    executionState.finalCode = finalCode;
-
-    modal.classList.add('show');
+    executionState.running = false;
+    eda.sys_Message.showToastMessage('工作流执行完成', 'info', 1);
 }
 
 function hasDownstreamDependents(blockId) {
@@ -1538,31 +1536,70 @@ function showArraySelectionModal() {
 
     const selectedValue = getValueAtPath(data, selectedPath);
     preview.value = stringifyForDisplay(selectedValue, 2);
+
+    const backBtn = document.getElementById('array-selection-back');
+    backBtn.disabled = executionState.selectionHistory.length === 0;
+    backBtn.style.opacity = backBtn.disabled ? '0.4' : '1';
+    backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
+
     modal.classList.add('show');
 }
 
 const arraySelectionModal = document.getElementById('array-selection-modal');
 
-document.getElementById('array-selection-confirm').addEventListener('click', async () => {
-    if (!executionState.pendingArraySelection) return;
+document.addEventListener('click', async (e) => {
+    const target = e.target.closest('[id]');
+    if (!target) return;
 
-    const { blockId, data, selectedPath } = executionState.pendingArraySelection;
-    const selectedValue = getValueAtPath(data, selectedPath);
-    executionState.outputs.set(blockId, [selectedValue]);
-    executionState.outputPaths.set(blockId, [selectedPath]);
+    if (target.id === 'array-selection-confirm') {
+        if (!executionState.pendingArraySelection) return;
 
-    arraySelectionModal.classList.remove('show');
-    executionState.pendingArraySelection = null;
-    executionState.currentIndex++;
+        const { blockId, data, selectedPath } = executionState.pendingArraySelection;
+        const block = state.blocks.find(b => b.id === blockId);
+        const selectedValue = getValueAtPath(data, selectedPath);
 
-    await executeWorkflow();
-});
+        executionState.selectionHistory.push({
+            blockId,
+            blockTitle: executionState.pendingArraySelection.blockTitle,
+            data,
+            previousPath: selectedPath
+        });
 
-document.getElementById('array-selection-cancel').addEventListener('click', () => {
-    arraySelectionModal.classList.remove('show');
-    executionState.running = false;
-    executionState.pendingArraySelection = null;
-    console.log('Workflow execution cancelled');
+        if (block) block.savedPath = selectedPath;
+
+        executionState.outputs.set(blockId, [selectedValue]);
+        executionState.outputPaths.set(blockId, [selectedPath]);
+
+        arraySelectionModal.classList.remove('show');
+        executionState.pendingArraySelection = null;
+        executionState.currentIndex++;
+
+        await executeWorkflow();
+    }
+
+    if (target.id === 'array-selection-back') {
+        if (executionState.selectionHistory.length === 0) return;
+
+        const prev = executionState.selectionHistory.pop();
+
+        executionState.outputs.delete(prev.blockId);
+        executionState.outputPaths.delete(prev.blockId);
+        executionState.currentIndex--;
+
+        executionState.pendingArraySelection = {
+            blockId: prev.blockId,
+            blockTitle: prev.blockTitle,
+            data: prev.data,
+            selectedPath: prev.previousPath
+        };
+        showArraySelectionModal();
+    }
+
+    if (target.id === 'array-selection-cancel') {
+        arraySelectionModal.classList.remove('show');
+        executionState.running = false;
+        executionState.pendingArraySelection = null;
+    }
 });
 
 arraySelectionModal.addEventListener('click', (e) => {
@@ -1570,28 +1607,6 @@ arraySelectionModal.addEventListener('click', (e) => {
         arraySelectionModal.classList.remove('show');
         executionState.running = false;
         executionState.pendingArraySelection = null;
-    }
-});
-
-// Execution Confirm Modal
-const executionConfirmModal = document.getElementById('execution-confirm-modal');
-
-document.getElementById('execution-confirm').addEventListener('click', async () => {
-    executionConfirmModal.classList.remove('show');
-    executionState.running = false;
-    console.log('Execution complete');
-    eda.sys_Message.showToastMessage('工作流执行完成', 'info', 1);
-});
-
-document.getElementById('execution-cancel').addEventListener('click', () => {
-    executionConfirmModal.classList.remove('show');
-    executionState.running = false;
-});
-
-executionConfirmModal.addEventListener('click', (e) => {
-    if (e.target === executionConfirmModal) {
-        executionConfirmModal.classList.remove('show');
-        executionState.running = false;
     }
 });
 
@@ -1672,7 +1687,8 @@ document.getElementById('export').addEventListener('click', () => {
             code: b.code,
             description: b.description,
             value: b.value,
-            rotation: b.rotation || 0
+            rotation: b.rotation || 0,
+            savedPath: b.savedPath
         })),
         connections: state.connections,
         nextId: state.nextId
