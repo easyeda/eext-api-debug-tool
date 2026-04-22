@@ -102,7 +102,9 @@ function initBlockDefs() {
         code: 'const value = null;\nreturn value;',
         category: '基础',
         description: '输入常量值（字符串、数字、布尔值等）',
-        value: null
+        value: null,
+        varName: '',
+        varScope: 'local'
     };
     if (!BLOCK_CATEGORIES['基础']) BLOCK_CATEGORIES['基础'] = [];
     BLOCK_CATEGORIES['基础'].unshift('variable');
@@ -327,9 +329,13 @@ function measureBlockWidth(block) {
         maxW = Math.max(maxW, ctx.measureText(block.description).width + 20);
     }
 
-    if (block.type === 'variable' && block.value !== undefined && block.value !== null) {
+    if (block.type === 'variable') {
         ctx.font = 'bold 12px monospace';
-        maxW = Math.max(maxW, ctx.measureText(JSON.stringify(block.value)).width + 20);
+        const prefix = block.varScope === 'global' ? '[G] ' : '';
+        const name = block.varName || '';
+        const valStr = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
+        const displayStr = name ? `${prefix}${name} = ${valStr}` : valStr;
+        if (displayStr) maxW = Math.max(maxW, ctx.measureText(displayStr).width + 20);
     }
 
     return Math.max(BLOCK_MIN_W, maxW);
@@ -352,6 +358,8 @@ function addBlock(type) {
         code: def.code,
         description: def.description || '',
         value: def.value !== undefined ? def.value : undefined,
+        varName: def.varName !== undefined ? def.varName : undefined,
+        varScope: def.varScope !== undefined ? def.varScope : undefined,
         loopCount: def.loopCount !== undefined ? def.loopCount : undefined,
         loopDelay: def.loopDelay !== undefined ? def.loopDelay : undefined,
         rotation: 0,
@@ -379,6 +387,8 @@ function copyBlock(blockId) {
         code: original.code,
         description: original.description || '',
         value: original.value !== undefined ? original.value : undefined,
+        varName: original.varName !== undefined ? original.varName : undefined,
+        varScope: original.varScope !== undefined ? original.varScope : undefined,
         loopCount: original.loopCount !== undefined ? original.loopCount : undefined,
         loopDelay: original.loopDelay !== undefined ? original.loopDelay : undefined,
         rotation: original.rotation || 0,
@@ -442,6 +452,8 @@ function startBlockPlacement(blockId) {
         code: def.code,
         description: def.description || '',
         value: def.value !== undefined ? def.value : undefined,
+        varName: def.varName !== undefined ? def.varName : undefined,
+        varScope: def.varScope !== undefined ? def.varScope : undefined,
         loopCount: def.loopCount !== undefined ? def.loopCount : undefined,
         loopDelay: def.loopDelay !== undefined ? def.loopDelay : undefined,
         rotation: 0,
@@ -514,7 +526,6 @@ function drawBlock(block) {
     const isSelected = state.selected === block.id;
     const hasDesc = block.description && block.description.length > 0;
     const isVariable = block.type === 'variable';
-    const hasValue = isVariable && block.value !== undefined && block.value !== null;
     const rot = block.rotation || 0;
 
     ctx.save();
@@ -558,13 +569,24 @@ function drawBlock(block) {
     let contentY = block.y + BLOCK_HEADER_H + 8;
 
     // Display variable value if it exists
-    if (hasValue) {
-        ctx.fillStyle = '#e6db74';
-        ctx.font = 'bold 12px monospace';
-        ctx.textAlign = 'left';
-        const valueStr = JSON.stringify(block.value);
-        ctx.fillText(valueStr, block.x + 10, contentY + 6);
-        contentY += 20;
+    if (isVariable) {
+        const prefix = block.varScope === 'global' ? '[G] ' : '';
+        const name = block.varName || '';
+        const valStr = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
+        const displayStr = name ? `${prefix}${name} = ${valStr}` : (valStr || '');
+        if (displayStr) {
+            ctx.fillStyle = block.varScope === 'global' ? '#f92672' : '#e6db74';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(displayStr, block.x + 10, contentY + 6);
+            contentY += 20;
+        } else if (hasDesc) {
+            ctx.fillStyle = '#75715e';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(block.description, block.x + 10, contentY + 6);
+            contentY += 16;
+        }
     } else if (hasDesc) {
         // Display description if no value
         ctx.fillStyle = '#75715e';
@@ -899,6 +921,9 @@ const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modal-title');
 const codeEditor = document.getElementById('code-editor');
 const variableEditor = document.getElementById('variable-editor');
+const variableExtraEditor = document.getElementById('variable-extra-editor');
+const variableNameEditor = document.getElementById('variable-name-editor');
+const variableScopeEditor = document.getElementById('variable-scope-editor');
 const functionEditor = document.getElementById('function-editor');
 const functionNameEditor = document.getElementById('function-name-editor');
 const paramsScroll = document.getElementById('params-scroll');
@@ -1018,6 +1043,7 @@ function openModal(block, type) {
         modalTitle.textContent = '编辑循环模块';
         codeEditor.style.display = 'none';
         variableEditor.style.display = 'none';
+        if (variableExtraEditor) variableExtraEditor.style.display = 'none';
         functionEditor.style.display = 'none';
         stateEditor.style.display = 'none';
         if (loopEditor) loopEditor.style.display = 'block';
@@ -1032,23 +1058,28 @@ function openModal(block, type) {
         modalTitle.textContent = '查看/编辑选择状态 - ' + block.title;
         codeEditor.style.display = 'none';
         variableEditor.style.display = 'none';
+        if (variableExtraEditor) variableExtraEditor.style.display = 'none';
         functionEditor.style.display = 'none';
         stateEditor.style.display = 'block';
         if (loopEditor) loopEditor.style.display = 'none';
         document.getElementById('state-path-editor').value = block.savedPath || '(未设置)';
     } else if (type === 'variable') {
-        modalTitle.textContent = '编辑变量值';
+        modalTitle.textContent = '编辑变量';
         codeEditor.style.display = 'none';
         variableEditor.style.display = 'block';
+        if (variableExtraEditor) variableExtraEditor.style.display = 'block';
         functionEditor.style.display = 'none';
         stateEditor.style.display = 'none';
         if (loopEditor) loopEditor.style.display = 'none';
         variableEditor.value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
-        variableEditor.focus();
+        if (variableNameEditor) variableNameEditor.value = block.varName || '';
+        if (variableScopeEditor) variableScopeEditor.value = block.varScope || 'local';
+        if (variableNameEditor) variableNameEditor.focus();
     } else {
         modalTitle.textContent = block.type === 'function' ? '编辑函数模块' : '编辑代码模块';
         codeEditor.style.display = 'block';
         variableEditor.style.display = 'none';
+        if (variableExtraEditor) variableExtraEditor.style.display = 'none';
         functionEditor.style.display = block.type === 'function' ? 'block' : 'none';
         stateEditor.style.display = 'none';
         if (loopEditor) loopEditor.style.display = 'none';
@@ -1117,7 +1148,18 @@ document.getElementById('modal-save').addEventListener('click', () => {
             return;
         }
         if (variableEditor.style.display !== 'none') {
-            // Saving variable value
+            const varName = variableNameEditor ? variableNameEditor.value.trim() : '';
+            const varScope = variableScopeEditor ? variableScopeEditor.value : 'local';
+            if (!varName) {
+                eda.sys_Message.showToastMessage('请输入变量名称', 'info', 1);
+                if (variableNameEditor) variableNameEditor.focus();
+                return;
+            }
+            if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(varName)) {
+                eda.sys_Message.showToastMessage('变量名称无效，请使用合法的标识符', 'info', 1);
+                if (variableNameEditor) variableNameEditor.focus();
+                return;
+            }
             const input = variableEditor.value.trim();
             try {
                 if (input === '') {
@@ -1135,7 +1177,15 @@ document.getElementById('modal-save').addEventListener('click', () => {
                 } else {
                     state.editingBlock.value = input;
                 }
-                state.editingBlock.code = `const value = ${JSON.stringify(state.editingBlock.value)};\nreturn value;`;
+                state.editingBlock.varName = varName;
+                state.editingBlock.varScope = varScope;
+                const valStr = JSON.stringify(state.editingBlock.value);
+                if (varScope === 'global') {
+                    state.editingBlock.code = `window.__wf_globals__ = window.__wf_globals__ || {};\nwindow.__wf_globals__['${varName}'] = ${valStr};\nreturn ${valStr};`;
+                } else {
+                    state.editingBlock.code = `const ${varName} = ${valStr};\nreturn ${varName};`;
+                }
+                state.editingBlock.description = varScope === 'global' ? `全局变量` : `局部变量`;
                 state.editingBlock.w = measureBlockWidth(state.editingBlock);
             } catch (e) {
                 eda.sys_Message.showToastMessage('无效的值格式: ' + e.message, 'info', 1);

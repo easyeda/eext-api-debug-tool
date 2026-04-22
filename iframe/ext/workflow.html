@@ -60,6 +60,19 @@
             </div>
             <textarea id="code-editor" placeholder="在此编写 JavaScript 代码...&#10;可用变量取决于上方的输入参数&#10;使用 return 输出值"></textarea>
             <input type="text" id="variable-editor" placeholder="输入值 (字符串、数字、true/false、null 或 JSON)">
+            <div id="variable-extra-editor" style="display:none;">
+                <div class="form-field">
+                    <label for="variable-name-editor">变量名称</label>
+                    <input type="text" id="variable-name-editor" class="text-input" placeholder="例如：myVar">
+                </div>
+                <div class="form-field">
+                    <label for="variable-scope-editor">变量类型</label>
+                    <select id="variable-scope-editor" class="text-input">
+                        <option value="local">局部变量</option>
+                        <option value="global">全局变量</option>
+                    </select>
+                </div>
+            </div>
             <div id="loop-editor" style="display:none;">
                 <div class="form-field">
                     <label for="loop-count-editor">循环次数</label>
