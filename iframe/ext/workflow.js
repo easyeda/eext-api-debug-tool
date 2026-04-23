@@ -1314,28 +1314,6 @@ addBlockSelect.addEventListener('change', (e) => {
     }
 });
 
-document.getElementById('zoom-in').addEventListener('click', () => {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const w = screenToWorld(cx, cy);
-    state.camera.scale = Math.min(4, state.camera.scale * 1.2);
-    state.camera.x = cx - w.x * state.camera.scale;
-    state.camera.y = cy - w.y * state.camera.scale;
-});
-
-document.getElementById('zoom-out').addEventListener('click', () => {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const w = screenToWorld(cx, cy);
-    state.camera.scale = Math.max(0.1, state.camera.scale / 1.2);
-    state.camera.x = cx - w.x * state.camera.scale;
-    state.camera.y = cy - w.y * state.camera.scale;
-});
-
-document.getElementById('zoom-reset').addEventListener('click', () => {
-    state.camera = { x: 0, y: 0, scale: 1 };
-});
-
 document.getElementById('clear').addEventListener('click', () => {
     eda.sys_Dialog.showConfirmationMessage(
         '确定清空所有模块？',
