@@ -2,51 +2,6 @@
   "version": 1,
   "blocks": [
     {
-      "id": 3,
-      "type": "eda_lib_Device_search",
-      "title": "search",
-      "color": "#75715e",
-      "x": 599.7700821957135,
-      "y": 69.17830509711172,
-      "w": 338.553466796875,
-      "inputs": [
-        {
-          "name": "key",
-          "description": "搜索关键字"
-        },
-        {
-          "name": "libraryUuid",
-          "description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
-        },
-        {
-          "name": "classification",
-          "description": "分类，默认为全部"
-        },
-        {
-          "name": "symbolType",
-          "description": "符号类型，默认为全部"
-        },
-        {
-          "name": "itemsOfPage",
-          "description": "一页搜索结果的数量"
-        },
-        {
-          "name": "page",
-          "description": "页数"
-        }
-      ],
-      "outputs": [
-        {
-          "name": "result",
-          "description": "搜索到的器件属性的列表"
-        }
-      ],
-      "code": "const result = await eda.lib_Device.search(key, libraryUuid, classification, symbolType, itemsOfPage, page);\nreturn result;",
-      "description": "搜索器件",
-      "rotation": 0,
-      "savedPath": "$[0].name"
-    },
-    {
       "id": 8,
       "type": "variable",
       "title": "变量",
@@ -127,12 +82,98 @@
       "savedPath": "$[1].uuid"
     },
     {
+      "id": 13,
+      "type": "loop",
+      "title": "循环",
+      "color": "#ae81ff",
+      "x": 1172.2375294552987,
+      "y": -193.42251415632697,
+      "w": 200,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "index",
+          "description": "当前循环索引 (从0开始)"
+        }
+      ],
+      "code": "return index;",
+      "description": "循环 2 次, 间隔 1000ms",
+      "loopCount": 2,
+      "loopDelay": 1000,
+      "rotation": 0
+    },
+    {
+      "id": 11,
+      "type": "variable",
+      "title": "变量",
+      "color": "#e6db74",
+      "x": 912.2951011368343,
+      "y": -98.11874443249033,
+      "w": 200,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "description": "变量值"
+        }
+      ],
+      "code": "const value = 2;\nreturn value;",
+      "description": "输入常量值（字符串、数字、布尔值等）",
+      "value": 2,
+      "rotation": 0
+    },
+    {
+      "id": 3,
+      "type": "eda_lib_Device_search",
+      "title": "search",
+      "color": "#75715e",
+      "x": 599.7700821957135,
+      "y": 69.17830509711172,
+      "w": 338.553466796875,
+      "inputs": [
+        {
+          "name": "key",
+          "description": "搜索关键字"
+        },
+        {
+          "name": "libraryUuid",
+          "description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+        },
+        {
+          "name": "classification",
+          "description": "分类，默认为全部"
+        },
+        {
+          "name": "symbolType",
+          "description": "符号类型，默认为全部"
+        },
+        {
+          "name": "itemsOfPage",
+          "description": "一页搜索结果的数量"
+        },
+        {
+          "name": "page",
+          "description": "页数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "description": "搜索到的器件属性的列表"
+        }
+      ],
+      "code": "const result = await eda.lib_Device.search(key, libraryUuid, classification, symbolType, itemsOfPage, page);\nreturn result;",
+      "description": "搜索器件",
+      "rotation": 0,
+      "savedPath": "$[0].name"
+    },
+    {
       "id": 10,
       "type": "eda_sys_Message_showToastMessage",
       "title": "showToastMessage",
       "color": "#e6db74",
-      "x": 1462.0659436109577,
-      "y": 74.99319260379812,
+      "x": 1564.274189918749,
+      "y": 35.245541261879225,
       "w": 236,
       "inputs": [
         {
@@ -166,23 +207,42 @@
       "rotation": 0
     },
     {
-      "id": 11,
-      "type": "variable",
-      "title": "变量",
+      "id": 17,
+      "type": "eda_sys_Message_showToastMessage",
+      "title": "showToastMessage",
       "color": "#e6db74",
-      "x": 1026.8793418286862,
-      "y": 334.11041665829276,
-      "w": 200,
-      "inputs": [],
-      "outputs": [
+      "x": 1657.2068860554123,
+      "y": 555.3150972384794,
+      "w": 236,
+      "inputs": [
         {
-          "name": "value",
-          "description": "变量值"
+          "name": "message",
+          "description": "消息内容"
+        },
+        {
+          "name": "messageType",
+          "description": "消息类型"
+        },
+        {
+          "name": "timer",
+          "description": "自动关闭倒计时秒数，`0` 为不自动关闭"
+        },
+        {
+          "name": "bottomPanel",
+          "description": "展开底部信息面板"
+        },
+        {
+          "name": "buttonTitle",
+          "description": "回调按钮标题"
+        },
+        {
+          "name": "buttonCallbackFn",
+          "description": "回调函数内容，字符串形式，会被自动解析并执行"
         }
       ],
-      "code": "const value = 2;\nreturn value;",
-      "description": "输入常量值（字符串、数字、布尔值等）",
-      "value": 2,
+      "outputs": [],
+      "code": "await eda.sys_Message.showToastMessage(message, messageType, timer, bottomPanel, buttonTitle, buttonCallbackFn);",
+      "description": "显示吐司消息",
       "rotation": 0
     },
     {
@@ -190,8 +250,8 @@
       "type": "variable",
       "title": "变量",
       "color": "#e6db74",
-      "x": 1011.3014311227719,
-      "y": -17.978781732561494,
+      "x": 858.8959822019019,
+      "y": 621.7696724585315,
       "w": 200,
       "inputs": [],
       "outputs": [
@@ -203,27 +263,6 @@
       "code": "const value = \"info\";\nreturn value;",
       "description": "输入常量值（字符串、数字、布尔值等）",
       "value": "info",
-      "rotation": 0
-    },
-    {
-      "id": 13,
-      "type": "loop",
-      "title": "循环",
-      "color": "#ae81ff",
-      "x": 1172.2375294552987,
-      "y": -193.42251415632697,
-      "w": 200,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "index",
-          "description": "当前循环索引 (从0开始)"
-        }
-      ],
-      "code": "return index;",
-      "description": "循环 2 次, 间隔 1000ms",
-      "loopCount": 2,
-      "loopDelay": 1000,
       "rotation": 0
     }
   ],
@@ -250,13 +289,17 @@
       "fromId": 9,
       "fromPort": 0,
       "toId": 3,
-      "toPort": 1
+      "toPort": 1,
+      "fromPath": "$[0].uuid",
+      "pathSelected": true
     },
     {
       "fromId": 3,
       "fromPort": 0,
       "toId": 10,
-      "toPort": 0
+      "toPort": 0,
+      "fromPath": "$",
+      "pathSelected": true
     },
     {
       "fromId": 12,
@@ -275,7 +318,27 @@
       "fromPort": 0,
       "toId": 10,
       "toPort": -1
+    },
+    {
+      "fromId": 12,
+      "fromPort": 0,
+      "toId": 17,
+      "toPort": 1
+    },
+    {
+      "fromId": 11,
+      "fromPort": 0,
+      "toId": 17,
+      "toPort": 2
+    },
+    {
+      "fromId": 3,
+      "fromPort": 0,
+      "toId": 17,
+      "toPort": 0,
+      "fromPath": "$",
+      "pathSelected": true
     }
   ],
-  "nextId": 15
+  "nextId": 18
 }

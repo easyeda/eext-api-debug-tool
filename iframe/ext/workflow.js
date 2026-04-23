@@ -1119,6 +1119,7 @@ function attachOutputMappingHandlers(block) {
             const conn = state.connections.find(c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort);
             if (conn) {
                 conn.fromPath = normalized;
+                conn.pathSelected = !!raw;
                 if (propertiesPanel.classList.contains('open') && currentEditingBlock && currentEditingBlock.id === block.id) {
                     openPropertiesPanel(block);
                 }
@@ -2117,7 +2118,8 @@ const executionState = {
     outputPaths: new Map(),
     currentIndex: 0,
     pendingArraySelection: null,
-    selectionHistory: []
+    selectionHistory: [],
+    pendingConnections: [],
 };
 
 function isThenable(value) {
@@ -2175,6 +2177,7 @@ document.getElementById('run').addEventListener('click', async () => {
     executionState.currentIndex = 0;
     executionState.pendingArraySelection = null;
     executionState.selectionHistory = [];
+    executionState.pendingConnections = [];
 
     await executeWorkflow();
 });
@@ -2335,7 +2338,29 @@ async function executeWorkflow() {
             executionState.outputs.set(id, block.outputs.length ? [result] : []);
             executionState.outputPaths.set(id, block.outputs.length ? ['$'] : []);
 
-            // Array selection modal removed - use per-connection output mappings instead
+            // Per-connection array selection: collect outgoing connections that need selection
+            if (block.outputs.length > 0 && result !== null && result !== undefined && typeof result === 'object') {
+                const outgoing = state.connections.filter(c => c.fromId === id && c.toPort !== -1);
+                const needSelection = outgoing.filter(c => !c.pathSelected && (!c.fromPath || c.fromPath === '$'));
+                if (needSelection.length > 0) {
+                    executionState.pendingConnections = needSelection.map(c => {
+                        const targetBlock = state.blocks.find(b => b.id === c.toId);
+                        const targetInput = targetBlock && targetBlock.inputs[c.toPort] ? portName(targetBlock.inputs[c.toPort]) : `input${c.toPort}`;
+                        return { conn: c, targetBlock, targetInput };
+                    });
+                    const first = executionState.pendingConnections.shift();
+                    const targetLabel = first.targetBlock ? `${first.targetBlock.title}.${first.targetInput}` : first.targetInput;
+                    executionState.pendingArraySelection = {
+                        blockId: id,
+                        blockTitle: `${block.title} → ${targetLabel}`,
+                        data: result,
+                        selectedPath: '$',
+                        targetConn: first.conn,
+                    };
+                    showArraySelectionModal();
+                    return;
+                }
+            }
 
             executionState.currentIndex++;
         } catch (err) {
@@ -2510,21 +2535,37 @@ document.addEventListener('click', async (e) => {
     if (target.id === 'array-selection-confirm') {
         if (!executionState.pendingArraySelection) return;
 
-        const { blockId, data, selectedPath } = executionState.pendingArraySelection;
+        const { blockId, data, selectedPath, targetConn } = executionState.pendingArraySelection;
         const block = state.blocks.find(b => b.id === blockId);
-        const selectedValue = getValueAtPath(data, selectedPath);
 
         executionState.selectionHistory.push({
             blockId,
             blockTitle: executionState.pendingArraySelection.blockTitle,
             data,
-            previousPath: selectedPath
+            previousPath: selectedPath,
+            targetConn,
         });
 
-        if (block) block.savedPath = selectedPath;
+        // Apply selected path to this specific connection
+        if (targetConn) {
+            targetConn.fromPath = selectedPath;
+            targetConn.pathSelected = true;
+        }
 
-        executionState.outputs.set(blockId, [selectedValue]);
-        executionState.outputPaths.set(blockId, [selectedPath]);
+        // Check if there are more pending connections for this block
+        if (executionState.pendingConnections.length > 0) {
+            const next = executionState.pendingConnections.shift();
+            const targetLabel = next.targetBlock ? `${next.targetBlock.title}.${next.targetInput}` : next.targetInput;
+            executionState.pendingArraySelection = {
+                blockId,
+                blockTitle: `${block ? block.title : ''} → ${targetLabel}`,
+                data,
+                selectedPath: '$',
+                targetConn: next.conn,
+            };
+            showArraySelectionModal();
+            return;
+        }
 
         arraySelectionModal.classList.remove('show');
         executionState.pendingArraySelection = null;
@@ -2538,15 +2579,26 @@ document.addEventListener('click', async (e) => {
 
         const prev = executionState.selectionHistory.pop();
 
-        executionState.outputs.delete(prev.blockId);
-        executionState.outputPaths.delete(prev.blockId);
-        executionState.currentIndex--;
+        // Undo the fromPath that was set on the previous connection
+        if (prev.targetConn) {
+            prev.targetConn.fromPath = '$';
+            prev.targetConn.pathSelected = false;
+        }
+
+        // Put the current pending selection back into the queue front
+        if (executionState.pendingArraySelection && executionState.pendingArraySelection.targetConn) {
+            const currentConn = executionState.pendingArraySelection.targetConn;
+            const targetBlock = state.blocks.find(b => b.id === currentConn.toId);
+            const targetInput = targetBlock && targetBlock.inputs[currentConn.toPort] ? portName(targetBlock.inputs[currentConn.toPort]) : `input${currentConn.toPort}`;
+            executionState.pendingConnections.unshift({ conn: currentConn, targetBlock, targetInput });
+        }
 
         executionState.pendingArraySelection = {
             blockId: prev.blockId,
             blockTitle: prev.blockTitle,
             data: prev.data,
-            selectedPath: prev.previousPath
+            selectedPath: prev.previousPath,
+            targetConn: prev.targetConn,
         };
         showArraySelectionModal();
     }
@@ -2555,6 +2607,7 @@ document.addEventListener('click', async (e) => {
         arraySelectionModal.classList.remove('show');
         executionState.running = false;
         executionState.pendingArraySelection = null;
+        executionState.pendingConnections = [];
     }
 });
 
