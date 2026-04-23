@@ -547,29 +547,6 @@ textarea {
     font-size: 13px;
 }
 
-#array-selection-modal.placing {
-    background: transparent;
-    pointer-events: none;
-}
-
-#array-selection-modal.placing .modal-content {
-    position: fixed;
-    opacity: 0.85;
-    pointer-events: none;
-    box-shadow: 0 8px 24px rgba(102, 217, 239, 0.4);
-    border-color: #66d9ef;
-}
-
-#array-selection-modal.placed {
-    background: rgba(0, 0, 0, 0.6);
-}
-
-#array-selection-modal.placed .modal-content {
-    position: relative;
-    opacity: 1;
-    pointer-events: auto;
-}
-
 /* 统一垂直滚动条样式 — 灰色轨道，仅对可滚动容器生效 */
 .modal-content::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,

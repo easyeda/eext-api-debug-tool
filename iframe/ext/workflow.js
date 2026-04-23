@@ -2408,9 +2408,6 @@ function updateArraySelection(path) {
     });
 }
 
-let arraySelectionPlacing = false;
-let arraySelectionPlaced = false;
-
 function showArraySelectionModal() {
     const modal = document.getElementById('array-selection-modal');
     const title = document.getElementById('array-selection-title');
@@ -2434,37 +2431,10 @@ function showArraySelectionModal() {
     backBtn.style.opacity = backBtn.disabled ? '0.4' : '1';
     backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
 
-    // Enter placing mode - modal follows mouse cursor
-    modal.classList.add('show', 'placing');
-    modal.classList.remove('placed');
-    arraySelectionPlacing = true;
-    arraySelectionPlaced = false;
+    modal.classList.add('show');
 }
 
 const arraySelectionModal = document.getElementById('array-selection-modal');
-
-// Track mouse for array selection modal placement
-document.addEventListener('mousemove', (e) => {
-    if (arraySelectionPlacing && !arraySelectionPlaced) {
-        const content = arraySelectionModal.querySelector('.modal-content');
-        if (content) {
-            content.style.left = (e.clientX + 10) + 'px';
-            content.style.top = (e.clientY + 10) + 'px';
-        }
-    }
-});
-
-// Click to place the array selection modal
-document.addEventListener('click', (e) => {
-    if (arraySelectionPlacing && !arraySelectionPlaced) {
-        arraySelectionModal.classList.remove('placing');
-        arraySelectionModal.classList.add('placed');
-        arraySelectionPlacing = false;
-        arraySelectionPlaced = true;
-        e.stopPropagation();
-        return;
-    }
-}, true);
 
 document.addEventListener('click', async (e) => {
     const target = e.target.closest('[id]');
@@ -2492,6 +2462,13 @@ document.addEventListener('click', async (e) => {
         arraySelectionModal.classList.remove('show');
         executionState.pendingArraySelection = null;
         executionState.currentIndex++;
+
+        // Refresh properties panel if it's showing this block
+        if (propertiesPanel.classList.contains('open') && block) {
+            if (currentEditingBlock && currentEditingBlock.id === blockId) {
+                openPropertiesPanel(block);
+            }
+        }
 
         await executeWorkflow();
     }
