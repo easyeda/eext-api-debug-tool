@@ -10,6 +10,8 @@ body {
     color: #f8f8f2;
     overflow: hidden;
     height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 #toolbar {
@@ -20,6 +22,331 @@ body {
     align-items: center;
     padding: 0 12px;
     gap: 8px;
+    flex-shrink: 0;
+}
+
+#canvas {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 48px);
+    cursor: grab;
+}
+
+/* Right Sidebar */
+#right-sidebar {
+    position: fixed;
+    right: 0;
+    top: 48px;
+    bottom: 0;
+    width: 40px;
+    background: #2d2e27;
+    border-left: 1px solid #3e3d32;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.sidebar-button {
+    width: 40px;
+    height: 80px;
+    background: #272822;
+    color: #f8f8f2;
+    border: none;
+    border-bottom: 1px solid #3e3d32;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.sidebar-button:hover {
+    background: #3e3d32;
+    color: #66d9ef;
+}
+
+.sidebar-button.active {
+    background: #3e3d32;
+    color: #66d9ef;
+    border-left: 3px solid #66d9ef;
+}
+
+.vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+/* Properties Panel */
+#properties-panel {
+    position: fixed;
+    right: -350px;
+    top: 48px;
+    bottom: 0;
+    width: 350px;
+    background: #2d2e27;
+    border-left: 1px solid #3e3d32;
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s ease;
+    box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+}
+
+#properties-panel.open {
+    right: 40px;
+}
+
+.properties-header {
+    height: 48px;
+    background: #272822;
+    border-bottom: 1px solid #3e3d32;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    flex-shrink: 0;
+}
+
+#properties-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #66d9ef;
+}
+
+.properties-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.property-section {
+    margin-bottom: 20px;
+}
+
+.property-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #f8f8f2;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.property-input {
+    width: 100%;
+    height: 36px;
+    background: #272822;
+    color: #f8f8f2;
+    border: 1px solid #49483e;
+    border-radius: 4px;
+    padding: 0 12px;
+    font-size: 13px;
+}
+
+.property-textarea {
+    width: 100%;
+    min-height: 120px;
+    background: #272822;
+    color: #f8f8f2;
+    border: 1px solid #49483e;
+    border-radius: 4px;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.property-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #3e3d32;
+}
+
+.property-button {
+    flex: 1;
+    height: 36px;
+    background: #66d9ef;
+    color: #272822;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.property-button:hover {
+    background: #7ee6ff;
+}
+
+.property-button.secondary {
+    background: #3e3d32;
+    color: #f8f8f2;
+}
+
+.property-button.secondary:hover {
+    background: #49483e;
+}
+
+/* Statistics View */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: #272822;
+    border: 1px solid #49483e;
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #66d9ef;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #75715e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stats-section {
+    margin-bottom: 20px;
+}
+
+.stats-section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f8f8f2;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #3e3d32;
+}
+
+.stats-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.stats-list-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #3e3d32;
+    font-size: 13px;
+}
+
+.stats-list-item:last-child {
+    border-bottom: none;
+}
+
+.stats-list-label {
+    color: #f8f8f2;
+}
+
+.stats-list-value {
+    color: #66d9ef;
+    font-weight: 500;
+}
+
+/* Input Field Groups */
+.input-field-group {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.input-field-group .property-input {
+    padding-right: 32px;
+}
+
+.input-clear-btn {
+    position: absolute;
+    right: 4px;
+    top: 28px;
+    width: 24px;
+    height: 24px;
+    background: #3e3d32;
+    border: none;
+    border-radius: 4px;
+    color: #75715e;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.input-clear-btn:hover {
+    background: #49483e;
+    color: #f92672;
+}
+
+/* Context Menu */
+.context-menu {
+    position: fixed;
+    background: #2d2e27;
+    border: 1px solid #49483e;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    min-width: 180px;
+    padding: 4px 0;
+    display: none;
+}
+
+.context-menu.show {
+    display: block;
+}
+
+.context-menu-item {
+    padding: 8px 16px;
+    color: #f8f8f2;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.context-menu-item:hover {
+    background: #3e3d32;
+}
+
+.context-menu-item.disabled {
+    color: #75715e;
+    cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+    background: transparent;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: #3e3d32;
+    margin: 4px 0;
+}
+
+.context-menu-label {
+    padding: 6px 16px;
+    color: #75715e;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 button {
@@ -38,17 +365,6 @@ button:hover {
     background: #3e3d32;
     border-color: #66d9ef;
     color: #66d9ef;
-}
-
-select {
-    height: 32px;
-    padding: 0 12px;
-    background: #272822;
-    color: #f8f8f2;
-    border: 1px solid #49483e;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
 }
 
 #canvas {
@@ -158,8 +474,7 @@ textarea {
     display: none;
     position: fixed;
     top: 60px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 12px;
     width: 600px;
     max-height: 500px;
     background: #2d2e27;
@@ -232,35 +547,62 @@ textarea {
     font-size: 13px;
 }
 
+#array-selection-modal.placing {
+    background: transparent;
+    pointer-events: none;
+}
+
+#array-selection-modal.placing .modal-content {
+    position: fixed;
+    opacity: 0.85;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(102, 217, 239, 0.4);
+    border-color: #66d9ef;
+}
+
+#array-selection-modal.placed {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+#array-selection-modal.placed .modal-content {
+    position: relative;
+    opacity: 1;
+    pointer-events: auto;
+}
+
 /* 统一垂直滚动条样式 — 灰色轨道，仅对可滚动容器生效 */
 .modal-content::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,
 #array-selection-tree::-webkit-scrollbar,
-textarea::-webkit-scrollbar {
+textarea::-webkit-scrollbar,
+.properties-content::-webkit-scrollbar {
     width: 8px;
 }
 
 .modal-content::-webkit-scrollbar-track,
 .search-results::-webkit-scrollbar-track,
 #array-selection-tree::-webkit-scrollbar-track,
-textarea::-webkit-scrollbar-track {
-    background: #3e3d32;
+textarea::-webkit-scrollbar-track,
+.properties-content::-webkit-scrollbar-track {
+    background: #75715e;
     border-radius: 4px;
 }
 
 .modal-content::-webkit-scrollbar-thumb,
 .search-results::-webkit-scrollbar-thumb,
 #array-selection-tree::-webkit-scrollbar-thumb,
-textarea::-webkit-scrollbar-thumb {
-    background: #75715e;
+textarea::-webkit-scrollbar-thumb,
+.properties-content::-webkit-scrollbar-thumb {
+    background: #49483e;
     border-radius: 4px;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover,
 .search-results::-webkit-scrollbar-thumb:hover,
 #array-selection-tree::-webkit-scrollbar-thumb:hover,
-textarea::-webkit-scrollbar-thumb:hover {
-    background: #a6a18d;
+textarea::-webkit-scrollbar-thumb:hover,
+.properties-content::-webkit-scrollbar-thumb:hover {
+    background: #3e3d32;
 }
 
 /* 参数输入区域 */

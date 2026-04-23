@@ -374,13 +374,19 @@ function copyBlock(blockId) {
     const original = state.blocks.find(b => b.id === blockId);
     if (!original) return;
 
+    // Cancel any existing placement
+    if (state.placingBlock) {
+        state.placingBlock = null;
+    }
+
+    // Create a copy as a placing block (follows mouse cursor)
     const block = {
-        id: state.nextId++,
+        id: -1, // Temporary ID for placement mode
         type: original.type,
         title: original.title,
         color: original.color,
-        x: original.x + 30,
-        y: original.y + 30,
+        x: state.mouse.wx - original.w / 2,
+        y: state.mouse.wy - 20,
         w: original.w,
         inputs: [...original.inputs],
         outputs: [...original.outputs],
@@ -394,15 +400,23 @@ function copyBlock(blockId) {
         rotation: original.rotation || 0,
         savedPath: original.savedPath,
     };
-    block.w = measureBlockWidth(block);
-    state.blocks.push(block);
-    state.selected = block.id;
+
+    state.placingBlock = block;
+    canvas.style.cursor = 'crosshair';
 }
 
 function removeBlock(blockId) {
     state.blocks = state.blocks.filter((b) => b.id !== blockId);
     state.connections = state.connections.filter((c) => c.fromId !== blockId && c.toId !== blockId);
     if (state.selected === blockId) state.selected = null;
+
+    // Update properties panel if open
+    if (propertiesPanel.classList.contains('open')) {
+        if (currentEditingBlock && currentEditingBlock.id === blockId) {
+            // If the deleted block was being edited, show statistics
+            openPropertiesPanel(null);
+        }
+    }
 }
 
 function createBlockFromMethod(methodPath, edcodeItem) {
@@ -472,6 +486,11 @@ function finalizePlacement() {
     state.selected = block.id;
     state.placingBlock = null;
     canvas.style.cursor = 'default';
+
+    // Update properties panel if open
+    if (propertiesPanel.classList.contains('open')) {
+        openPropertiesPanel(block);
+    }
 }
 
 function cancelPlacement() {
@@ -712,6 +731,83 @@ resize();
 
 canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
+
+    // Don't show context menu if placing a block
+    if (state.placingBlock) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const w = screenToWorld(sx, sy);
+    const block = hitTestBlock(w.x, w.y);
+
+    if (block) {
+        showContextMenu(e.clientX, e.clientY, block);
+    } else {
+        hideContextMenu();
+    }
+});
+
+// Context Menu Management
+const contextMenu = document.getElementById('context-menu');
+
+function showContextMenu(x, y, block) {
+    let menuHtml = '';
+
+    if (block.outputs && block.outputs.length > 0) {
+        menuHtml += '<div class="context-menu-label">复制输出变量</div>';
+
+        block.outputs.forEach((output, index) => {
+            const outputName = portName(output);
+            const varRef = `${block.title}.${outputName}`;
+
+            menuHtml += `
+                <div class="context-menu-item" data-action="copy-output" data-block-id="${block.id}" data-output-index="${index}" data-var-ref="${varRef}">
+                    <span>${outputName}</span>
+                </div>
+            `;
+        });
+    } else {
+        menuHtml += '<div class="context-menu-item disabled">此模块无输出</div>';
+    }
+
+    contextMenu.innerHTML = menuHtml;
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+    contextMenu.classList.add('show');
+
+    // Attach click handlers
+    contextMenu.querySelectorAll('[data-action="copy-output"]').forEach(item => {
+        item.addEventListener('click', () => {
+            const varRef = item.dataset.varRef;
+            copyToClipboard(varRef);
+            eda.sys_Message.showToastMessage(`已复制: ${varRef}`, 'info', 1);
+            hideContextMenu();
+        });
+    });
+}
+
+function hideContextMenu() {
+    contextMenu.classList.remove('show');
+}
+
+function copyToClipboard(text) {
+    // Create a temporary textarea
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+}
+
+// Hide context menu when clicking elsewhere
+document.addEventListener('click', (e) => {
+    if (!contextMenu.contains(e.target)) {
+        hideContextMenu();
+    }
 });
 
 canvas.addEventListener('mousedown', (e) => {
@@ -722,6 +818,13 @@ canvas.addEventListener('mousedown', (e) => {
 
     if (state.placingBlock && e.button === 0) {
         finalizePlacement();
+        return;
+    }
+
+    // Right-click cancels placement mode
+    if (state.placingBlock && e.button === 2) {
+        cancelPlacement();
+        e.preventDefault();
         return;
     }
 
@@ -747,7 +850,15 @@ canvas.addEventListener('mousedown', (e) => {
             removeBlock(block.id);
             return;
         }
+
+        // Select the block
         state.selected = block.id;
+
+        // If properties panel is open, switch to this block's properties
+        if (propertiesPanel.classList.contains('open')) {
+            openPropertiesPanel(block);
+        }
+
         state.dragging = { blockId: block.id, offsetX: w.x - block.x, offsetY: w.y - block.y };
         const idx = state.blocks.indexOf(block);
         state.blocks.splice(idx, 1);
@@ -756,6 +867,11 @@ canvas.addEventListener('mousedown', (e) => {
     }
 
     state.selected = null;
+
+    // If properties panel is open and nothing selected, show statistics
+    if (propertiesPanel.classList.contains('open')) {
+        openPropertiesPanel(null);
+    }
 });
 
 canvas.addEventListener('mousemove', (e) => {
@@ -857,31 +973,598 @@ canvas.addEventListener('wheel', (e) => {
     state.camera.scale = newScale;
 });
 
-canvas.addEventListener('dblclick', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const w = screenToWorld(sx, sy);
-    const block = hitTestBlock(w.x, w.y);
+// Properties Panel Management
+const propertiesPanel = document.getElementById('properties-panel');
+const propertiesToggle = document.getElementById('properties-toggle');
+const propertiesContent = document.getElementById('properties-content');
+const propertiesTitle = document.getElementById('properties-title');
+
+let currentEditingBlock = null;
+
+function openPropertiesPanel(block) {
+    currentEditingBlock = block;
+    state.editingBlock = block;
+
+    propertiesPanel.classList.add('open');
+    propertiesToggle.classList.add('active');
+
     if (block) {
+        propertiesTitle.textContent = `${block.title} - 属性`;
+
         if (block.type === 'loop') {
-            openModal(block, 'loop');
+            buildLoopProperties(block);
         } else if (block.type === 'variable') {
-            openModal(block, 'variable');
-        } else if (block.savedPath) {
-            openModal(block, 'state');
+            buildVariableProperties(block);
+        } else if (block.type === 'function') {
+            buildFunctionProperties(block);
         } else {
-            openModal(block, 'code');
+            buildCodeProperties(block);
         }
+    } else {
+        // Show statistics when no block is selected
+        propertiesTitle.textContent = '工作流统计';
+        buildStatisticsView();
+    }
+}
+
+function closePropertiesPanel() {
+    propertiesPanel.classList.remove('open');
+    propertiesToggle.classList.remove('active');
+    currentEditingBlock = null;
+    state.editingBlock = null;
+    propertiesContent.innerHTML = '';
+}
+
+function buildStatisticsView() {
+    const blockCount = state.blocks.length;
+    const connectionCount = state.connections.length;
+
+    // Count blocks by category
+    const categoryCounts = {};
+    state.blocks.forEach(block => {
+        const def = BLOCK_DEFS[block.type];
+        if (def && def.category) {
+            const category = def.category;
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        } else {
+            // Fallback for blocks without proper definition
+            categoryCounts['未知'] = (categoryCounts['未知'] || 0) + 1;
+        }
+    });
+
+    const categoryList = Object.entries(categoryCounts)
+        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+        .map(([cat, count]) => `<li class="stats-list-item"><span class="stats-list-label">${cat}</span><span class="stats-list-value">${count}</span></li>`)
+        .join('');
+
+    propertiesContent.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">${blockCount}</div>
+                <div class="stat-label">模块总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${connectionCount}</div>
+                <div class="stat-label">连接数</div>
+            </div>
+        </div>
+
+        ${blockCount > 0 ? `
+        <div class="stats-section">
+            <div class="stats-section-title">模块分类</div>
+            <ul class="stats-list">
+                ${categoryList}
+            </ul>
+        </div>
+        ` : ''}
+
+        <div class="stats-section">
+            <div class="stats-section-title">快捷键</div>
+            <ul class="stats-list">
+                <li class="stats-list-item"><span class="stats-list-label">选择模块</span><span class="stats-list-value">单击</span></li>
+                <li class="stats-list-item"><span class="stats-list-label">拖动画布</span><span class="stats-list-value">中键/右键</span></li>
+                <li class="stats-list-item"><span class="stats-list-label">缩放</span><span class="stats-list-value">滚轮</span></li>
+                <li class="stats-list-item"><span class="stats-list-label">旋转模块</span><span class="stats-list-value">Space</span></li>
+                <li class="stats-list-item"><span class="stats-list-label">删除模块</span><span class="stats-list-value">Delete</span></li>
+                <li class="stats-list-item"><span class="stats-list-label">复制模块</span><span class="stats-list-value">Ctrl+D</span></li>
+            </ul>
+        </div>
+    `;
+}
+
+function buildSavedPathSection(block) {
+    if (!block.savedPath) return '';
+    return `
+        <div class="property-section">
+            <label class="property-label">已保存的选择路径</label>
+            <input type="text" class="property-input" value="${block.savedPath}" readonly>
+            <div class="property-actions" style="margin-top: 8px; padding-top: 0; border-top: none;">
+                <button class="property-button secondary" onclick="clearSavedPath()">清除路径</button>
+            </div>
+        </div>
+    `;
+}
+
+function buildLoopProperties(block) {
+    const savedPathHtml = buildSavedPathSection(block);
+    const inputFieldsHtml = buildInputFields(block);
+
+    propertiesContent.innerHTML = `
+        ${savedPathHtml}
+        ${inputFieldsHtml}
+        <div class="property-section">
+            <label class="property-label">循环次数</label>
+            <input type="number" id="prop-loop-count" class="property-input"
+                   value="${block.loopCount || 3}" min="1" step="1">
+        </div>
+        <div class="property-section">
+            <label class="property-label">每次循环间隔 (毫秒)</label>
+            <input type="number" id="prop-loop-delay" class="property-input"
+                   value="${block.loopDelay || 0}" min="0" step="100">
+            <div style="color: #75715e; font-size: 11px; margin-top: 4px;">
+                输出端口将依次输出 0 到 N-1 的索引值
+            </div>
+        </div>
+        <div class="property-actions">
+            <button class="property-button secondary" onclick="closePropertiesPanel()">取消</button>
+            <button class="property-button" onclick="saveLoopProperties()">保存</button>
+        </div>
+    `;
+
+    attachInputFieldHandlers(block);
+}
+
+function buildVariableProperties(block) {
+    const value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
+    const savedPathHtml = buildSavedPathSection(block);
+    propertiesContent.innerHTML = `
+        ${savedPathHtml}
+        <div class="property-section">
+            <label class="property-label">变量名称</label>
+            <input type="text" id="prop-var-name" class="property-input"
+                   value="${block.varName || ''}" placeholder="例如：myVar">
+        </div>
+        <div class="property-section">
+            <label class="property-label">变量类型</label>
+            <select id="prop-var-scope" class="property-input">
+                <option value="local" ${block.varScope === 'local' ? 'selected' : ''}>局部变量</option>
+                <option value="global" ${block.varScope === 'global' ? 'selected' : ''}>全局变量</option>
+            </select>
+        </div>
+        <div class="property-section">
+            <label class="property-label">变量值</label>
+            <input type="text" id="prop-var-value" class="property-input"
+                   value="${value}" placeholder="字符串、数字、true/false、null 或 JSON">
+        </div>
+        <div class="property-actions">
+            <button class="property-button secondary" onclick="closePropertiesPanel()">取消</button>
+            <button class="property-button" onclick="saveVariableProperties()">保存</button>
+        </div>
+    `;
+}
+
+function buildStateProperties(block) {
+    // Deprecated - saved path now shown inline in other property views
+    openPropertiesPanel(block);
+}
+
+function buildFunctionProperties(block) {
+    const outputName = portName(block.outputs[0] || { name: 'result' });
+    const params = block.inputs.map(portName);
+
+    const savedPathHtml = buildSavedPathSection(block);
+    const inputFieldsHtml = buildInputFields(block);
+
+    propertiesContent.innerHTML = `
+        ${savedPathHtml}
+        <div class="property-section">
+            <label class="property-label">函数名称</label>
+            <input type="text" id="prop-func-name" class="property-input"
+                   value="${block.title || ''}" placeholder="例如：处理数据">
+        </div>
+        <div class="property-section">
+            <label class="property-label">函数描述</label>
+            <input type="text" id="prop-func-desc" class="property-input"
+                   value="${block.description || ''}" placeholder="简短描述">
+        </div>
+        ${inputFieldsHtml}
+        <div class="property-section">
+            <label class="property-label">输入参数 (逗号分隔)</label>
+            <input type="text" id="prop-func-inputs" class="property-input"
+                   value="${params.join(', ')}" placeholder="例如：input1, input2">
+        </div>
+        <div class="property-section">
+            <label class="property-label">输出参数</label>
+            <input type="text" id="prop-func-output" class="property-input"
+                   value="${outputName}" placeholder="例如：result">
+        </div>
+        <div class="property-section">
+            <label class="property-label">代码</label>
+            <textarea id="prop-func-code" class="property-textarea">${block.code}</textarea>
+        </div>
+        <div class="property-actions">
+            <button class="property-button secondary" onclick="closePropertiesPanel()">取消</button>
+            <button class="property-button" onclick="saveFunctionProperties()">保存</button>
+        </div>
+    `;
+
+    // Attach input field handlers
+    attachInputFieldHandlers(block);
+}
+
+function buildCodeProperties(block) {
+    const savedPathHtml = buildSavedPathSection(block);
+    const inputFieldsHtml = buildInputFields(block);
+
+    propertiesContent.innerHTML = `
+        ${savedPathHtml}
+        ${inputFieldsHtml}
+        <div class="property-section">
+            <label class="property-label">代码</label>
+            <textarea id="prop-code" class="property-textarea"
+                      placeholder="在此编写 JavaScript 代码...">${block.code}</textarea>
+        </div>
+        <div class="property-actions">
+            <button class="property-button secondary" onclick="closePropertiesPanel()">取消</button>
+            <button class="property-button" onclick="saveCodeProperties()">保存</button>
+        </div>
+    `;
+
+    // Attach input field handlers
+    attachInputFieldHandlers(block);
+}
+
+function buildInputFields(block) {
+    if (!block.inputs || block.inputs.length === 0) {
+        return '';
+    }
+
+    let html = '<div class="property-section"><div class="stats-section-title">输入参数</div>';
+
+    block.inputs.forEach((input, index) => {
+        const inputName = portName(input);
+        const connection = state.connections.find(c => c.toId === block.id && c.toPort === index);
+        let currentValue = '';
+
+        if (connection) {
+            const sourceBlock = state.blocks.find(b => b.id === connection.fromId);
+            if (sourceBlock) {
+                const outputName = portName(sourceBlock.outputs[connection.fromPort] || { name: 'output' });
+                currentValue = `${sourceBlock.title}.${outputName}`;
+            }
+        }
+
+        html += `
+            <div class="input-field-group">
+                <label class="property-label">${inputName}</label>
+                <input type="text"
+                       class="property-input input-field"
+                       data-block-id="${block.id}"
+                       data-port-index="${index}"
+                       value="${currentValue}"
+                       placeholder="输入值或粘贴变量引用">
+                ${connection ? `<button class="input-clear-btn" data-port-index="${index}">×</button>` : ''}
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+function attachInputFieldHandlers(block) {
+    const inputFields = propertiesContent.querySelectorAll('.input-field');
+
+    inputFields.forEach(field => {
+        field.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleInputFieldValue(field, block);
+            }
+        });
+
+        field.addEventListener('blur', () => {
+            handleInputFieldValue(field, block);
+        });
+    });
+
+    // Clear button handlers
+    const clearBtns = propertiesContent.querySelectorAll('.input-clear-btn');
+    clearBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const portIndex = parseInt(btn.dataset.portIndex);
+            clearInputConnection(block.id, portIndex);
+            openPropertiesPanel(block); // Refresh
+        });
+    });
+}
+
+function handleInputFieldValue(field, block) {
+    const value = field.value.trim();
+    const portIndex = parseInt(field.dataset.portIndex);
+
+    if (!value) {
+        // Clear connection if empty
+        clearInputConnection(block.id, portIndex);
+        return;
+    }
+
+    // Check if it's a variable reference (format: BlockTitle.outputName or block_X_Y)
+    if (value.includes('.') || value.match(/^block_\d+_\d+$/)) {
+        handleVariableReference(value, block.id, portIndex);
+    } else {
+        // Create a variable block with this value
+        createVariableBlockAndConnect(value, block.id, portIndex);
+    }
+
+    // Refresh the properties panel
+    openPropertiesPanel(block);
+}
+
+function clearInputConnection(blockId, portIndex) {
+    state.connections = state.connections.filter(
+        c => !(c.toId === blockId && c.toPort === portIndex)
+    );
+}
+
+function handleVariableReference(reference, targetBlockId, targetPortIndex) {
+    // Try to parse "BlockTitle.outputName" format
+    if (reference.includes('.')) {
+        const [blockTitle, outputName] = reference.split('.');
+        const sourceBlock = state.blocks.find(b => b.title === blockTitle.trim());
+
+        if (sourceBlock) {
+            const outputIndex = sourceBlock.outputs.findIndex(
+                o => portName(o) === outputName.trim()
+            );
+
+            if (outputIndex !== -1) {
+                createConnection(sourceBlock.id, outputIndex, targetBlockId, targetPortIndex);
+                return;
+            }
+        }
+    }
+
+    // Try to parse "block_X_Y" format
+    const match = reference.match(/^block_(\d+)_(\d+)$/);
+    if (match) {
+        const sourceBlockId = parseInt(match[1]);
+        const outputIndex = parseInt(match[2]);
+        const sourceBlock = state.blocks.find(b => b.id === sourceBlockId);
+
+        if (sourceBlock && outputIndex < sourceBlock.outputs.length) {
+            createConnection(sourceBlockId, outputIndex, targetBlockId, targetPortIndex);
+            return;
+        }
+    }
+
+    eda.sys_Message.showToastMessage('无法找到引用的变量', 'info', 1);
+}
+
+function createConnection(fromId, fromPort, toId, toPort) {
+    // Remove existing connection to this input
+    clearInputConnection(toId, toPort);
+
+    // Check if connection already exists
+    const exists = state.connections.some(
+        c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort
+    );
+
+    if (!exists) {
+        state.connections.push({
+            fromId,
+            fromPort,
+            toId,
+            toPort
+        });
+    }
+}
+
+function createVariableBlockAndConnect(value, targetBlockId, targetPortIndex) {
+    // Parse the value
+    let parsedValue;
+    try {
+        if (value === 'true') {
+            parsedValue = true;
+        } else if (value === 'false') {
+            parsedValue = false;
+        } else if (value === 'null') {
+            parsedValue = null;
+        } else if (!isNaN(value) && value !== '') {
+            parsedValue = Number(value);
+        } else if ((value.startsWith('{') && value.endsWith('}')) ||
+                   (value.startsWith('[') && value.endsWith(']'))) {
+            parsedValue = JSON.parse(value);
+        } else {
+            parsedValue = value;
+        }
+    } catch (e) {
+        parsedValue = value;
+    }
+
+    // Find target block position
+    const targetBlock = state.blocks.find(b => b.id === targetBlockId);
+    if (!targetBlock) return;
+
+    // Create variable block
+    const varBlock = {
+        id: state.nextId++,
+        type: 'variable',
+        title: '变量',
+        color: '#e6db74',
+        x: targetBlock.x - 250,
+        y: targetBlock.y + targetPortIndex * 60,
+        w: BLOCK_MIN_W,
+        inputs: [],
+        outputs: [{ name: 'value', description: '变量值' }],
+        code: `const value = ${JSON.stringify(parsedValue)};\nreturn value;`,
+        description: '自动创建',
+        value: parsedValue,
+        varName: `auto_${state.nextId - 1}`,
+        varScope: 'local',
+        rotation: 0,
+        savedPath: undefined,
+    };
+
+    varBlock.w = measureBlockWidth(varBlock);
+    state.blocks.push(varBlock);
+
+    // Create connection
+    createConnection(varBlock.id, 0, targetBlockId, targetPortIndex);
+}
+
+// Save functions
+window.saveLoopProperties = function() {
+    const count = parseInt(document.getElementById('prop-loop-count').value, 10);
+    const delay = parseInt(document.getElementById('prop-loop-delay').value, 10) || 0;
+
+    if (isNaN(count) || count < 1) {
+        eda.sys_Message.showToastMessage('循环次数必须为正整数', 'info', 1);
+        return;
+    }
+
+    currentEditingBlock.loopCount = count;
+    currentEditingBlock.loopDelay = delay;
+    currentEditingBlock.description = delay > 0 ? `循环 ${count} 次, 间隔 ${delay}ms` : `循环 ${count} 次`;
+    currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
+
+    closePropertiesPanel();
+};
+
+window.saveVariableProperties = function() {
+    const varName = document.getElementById('prop-var-name').value.trim();
+    const varScope = document.getElementById('prop-var-scope').value;
+    const input = document.getElementById('prop-var-value').value.trim();
+
+    if (!varName) {
+        eda.sys_Message.showToastMessage('请输入变量名称', 'info', 1);
+        return;
+    }
+
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(varName)) {
+        eda.sys_Message.showToastMessage('变量名称无效，请使用合法的标识符', 'info', 1);
+        return;
+    }
+
+    try {
+        let value;
+        if (input === '') {
+            value = null;
+        } else if (input === 'true') {
+            value = true;
+        } else if (input === 'false') {
+            value = false;
+        } else if (input === 'null') {
+            value = null;
+        } else if (!isNaN(input) && input !== '') {
+            value = Number(input);
+        } else if ((input.startsWith('{') && input.endsWith('}')) || (input.startsWith('[') && input.endsWith(']'))) {
+            value = JSON.parse(input);
+        } else {
+            value = input;
+        }
+
+        currentEditingBlock.value = value;
+        currentEditingBlock.varName = varName;
+        currentEditingBlock.varScope = varScope;
+
+        const valStr = JSON.stringify(value);
+        if (varScope === 'global') {
+            currentEditingBlock.code = `window.__wf_globals__ = window.__wf_globals__ || {};\nwindow.__wf_globals__['${varName}'] = ${valStr};\nreturn ${valStr};`;
+        } else {
+            currentEditingBlock.code = `const ${varName} = ${valStr};\nreturn ${varName};`;
+        }
+
+        currentEditingBlock.description = varScope === 'global' ? `全局变量` : `局部变量`;
+        currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
+
+        closePropertiesPanel();
+    } catch (e) {
+        eda.sys_Message.showToastMessage('无效的值格式: ' + e.message, 'info', 1);
+    }
+};
+
+window.saveFunctionProperties = function() {
+    const title = document.getElementById('prop-func-name').value.trim() || '函数';
+    const desc = document.getElementById('prop-func-desc').value.trim();
+    const inputsStr = document.getElementById('prop-func-inputs').value.trim();
+    const outputName = document.getElementById('prop-func-output').value.trim() || 'result';
+    const code = document.getElementById('prop-func-code').value;
+
+    const inputNames = inputsStr.split(',').map(s => s.trim()).filter(Boolean);
+
+    if (inputNames.length === 0) {
+        eda.sys_Message.showToastMessage('至少需要一个输入参数', 'info', 1);
+        return;
+    }
+
+    for (const name of inputNames) {
+        if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
+            eda.sys_Message.showToastMessage(`无效的输入名称: ${name}`, 'info', 1);
+            return;
+        }
+    }
+
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(outputName)) {
+        eda.sys_Message.showToastMessage(`无效的输出名称: ${outputName}`, 'info', 1);
+        return;
+    }
+
+    currentEditingBlock.title = title;
+    currentEditingBlock.description = desc;
+    currentEditingBlock.inputs = inputNames.map(name => ({ name, description: '' }));
+    currentEditingBlock.outputs = [{ name: outputName, description: '函数输出' }];
+    currentEditingBlock.code = code;
+    currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
+
+    // Remove invalid connections
+    state.connections = state.connections.filter((conn) => {
+        if (conn.toId === currentEditingBlock.id && conn.toPort >= inputNames.length) {
+            return false;
+        }
+        return !(conn.fromId === currentEditingBlock.id && conn.fromPort >= 1);
+    });
+
+    closePropertiesPanel();
+};
+
+window.saveCodeProperties = function() {
+    const code = document.getElementById('prop-code').value;
+    currentEditingBlock.code = code;
+    currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
+    closePropertiesPanel();
+};
+
+window.clearSavedPath = function() {
+    if (currentEditingBlock) {
+        currentEditingBlock.savedPath = undefined;
+        // Keep panel open and refresh to reflect the cleared path
+        openPropertiesPanel(currentEditingBlock);
+    }
+};
+
+// Toggle button handler - can open or close
+propertiesToggle.addEventListener('click', () => {
+    if (propertiesPanel.classList.contains('open')) {
+        closePropertiesPanel();
+    } else {
+        // Open with current selected block or statistics
+        const selectedBlock = state.selected ? state.blocks.find(b => b.id === state.selected) : null;
+        openPropertiesPanel(selectedBlock);
     }
 });
 
 window.addEventListener('keydown', (e) => {
+    // Check if user is typing in an input field or textarea
+    const isTyping = e.target.tagName === 'INPUT' ||
+                     e.target.tagName === 'TEXTAREA' ||
+                     e.target.isContentEditable;
+
     if (e.code === 'Escape' && state.placingBlock) {
         cancelPlacement();
         return;
     }
-    if (e.code === 'Space' && !state.editingBlock) {
+    if (e.code === 'Space' && !state.editingBlock && !isTyping) {
         e.preventDefault();
         if (state.selected) {
             const block = state.blocks.find(b => b.id === state.selected);
@@ -893,18 +1576,18 @@ window.addEventListener('keydown', (e) => {
             canvas.style.cursor = 'grab';
         }
     }
-    if (e.code === 'Delete' && state.selected && !state.editingBlock) {
+    if (e.code === 'Delete' && state.selected && !isTyping) {
         removeBlock(state.selected);
     }
-    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyD' && state.selected && !state.editingBlock) {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyD' && state.selected && !isTyping) {
         e.preventDefault();
         copyBlock(state.selected);
     }
-    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && state.selected && !state.editingBlock) {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC' && state.selected && !isTyping) {
         e.preventDefault();
         state.copiedBlock = state.selected;
     }
-    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV' && state.copiedBlock && !state.editingBlock) {
+    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV' && state.copiedBlock && !isTyping) {
         e.preventDefault();
         copyBlock(state.copiedBlock);
     }
@@ -1225,28 +1908,16 @@ document.getElementById('modal-save').addEventListener('click', () => {
 });
 
 
-const addBlockSelect = document.getElementById('add-block');
 const searchInput = document.getElementById('search-blocks');
 const searchPanel = document.getElementById('search-panel');
 const searchResults = document.getElementById('search-results');
 
 function populateBlockMenu() {
-    addBlockSelect.innerHTML = '<option value="">添加模块...</option>';
-    Object.keys(BLOCK_CATEGORIES).sort().forEach(cat => {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = cat;
-        BLOCK_CATEGORIES[cat].slice(0, 20).forEach(blockId => {
-            const opt = document.createElement('option');
-            opt.value = blockId;
-            opt.textContent = BLOCK_DEFS[blockId].title;
-            optgroup.appendChild(opt);
-        });
-        addBlockSelect.appendChild(optgroup);
-    });
+    // Dropdown removed - search is the primary way to add blocks
 }
 
 function searchBlocks(query) {
-    if (!query || query.length < 2) {
+    if (!query || query.length < 1) {
         searchPanel.classList.remove('show');
         return;
     }
@@ -1277,7 +1948,7 @@ function searchBlocks(query) {
             ${def.description ? `<div class="search-result-desc">${def.description}</div>` : ''}
         `;
         item.onclick = () => {
-            addBlock(blockId);
+            startBlockPlacement(blockId);
             searchInput.value = '';
             searchPanel.classList.remove('show');
         };
@@ -1296,7 +1967,7 @@ searchInput.addEventListener('input', (e) => {
 });
 
 searchInput.addEventListener('focus', (e) => {
-    if (e.target.value.length >= 2) {
+    if (e.target.value.length >= 1) {
         searchBlocks(e.target.value);
     }
 });
@@ -1304,13 +1975,6 @@ searchInput.addEventListener('focus', (e) => {
 document.addEventListener('click', (e) => {
     if (!searchPanel.contains(e.target) && e.target !== searchInput) {
         searchPanel.classList.remove('show');
-    }
-});
-
-addBlockSelect.addEventListener('change', (e) => {
-    if (e.target.value) {
-        addBlock(e.target.value);
-        e.target.value = '';
     }
 });
 
@@ -1326,6 +1990,11 @@ document.getElementById('clear').addEventListener('click', () => {
                 state.connections = [];
                 state.selected = null;
                 state.nextId = 1;
+
+                // Update properties panel if open
+                if (propertiesPanel.classList.contains('open')) {
+                    openPropertiesPanel(null);
+                }
             }
         }
     );
@@ -1739,6 +2408,9 @@ function updateArraySelection(path) {
     });
 }
 
+let arraySelectionPlacing = false;
+let arraySelectionPlaced = false;
+
 function showArraySelectionModal() {
     const modal = document.getElementById('array-selection-modal');
     const title = document.getElementById('array-selection-title');
@@ -1762,10 +2434,37 @@ function showArraySelectionModal() {
     backBtn.style.opacity = backBtn.disabled ? '0.4' : '1';
     backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
 
-    modal.classList.add('show');
+    // Enter placing mode - modal follows mouse cursor
+    modal.classList.add('show', 'placing');
+    modal.classList.remove('placed');
+    arraySelectionPlacing = true;
+    arraySelectionPlaced = false;
 }
 
 const arraySelectionModal = document.getElementById('array-selection-modal');
+
+// Track mouse for array selection modal placement
+document.addEventListener('mousemove', (e) => {
+    if (arraySelectionPlacing && !arraySelectionPlaced) {
+        const content = arraySelectionModal.querySelector('.modal-content');
+        if (content) {
+            content.style.left = (e.clientX + 10) + 'px';
+            content.style.top = (e.clientY + 10) + 'px';
+        }
+    }
+});
+
+// Click to place the array selection modal
+document.addEventListener('click', (e) => {
+    if (arraySelectionPlacing && !arraySelectionPlaced) {
+        arraySelectionModal.classList.remove('placing');
+        arraySelectionModal.classList.add('placed');
+        arraySelectionPlacing = false;
+        arraySelectionPlaced = true;
+        e.stopPropagation();
+        return;
+    }
+}, true);
 
 document.addEventListener('click', async (e) => {
     const target = e.target.closest('[id]');
@@ -1970,6 +2669,11 @@ document.getElementById('import').addEventListener('click', () => {
                                 state.selected = null;
                                 state.camera = { x: 0, y: 0, scale: 1 };
 
+                                // Update properties panel if open
+                                if (propertiesPanel.classList.contains('open')) {
+                                    openPropertiesPanel(null);
+                                }
+
                                 eda.sys_Message.showToastMessage('工作流导入成功', 'info', 1);
                             }
                         }
@@ -1980,6 +2684,11 @@ document.getElementById('import').addEventListener('click', () => {
                     state.nextId = data.nextId || state.blocks.length + 1;
                     state.selected = null;
                     state.camera = { x: 0, y: 0, scale: 1 };
+
+                    // Update properties panel if open
+                    if (propertiesPanel.classList.contains('open')) {
+                        openPropertiesPanel(null);
+                    }
 
                     eda.sys_Message.showToastMessage('工作流导入成功', 'info', 1);
                 }

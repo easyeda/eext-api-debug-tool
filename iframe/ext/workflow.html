@@ -9,9 +9,6 @@
 <body>
     <div id="toolbar">
         <input type="text" id="search-blocks" placeholder="搜索模块...">
-        <select id="add-block">
-            <option value="">添加模块...</option>
-        </select>
         <button id="run">运行</button>
         <button id="view-code">查看代码</button>
         <button id="export">导出</button>
@@ -19,6 +16,28 @@
         <button id="clear">清空</button>
     </div>
     <canvas id="canvas"></canvas>
+
+    <!-- Right Sidebar -->
+    <div id="right-sidebar">
+        <button id="properties-toggle" class="sidebar-button">
+            <span class="vertical-text">属性</span>
+        </button>
+    </div>
+
+    <!-- Properties Panel -->
+    <div id="properties-panel">
+        <div class="properties-header">
+            <span id="properties-title">模块属性</span>
+        </div>
+        <div class="properties-content" id="properties-content">
+            <!-- Content will be dynamically populated -->
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu">
+        <!-- Dynamically populated -->
+    </div>
 
     <div id="search-panel">
         <div class="search-results" id="search-results"></div>
