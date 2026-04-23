@@ -1001,7 +1001,6 @@ function openPropertiesPanel(block) {
             buildCodeProperties(block);
         }
     } else {
-        // Show statistics when no block is selected
         propertiesTitle.textContent = '工作流统计';
         buildStatisticsView();
     }
@@ -1072,25 +1071,80 @@ function buildStatisticsView() {
     `;
 }
 
-function buildSavedPathSection(block) {
-    if (!block.savedPath) return '';
+function buildOutputMappings(block) {
+    const outgoing = state.connections.filter(c => c.fromId === block.id && c.toPort !== -1);
+    if (outgoing.length === 0) return '';
+
+    const items = outgoing.map((conn, index) => {
+        const output = block.outputs[conn.fromPort];
+        const outputName = portName(output || { name: 'output' });
+        const targetBlock = state.blocks.find(b => b.id === conn.toId);
+        const targetInput = targetBlock && targetBlock.inputs[conn.toPort] ? portName(targetBlock.inputs[conn.toPort]) : `input${conn.toPort}`;
+        const fromPath = conn.fromPath || '$';
+        const displayPath = fromPath === '$' ? '' : fromPath.replace(/^\$/, '');
+        return `
+            <div class="mapping-row">
+                <div class="mapping-label">${outputName}${displayPath} → ${targetBlock ? targetBlock.title : '未知模块'}.${targetInput}</div>
+                <input type="text" class="property-input mapping-path-input"
+                       data-conn-index="${index}"
+                       data-from-id="${conn.fromId}"
+                       data-from-port="${conn.fromPort}"
+                       data-to-id="${conn.toId}"
+                       data-to-port="${conn.toPort}"
+                       value="${displayPath}"
+                       placeholder="例如：.name 或 [0] 或 .data.uuid">
+            </div>
+        `;
+    }).join('');
+
     return `
         <div class="property-section">
-            <label class="property-label">已保存的选择路径</label>
-            <input type="text" class="property-input" value="${block.savedPath}" readonly>
-            <div class="property-actions" style="margin-top: 8px; padding-top: 0; border-top: none;">
-                <button class="property-button secondary" onclick="clearSavedPath()">清除路径</button>
-            </div>
+            <div class="stats-section-title">输出映射</div>
+            <div class="mapping-help">复杂输出可为每条连接单独设置路径，例如 .name / .uuid / [0]</div>
+            ${items}
         </div>
     `;
 }
 
+function attachOutputMappingHandlers(block) {
+    const fields = propertiesContent.querySelectorAll('.mapping-path-input');
+    fields.forEach(field => {
+        const apply = () => {
+            const fromId = parseInt(field.dataset.fromId);
+            const fromPort = parseInt(field.dataset.fromPort);
+            const toId = parseInt(field.dataset.toId);
+            const toPort = parseInt(field.dataset.toPort);
+            const raw = field.value.trim();
+            const normalized = !raw ? '$' : (raw.startsWith('$') ? raw : `$${raw}`);
+            const conn = state.connections.find(c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort);
+            if (conn) {
+                conn.fromPath = normalized;
+                if (propertiesPanel.classList.contains('open') && currentEditingBlock && currentEditingBlock.id === block.id) {
+                    openPropertiesPanel(block);
+                }
+            }
+        };
+        field.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                apply();
+            }
+        });
+        field.addEventListener('blur', apply);
+    });
+}
+
+function buildSavedPathSection(block) {
+    // Deprecated: replaced by per-connection output mappings
+    return '';
+}
+
 function buildLoopProperties(block) {
-    const savedPathHtml = buildSavedPathSection(block);
     const inputFieldsHtml = buildInputFields(block);
+    const outputMappingsHtml = buildOutputMappings(block);
 
     propertiesContent.innerHTML = `
-        ${savedPathHtml}
+        ${outputMappingsHtml}
         ${inputFieldsHtml}
         <div class="property-section">
             <label class="property-label">循环次数</label>
@@ -1112,13 +1166,14 @@ function buildLoopProperties(block) {
     `;
 
     attachInputFieldHandlers(block);
+    attachOutputMappingHandlers(block);
 }
 
 function buildVariableProperties(block) {
     const value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
-    const savedPathHtml = buildSavedPathSection(block);
+    const outputMappingsHtml = buildOutputMappings(block);
     propertiesContent.innerHTML = `
-        ${savedPathHtml}
+        ${outputMappingsHtml}
         <div class="property-section">
             <label class="property-label">变量名称</label>
             <input type="text" id="prop-var-name" class="property-input"
@@ -1141,6 +1196,8 @@ function buildVariableProperties(block) {
             <button class="property-button" onclick="saveVariableProperties()">保存</button>
         </div>
     `;
+
+    attachOutputMappingHandlers(block);
 }
 
 function buildStateProperties(block) {
@@ -1152,11 +1209,11 @@ function buildFunctionProperties(block) {
     const outputName = portName(block.outputs[0] || { name: 'result' });
     const params = block.inputs.map(portName);
 
-    const savedPathHtml = buildSavedPathSection(block);
     const inputFieldsHtml = buildInputFields(block);
+    const outputMappingsHtml = buildOutputMappings(block);
 
     propertiesContent.innerHTML = `
-        ${savedPathHtml}
+        ${outputMappingsHtml}
         <div class="property-section">
             <label class="property-label">函数名称</label>
             <input type="text" id="prop-func-name" class="property-input"
@@ -1190,14 +1247,15 @@ function buildFunctionProperties(block) {
 
     // Attach input field handlers
     attachInputFieldHandlers(block);
+    attachOutputMappingHandlers(block);
 }
 
 function buildCodeProperties(block) {
-    const savedPathHtml = buildSavedPathSection(block);
     const inputFieldsHtml = buildInputFields(block);
+    const outputMappingsHtml = buildOutputMappings(block);
 
     propertiesContent.innerHTML = `
-        ${savedPathHtml}
+        ${outputMappingsHtml}
         ${inputFieldsHtml}
         <div class="property-section">
             <label class="property-label">代码</label>
@@ -1212,6 +1270,7 @@ function buildCodeProperties(block) {
 
     // Attach input field handlers
     attachInputFieldHandlers(block);
+    attachOutputMappingHandlers(block);
 }
 
 function buildInputFields(block) {
@@ -1230,7 +1289,10 @@ function buildInputFields(block) {
             const sourceBlock = state.blocks.find(b => b.id === connection.fromId);
             if (sourceBlock) {
                 const outputName = portName(sourceBlock.outputs[connection.fromPort] || { name: 'output' });
-                currentValue = `${sourceBlock.title}.${outputName}`;
+                const displayPath = connection.fromPath && connection.fromPath !== '$'
+                    ? connection.fromPath.replace(/^\$/, '')
+                    : '';
+                currentValue = `${sourceBlock.title}.${outputName}${displayPath}`;
             }
         }
 
@@ -1308,32 +1370,48 @@ function clearInputConnection(blockId, portIndex) {
 }
 
 function handleVariableReference(reference, targetBlockId, targetPortIndex) {
-    // Try to parse "BlockTitle.outputName" format
     if (reference.includes('.')) {
-        const [blockTitle, outputName] = reference.split('.');
-        const sourceBlock = state.blocks.find(b => b.title === blockTitle.trim());
+        const firstDot = reference.indexOf('.');
+        const blockTitle = reference.slice(0, firstDot).trim();
+        const remainder = reference.slice(firstDot + 1);
+        const sourceBlock = state.blocks.find(b => b.title === blockTitle);
 
         if (sourceBlock) {
-            const outputIndex = sourceBlock.outputs.findIndex(
-                o => portName(o) === outputName.trim()
-            );
+            let matchedOutputIndex = -1;
+            let matchedPath = '$';
 
-            if (outputIndex !== -1) {
-                createConnection(sourceBlock.id, outputIndex, targetBlockId, targetPortIndex);
+            sourceBlock.outputs.forEach((output, index) => {
+                if (matchedOutputIndex !== -1) return;
+                const outputName = portName(output);
+                if (remainder === outputName) {
+                    matchedOutputIndex = index;
+                    matchedPath = '$';
+                } else if (remainder.startsWith(outputName + '.')) {
+                    matchedOutputIndex = index;
+                    matchedPath = '$' + remainder.slice(outputName.length);
+                } else if (remainder.startsWith(outputName + '[')) {
+                    matchedOutputIndex = index;
+                    matchedPath = '$' + remainder.slice(outputName.length);
+                }
+            });
+
+            if (matchedOutputIndex !== -1) {
+                createConnection(sourceBlock.id, matchedOutputIndex, targetBlockId, targetPortIndex, matchedPath);
                 return;
             }
         }
     }
 
-    // Try to parse "block_X_Y" format
-    const match = reference.match(/^block_(\d+)_(\d+)$/);
+    const match = reference.match(/^block_(\d+)_(\d+)(.*)$/);
     if (match) {
         const sourceBlockId = parseInt(match[1]);
         const outputIndex = parseInt(match[2]);
+        const rawPath = match[3] || '';
         const sourceBlock = state.blocks.find(b => b.id === sourceBlockId);
 
         if (sourceBlock && outputIndex < sourceBlock.outputs.length) {
-            createConnection(sourceBlockId, outputIndex, targetBlockId, targetPortIndex);
+            const normalizedPath = !rawPath ? '$' : (rawPath.startsWith('$') ? rawPath : `$${rawPath}`);
+            createConnection(sourceBlockId, outputIndex, targetBlockId, targetPortIndex, normalizedPath);
             return;
         }
     }
@@ -1341,22 +1419,17 @@ function handleVariableReference(reference, targetBlockId, targetPortIndex) {
     eda.sys_Message.showToastMessage('无法找到引用的变量', 'info', 1);
 }
 
-function createConnection(fromId, fromPort, toId, toPort) {
-    // Remove existing connection to this input
+function createConnection(fromId, fromPort, toId, toPort, fromPath = '$') {
     clearInputConnection(toId, toPort);
 
-    // Check if connection already exists
     const exists = state.connections.some(
         c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort
     );
 
     if (!exists) {
-        state.connections.push({
-            fromId,
-            fromPort,
-            toId,
-            toPort
-        });
+        const conn = { fromId, fromPort, toId, toPort };
+        if (fromPath && fromPath !== '$') conn.fromPath = fromPath;
+        state.connections.push(conn);
     }
 }
 
@@ -1536,11 +1609,7 @@ window.saveCodeProperties = function() {
 };
 
 window.clearSavedPath = function() {
-    if (currentEditingBlock) {
-        currentEditingBlock.savedPath = undefined;
-        // Keep panel open and refresh to reflect the cleared path
-        openPropertiesPanel(currentEditingBlock);
-    }
+    // Deprecated: saved path feature removed, use output mappings instead
 };
 
 // Toggle button handler - can open or close
@@ -2154,7 +2223,13 @@ async function executeWorkflow() {
                     if (!fromInLoop) {
                         const fromOutputs = executionState.outputs.get(conn.fromId) || [];
                         if (conn.fromPort < fromOutputs.length) {
-                            const val = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+                            let val = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+
+                            // Apply fromPath if specified
+                            if (conn.fromPath && conn.fromPath !== '$') {
+                                val = getValueAtPath(val, conn.fromPath);
+                            }
+
                             if (!cachedArgs.has(did)) cachedArgs.set(did, {});
                             cachedArgs.get(did)[inputNames[pi]] = val;
                         }
@@ -2186,7 +2261,14 @@ async function executeWorkflow() {
                         if (fromInLoop) {
                             const fromOutputs = executionState.outputs.get(conn.fromId) || [];
                             if (conn.fromPort < fromOutputs.length) {
-                                args[inputNames[pi]] = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+                                let value = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+
+                                // Apply fromPath if specified
+                                if (conn.fromPath && conn.fromPath !== '$') {
+                                    value = getValueAtPath(value, conn.fromPath);
+                                }
+
+                                args[inputNames[pi]] = value;
                             } else {
                                 args[inputNames[pi]] = undefined;
                             }
@@ -2234,7 +2316,14 @@ async function executeWorkflow() {
                     throw new Error(`Upstream output port ${conn.fromPort} has no data`);
                 }
 
-                args[inputNames[i]] = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+                let value = await resolveExecutionValue(fromOutputs[conn.fromPort]);
+
+                // Apply fromPath if specified
+                if (conn.fromPath && conn.fromPath !== '$') {
+                    value = getValueAtPath(value, conn.fromPath);
+                }
+
+                args[inputNames[i]] = value;
             } else {
                 args[inputNames[i]] = undefined;
             }
@@ -2246,29 +2335,7 @@ async function executeWorkflow() {
             executionState.outputs.set(id, block.outputs.length ? [result] : []);
             executionState.outputPaths.set(id, block.outputs.length ? ['$'] : []);
 
-            if ((Array.isArray(result) || (result && typeof result === 'object')) && hasDownstreamDependents(id)) {
-                if (block.savedPath) {
-                    const selectedValue = getValueAtPath(result, block.savedPath);
-                    executionState.outputs.set(id, [selectedValue]);
-                    executionState.outputPaths.set(id, [block.savedPath]);
-                    executionState.selectionHistory.push({
-                        blockId: id,
-                        blockTitle: block.title,
-                        data: result,
-                        previousPath: block.savedPath
-                    });
-                    executionState.currentIndex++;
-                    continue;
-                }
-                executionState.pendingArraySelection = {
-                    blockId: id,
-                    blockTitle: block.title,
-                    data: result,
-                    selectedPath: '$'
-                };
-                showArraySelectionModal();
-                return;
-            }
+            // Array selection modal removed - use per-connection output mappings instead
 
             executionState.currentIndex++;
         } catch (err) {
@@ -2462,13 +2529,6 @@ document.addEventListener('click', async (e) => {
         arraySelectionModal.classList.remove('show');
         executionState.pendingArraySelection = null;
         executionState.currentIndex++;
-
-        // Refresh properties panel if it's showing this block
-        if (propertiesPanel.classList.contains('open') && block) {
-            if (currentEditingBlock && currentEditingBlock.id === blockId) {
-                openPropertiesPanel(block);
-            }
-        }
 
         await executeWorkflow();
     }
