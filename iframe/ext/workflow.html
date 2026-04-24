@@ -141,7 +141,48 @@
         </div>
     </div>
 
+    <!-- EDA API definitions (must load before block registration) -->
     <script src="../script/eda_coder/EDA_Codes.js"></script>
-    <script src="workflow.js"></script>
+
+    <!-- Utilities -->
+    <script src="utils/Helpers.js"></script>
+    <script src="utils/Geometry.js"></script>
+
+    <!-- Core -->
+    <script src="core/EventBus.js"></script>
+    <script src="core/CanvasState.js"></script>
+    <script src="core/BlockRegistry.js"></script>
+    <script src="core/ExecutionEngine.js"></script>
+
+    <!-- Blocks -->
+    <script src="blocks/BaseBlock.js"></script>
+    <script src="blocks/CustomBlock.js"></script>
+    <script src="blocks/FunctionBlock.js"></script>
+    <script src="blocks/VariableBlock.js"></script>
+    <script src="blocks/LoopBlock.js"></script>
+    <script src="blocks/ApiBlock.js"></script>
+
+    <!-- Rendering -->
+    <script src="rendering/GridRenderer.js"></script>
+    <script src="rendering/ConnectionRenderer.js"></script>
+    <script src="rendering/BlockRenderer.js"></script>
+    <script src="rendering/CanvasRenderer.js"></script>
+
+    <!-- UI -->
+    <script src="ui/PropertiesPanel.js"></script>
+    <script src="ui/Toolbar.js"></script>
+    <script src="ui/SearchPanel.js"></script>
+    <script src="ui/ModalManager.js"></script>
+    <script src="ui/ContextMenu.js"></script>
+
+    <!-- Interaction -->
+    <script src="interaction/InteractionController.js"></script>
+
+    <!-- Serialization -->
+    <script src="serialization/WorkflowSerializer.js"></script>
+    <script src="serialization/CodeGenerator.js"></script>
+
+    <!-- Main Orchestrator -->
+    <script src="WorkflowEngine.js"></script>
 </body>
 </html>
