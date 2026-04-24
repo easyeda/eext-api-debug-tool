@@ -971,7 +971,7 @@ canvas.addEventListener('wheel', (e) => {
     state.camera.x = sx - w.x * newScale;
     state.camera.y = sy - w.y * newScale;
     state.camera.scale = newScale;
-});
+}, { passive: false });
 
 // Properties Panel Management
 const propertiesPanel = document.getElementById('properties-panel');
@@ -1305,7 +1305,7 @@ function buildInputFields(block) {
                        data-block-id="${block.id}"
                        data-port-index="${index}"
                        value="${currentValue}"
-                       placeholder="输入值或粘贴变量引用">
+                       placeholder="${(typeof input === 'object' && input.description) || '输入值或粘贴变量引用'}">
                 ${connection ? `<button class="input-clear-btn" data-port-index="${index}">×</button>` : ''}
             </div>
         `;

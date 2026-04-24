@@ -41,7 +41,7 @@
                 const delta = e.deltaY > 0 ? 0.9 : 1.1;
 
                 eventBus.emit('mouse:wheel', { sx, sy, delta });
-            });
+            }, { passive: false });
 
             // 键盘事件处理
             window.addEventListener('keydown', (e) => {
