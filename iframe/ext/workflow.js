@@ -960,6 +960,22 @@ canvas.addEventListener('mouseup', (e) => {
     state.panning = false;
 });
 
+canvas.addEventListener('dblclick', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const w = screenToWorld(sx, sy);
+    const block = hitTestBlock(w.x, w.y);
+    if (block) {
+        if (propertiesPanel.classList.contains('open') && currentEditingBlock && currentEditingBlock.id === block.id) {
+            closePropertiesPanel();
+        } else {
+            state.selected = block.id;
+            openPropertiesPanel(block);
+        }
+    }
+});
+
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
@@ -1530,7 +1546,7 @@ window.saveLoopProperties = function() {
     currentEditingBlock.description = delay > 0 ? `循环 ${count} 次, 间隔 ${delay}ms` : `循环 ${count} 次`;
     currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
 
-    closePropertiesPanel();
+    openPropertiesPanel(currentEditingBlock);
 };
 
 window.saveVariableProperties = function() {
@@ -1580,7 +1596,7 @@ window.saveVariableProperties = function() {
         currentEditingBlock.description = varScope === 'global' ? `全局变量` : `局部变量`;
         currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
 
-        closePropertiesPanel();
+        openPropertiesPanel(currentEditingBlock);
     } catch (e) {
         eda.sys_Message.showToastMessage('无效的值格式: ' + e.message, 'info', 1);
     }
@@ -1627,14 +1643,14 @@ window.saveFunctionProperties = function() {
         return !(conn.fromId === currentEditingBlock.id && conn.fromPort >= 1);
     });
 
-    closePropertiesPanel();
+    openPropertiesPanel(currentEditingBlock);
 };
 
 window.saveCodeProperties = function() {
     const code = document.getElementById('prop-code').value;
     currentEditingBlock.code = code;
     currentEditingBlock.w = measureBlockWidth(currentEditingBlock);
-    closePropertiesPanel();
+    openPropertiesPanel(currentEditingBlock);
 };
 
 window.clearSavedPath = function() {
