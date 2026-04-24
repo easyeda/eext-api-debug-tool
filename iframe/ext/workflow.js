@@ -1075,6 +1075,30 @@ function buildOutputMappings(block) {
     const outgoing = state.connections.filter(c => c.fromId === block.id && c.toPort !== -1);
     if (outgoing.length === 0) return '';
 
+    if (block.type === 'variable') {
+        const items = outgoing.map(conn => {
+            const targetBlock = state.blocks.find(b => b.id === conn.toId);
+            const targetInput = targetBlock && targetBlock.inputs[conn.toPort] ? portName(targetBlock.inputs[conn.toPort]) : `input${conn.toPort}`;
+            const fromPath = conn.fromPath || '$';
+            const resolved = getValueAtPath(block.value, fromPath);
+            const displayValue = stringifyForDisplay(resolved);
+            const targetName = targetBlock ? targetBlock.title : '未知模块';
+            return `
+                <div class="mapping-row">
+                    <div class="mapping-label">→ ${targetName}.${targetInput}</div>
+                    <div class="property-input" style="background:transparent;border:1px solid #3e3d3255;cursor:default;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${displayValue.replace(/"/g, '&quot;')}">${displayValue}</div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="property-section">
+                <div class="stats-section-title">输出映射</div>
+                ${items}
+            </div>
+        `;
+    }
+
     const items = outgoing.map((conn, index) => {
         const output = block.outputs[conn.fromPort];
         const outputName = portName(output || { name: 'output' });
@@ -1171,7 +1195,6 @@ function buildLoopProperties(block) {
 }
 
 function buildVariableProperties(block) {
-    const value = block.value !== undefined && block.value !== null ? JSON.stringify(block.value) : '';
     const outputMappingsHtml = buildOutputMappings(block);
     propertiesContent.innerHTML = `
         ${outputMappingsHtml}
@@ -1190,13 +1213,18 @@ function buildVariableProperties(block) {
         <div class="property-section">
             <label class="property-label">变量值</label>
             <input type="text" id="prop-var-value" class="property-input"
-                   value="${value}" placeholder="字符串、数字、true/false、null 或 JSON">
+                   placeholder="字符串、数字、true/false、null 或 JSON">
         </div>
         <div class="property-actions">
             <button class="property-button secondary" onclick="closePropertiesPanel()">取消</button>
             <button class="property-button" onclick="saveVariableProperties()">保存</button>
         </div>
     `;
+
+    const varValueInput = document.getElementById('prop-var-value');
+    if (varValueInput && block.value !== undefined && block.value !== null) {
+        varValueInput.value = JSON.stringify(block.value);
+    }
 
     attachOutputMappingHandlers(block);
 }
@@ -2178,6 +2206,8 @@ document.getElementById('run').addEventListener('click', async () => {
     executionState.pendingArraySelection = null;
     executionState.selectionHistory = [];
     executionState.pendingConnections = [];
+
+    state.connections.forEach(c => { c.pathSelected = false; });
 
     await executeWorkflow();
 });
