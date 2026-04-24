@@ -1068,6 +1068,13 @@ function buildStatisticsView() {
                 <li class="stats-list-item"><span class="stats-list-label">复制模块</span><span class="stats-list-value">Ctrl+D</span></li>
             </ul>
         </div>
+
+        ${executionState.lastExecutedCode ? `
+        <div class="stats-section">
+            <div class="stats-section-title">最后执行代码</div>
+            <pre style="background:#1e1e1e;color:#d4d4d4;padding:10px;border-radius:6px;font-size:12px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;margin:0;">${executionState.lastExecutedCode.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+        </div>
+        ` : ''}
     `;
 }
 
@@ -2120,6 +2127,7 @@ const executionState = {
     pendingArraySelection: null,
     selectionHistory: [],
     pendingConnections: [],
+    lastExecutedCode: null,
 };
 
 function isThenable(value) {
@@ -2372,7 +2380,9 @@ async function executeWorkflow() {
     }
 
     executionState.running = false;
+    executionState.lastExecutedCode = generateWorkflowCode();
     eda.sys_Message.showToastMessage('工作流执行完成', 'info', 1);
+    if (!currentEditingBlock && propertiesPanel.classList.contains('open')) buildStatisticsView();
 }
 
 function hasDownstreamDependents(blockId) {
