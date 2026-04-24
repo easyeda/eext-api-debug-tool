@@ -25,6 +25,13 @@
         }
 
         measureBlockWidth(block) {
+            if (block.type === 'annotation') {
+                const text = block.annotationText || '';
+                if (!text) return 150;
+                this.ctx.font = '14px sans-serif';
+                return Math.max(150, this.ctx.measureText(text).width + 40);
+            }
+
             this.ctx.font = 'bold 13px sans-serif';
             let maxW = this.ctx.measureText(block.title).width + 50;
 
@@ -67,6 +74,11 @@
         }
 
         drawBlock(block) {
+            if (block.type === 'annotation') {
+                this.drawAnnotationBlock(block);
+                return;
+            }
+
             const h = window.WorkflowApp.Geometry.getBlockHeight(block);
             const isSelected = this.state.selected === block.id;
             const hasDesc = block.description && block.description.length > 0;
@@ -187,6 +199,80 @@
                     this.ctx.font = '11px sans-serif';
                 }
             }
+            this.ctx.restore();
+        }
+
+        drawAnnotationBlock(block) {
+            const isSelected = this.state.selected === block.id;
+            const rot = (block.rotation || 0) * Math.PI / 180;
+            const len = block.w || 150;
+            const text = block.annotationText || '';
+
+            this.ctx.save();
+
+            // Draw line and arrowhead
+            const startX = block.x - len / 2;
+            const endX = block.x + len / 2;
+            const y = block.y;
+
+            // Apply rotation around center
+            this.ctx.translate(block.x, block.y);
+            this.ctx.rotate(rot);
+            this.ctx.translate(-block.x, -block.y);
+
+            // Draw line
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, y);
+            this.ctx.lineTo(endX, y);
+            this.ctx.strokeStyle = isSelected ? '#66d9ef' : block.color;
+            this.ctx.lineWidth = isSelected ? 3 : 2;
+            this.ctx.stroke();
+
+            // Draw arrowhead at the end
+            const arrowSize = 12;
+            this.ctx.beginPath();
+            this.ctx.moveTo(endX, y);
+            this.ctx.lineTo(endX - arrowSize, y - arrowSize / 2);
+            this.ctx.lineTo(endX - arrowSize, y + arrowSize / 2);
+            this.ctx.closePath();
+            this.ctx.fillStyle = isSelected ? '#66d9ef' : block.color;
+            this.ctx.fill();
+
+            // Draw start circle
+            this.ctx.beginPath();
+            this.ctx.arc(startX, y, 4, 0, Math.PI * 2);
+            this.ctx.fillStyle = isSelected ? '#66d9ef' : block.color;
+            this.ctx.fill();
+
+            // Draw text above the line
+            if (text) {
+                this.ctx.font = '14px sans-serif';
+                this.ctx.fillStyle = '#f8f8f2';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'bottom';
+                this.ctx.fillText(text, block.x, y - 8);
+            }
+
+            // Draw delete button at center
+            if (isSelected) {
+                const btnSize = 20;
+                const btnX = block.x - btnSize / 2;
+                const btnY = y + 12;
+
+                this.ctx.fillStyle = '#f92672';
+                this.roundedRect(btnX, btnY, btnSize, btnSize, 4);
+                this.ctx.fill();
+
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(btnX + 6, btnY + 6);
+                this.ctx.lineTo(btnX + 14, btnY + 14);
+                this.ctx.moveTo(btnX + 14, btnY + 6);
+                this.ctx.lineTo(btnX + 6, btnY + 14);
+                this.ctx.stroke();
+            }
+
             this.ctx.restore();
         }
     }

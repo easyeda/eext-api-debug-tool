@@ -35,6 +35,8 @@
                     this.buildVariableProperties(block);
                 } else if (block.type === 'function') {
                     this.buildFunctionProperties(block);
+                } else if (block.type === 'annotation') {
+                    this.buildAnnotationProperties(block);
                 } else {
                     this.buildCodeProperties(block);
                 }
@@ -277,6 +279,29 @@
 
         saveCodeProperties() {
             this.currentBlock.code = document.getElementById('prop-code').value;
+            this.currentBlock.w = this.blockRenderer.measureBlockWidth(this.currentBlock);
+            eda.sys_Message.showToastMessage('保存成功', 'info', 1);
+            this.open(this.currentBlock);
+        }
+
+        buildAnnotationProperties(block) {
+            this.content.innerHTML = `
+                <div class="property-section">
+                    <label class="property-label">注释文本</label>
+                    <textarea id="prop-annotation-text" class="property-textarea"
+                              placeholder="输入注释内容...">${block.annotationText || ''}</textarea>
+                </div>
+                <div class="property-actions">
+                    <button class="property-button secondary" id="prop-cancel">取消</button>
+                    <button class="property-button" id="prop-save-annotation">保存</button>
+                </div>
+            `;
+            document.getElementById('prop-cancel').onclick = () => this.close();
+            document.getElementById('prop-save-annotation').onclick = () => this.saveAnnotationProperties();
+        }
+
+        saveAnnotationProperties() {
+            this.currentBlock.annotationText = document.getElementById('prop-annotation-text').value;
             this.currentBlock.w = this.blockRenderer.measureBlockWidth(this.currentBlock);
             eda.sys_Message.showToastMessage('保存成功', 'info', 1);
             this.open(this.currentBlock);

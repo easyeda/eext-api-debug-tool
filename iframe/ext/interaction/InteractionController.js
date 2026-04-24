@@ -40,6 +40,25 @@
         hitTestBlock(mx, my) {
             for (let i = this.state.blocks.length - 1; i >= 0; i--) {
                 const b = this.state.blocks[i];
+
+                // Special handling for annotation blocks
+                if (b.type === 'annotation') {
+                    const rot = (b.rotation || 0) * Math.PI / 180;
+                    const len = b.w || 150;
+
+                    // Transform mouse point to annotation's local space
+                    const dx = mx - b.x;
+                    const dy = my - b.y;
+                    const localX = dx * Math.cos(-rot) - dy * Math.sin(-rot);
+                    const localY = dx * Math.sin(-rot) + dy * Math.cos(-rot);
+
+                    // Check if within line bounds (with some tolerance)
+                    if (Math.abs(localY) < 20 && localX >= -len/2 - 10 && localX <= len/2 + 10) {
+                        return b;
+                    }
+                    continue;
+                }
+
                 const h = window.WorkflowApp.Geometry.getBlockHeight(b);
                 const lp = window.WorkflowApp.Geometry.unrotatePoint(mx, my, b);
                 if (lp.x >= b.x && lp.x <= b.x + b.w && lp.y >= b.y && lp.y <= b.y + h) {
@@ -50,10 +69,34 @@
         }
 
         hitTestDeleteBtn(mx, my, block) {
+            if (block.type === 'annotation') {
+                // Delete button is at center, below the line
+                const rot = (block.rotation || 0) * Math.PI / 180;
+                const dx = mx - block.x;
+                const dy = my - block.y;
+                const localX = dx * Math.cos(-rot) - dy * Math.sin(-rot);
+                const localY = dx * Math.sin(-rot) + dy * Math.cos(-rot);
+                return Math.abs(localX) < 10 && localY >= 12 && localY <= 32;
+            }
+
             const lp = window.WorkflowApp.Geometry.unrotatePoint(mx, my, block);
             const bx = block.x + block.w - 24;
             const by = block.y + 8;
             return lp.x >= bx && lp.x <= bx + 20 && lp.y >= by && lp.y <= by + 20;
+        }
+
+        hitTestAnnotationArrowhead(mx, my, block) {
+            if (block.type !== 'annotation') return false;
+
+            const rot = (block.rotation || 0) * Math.PI / 180;
+            const len = block.w || 150;
+
+            // Arrowhead tip position in world space
+            const tipX = block.x + (len / 2) * Math.cos(rot);
+            const tipY = block.y + (len / 2) * Math.sin(rot);
+
+            // Check distance to tip
+            return Math.hypot(mx - tipX, my - tipY) < 15;
         }
 
         bindCanvasEvents() {
@@ -114,6 +157,15 @@
                     this.eventBus.emit('blockDeleted', block.id);
                     return;
                 }
+
+                // Check if dragging annotation arrowhead for rotation
+                if (block.type === 'annotation' && this.hitTestAnnotationArrowhead(w.x, w.y, block)) {
+                    this.state.selected = block.id;
+                    this.eventBus.emit('blockSelected', block);
+                    this.state.rotatingAnnotation = { blockId: block.id };
+                    return;
+                }
+
                 this.state.selected = block.id;
                 this.eventBus.emit('blockSelected', block);
                 this.state.dragging = { blockId: block.id, offsetX: w.x - block.x, offsetY: w.y - block.y };
@@ -145,6 +197,15 @@
                 if (block) {
                     block.x = w.x - this.state.dragging.offsetX;
                     block.y = w.y - this.state.dragging.offsetY;
+                }
+                this.portTooltip.style.display = 'none';
+                return;
+            }
+            if (this.state.rotatingAnnotation) {
+                const block = this.state.blocks.find(b => b.id === this.state.rotatingAnnotation.blockId);
+                if (block) {
+                    const angle = Math.atan2(w.y - block.y, w.x - block.x) * 180 / Math.PI;
+                    block.rotation = angle;
                 }
                 this.portTooltip.style.display = 'none';
                 return;
@@ -192,6 +253,7 @@
                 this.state.connecting = null;
             }
             this.state.dragging = null;
+            this.state.rotatingAnnotation = null;
             this.state.panning = false;
         }
 
@@ -226,7 +288,7 @@
                     this.eventBus.emit('cancelPlacement');
                     return;
                 }
-                if (e.code === 'Space' && !this.state.editingBlock && !isTyping) {
+                if (e.code === 'Space' && !isTyping) {
                     e.preventDefault();
                     if (this.state.selected) {
                         const block = this.state.blocks.find(b => b.id === this.state.selected);

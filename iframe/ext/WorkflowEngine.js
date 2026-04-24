@@ -47,6 +47,7 @@
             this.registry.register(window.WorkflowApp.FunctionBlock);
             this.registry.register(window.WorkflowApp.VariableBlock);
             this.registry.register(window.WorkflowApp.LoopBlock);
+            this.registry.register(window.WorkflowApp.AnnotationBlock);
         }
 
         registerApiBlocks() {
