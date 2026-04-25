@@ -131,7 +131,9 @@
                 return;
             }
             if (this.state.placingBlock && e.button === 2) {
-                this.eventBus.emit('cancelPlacement');
+                this.placingRightClick = { x: sx, y: sy, time: Date.now() };
+                this.state.panning = true;
+                this.state.panStart = { x: sx - this.state.camera.x, y: sy - this.state.camera.y };
                 e.preventDefault();
                 return;
             }
@@ -220,6 +222,20 @@
         }
 
         onMouseUp(e) {
+            if (this.placingRightClick && e.button === 2) {
+                const rect = this.canvas.getBoundingClientRect();
+                const sx = e.clientX - rect.left;
+                const sy = e.clientY - rect.top;
+                const dist = Math.hypot(sx - this.placingRightClick.x, sy - this.placingRightClick.y);
+                const elapsed = Date.now() - this.placingRightClick.time;
+                this.placingRightClick = null;
+                this.state.panning = false;
+                if (dist < 5 && elapsed < 300) {
+                    this.eventBus.emit('cancelPlacement');
+                }
+                return;
+            }
+
             if (this.state.connecting) {
                 const rect = this.canvas.getBoundingClientRect();
                 const w = window.WorkflowApp.Geometry.screenToWorld(e.clientX - rect.left, e.clientY - rect.top, this.state.camera);
