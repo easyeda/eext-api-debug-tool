@@ -7,6 +7,7 @@
         constructor(codeGenerator, executionEngine) {
             this.codeGenerator = codeGenerator;
             this.executionEngine = executionEngine;
+            this.manualSelection = null;
             this.codeViewModal = document.getElementById('code-view-modal');
             this.codeViewEditor = document.getElementById('code-view-editor');
             this.arraySelectionModal = document.getElementById('array-selection-modal');
@@ -35,18 +36,35 @@
             const tree = document.getElementById('array-selection-tree');
             const preview = document.getElementById('array-selection-preview');
             const pathDisplay = document.getElementById('array-selection-path');
-            const { blockTitle, data, selectedPath } = selection;
+            const { blockTitle, data, selectedPath, targetInputDesc } = selection;
 
             title.textContent = `选择要传递的值 - ${blockTitle}`;
+            if (targetInputDesc) {
+                title.innerHTML = `选择要传递的值 - ${blockTitle} <span style="font-size: 12px; color: #75715e; font-weight: normal; margin-left: 8px;">${targetInputDesc}</span>`;
+            }
+
+            if (selection.manualMode) {
+                this.manualSelection = selection;
+            } else {
+                this.manualSelection = null;
+            }
             pathDisplay.textContent = selectedPath;
             tree.innerHTML = '';
             this.renderTreeNode(data, '$', tree, 0, selection);
             const selectedValue = window.WorkflowApp.Helpers.getValueAtPath(data, selectedPath);
             preview.value = window.WorkflowApp.Helpers.stringifyForDisplay(selectedValue, 2);
             const backBtn = document.getElementById('array-selection-back');
-            backBtn.disabled = this.executionEngine.executionState.selectionHistory.length === 0;
-            backBtn.style.opacity = backBtn.disabled ? '0.4' : '1';
-            backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
+            const cancelBtn = document.getElementById('array-selection-cancel');
+            if (selection.manualMode) {
+                backBtn.style.display = 'none';
+                cancelBtn.textContent = '取消';
+            } else {
+                backBtn.style.display = '';
+                cancelBtn.textContent = '取消运行';
+                backBtn.disabled = this.executionEngine.executionState.selectionHistory.length === 0;
+                backBtn.style.opacity = backBtn.disabled ? '0.4' : '1';
+                backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
+            }
             this.arraySelectionModal.classList.add('show');
         }
 
@@ -151,12 +169,30 @@
                 const target = e.target.closest('[id]');
                 if (!target) return;
                 if (target.id === 'array-selection-confirm') {
+                    if (this.manualSelection) {
+                        const selection = this.manualSelection;
+                        const conn = selection.targetConn;
+                        if (conn) {
+                            conn.fromPath = selection.selectedPath;
+                            conn.pathSelected = selection.selectedPath !== '$';
+                        }
+                        this.arraySelectionModal.classList.remove('show');
+                        this.manualSelection = null;
+                        eda.sys_Message.showToastMessage('路径已设置', 'info', 1);
+                        if (selection.onConfirm) selection.onConfirm();
+                        return;
+                    }
                     const selection = this.executionEngine.executionState.pendingArraySelection;
                     if (!selection) return;
                     this.arraySelectionModal.classList.remove('show');
                     await this.executionEngine.continueAfterArraySelection(selection.selectedPath);
                 }
                 if (target.id === 'array-selection-cancel') {
+                    if (this.manualSelection) {
+                        this.arraySelectionModal.classList.remove('show');
+                        this.manualSelection = null;
+                        return;
+                    }
                     this.arraySelectionModal.classList.remove('show');
                     this.executionEngine.cancelExecution();
                 }

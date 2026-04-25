@@ -18,7 +18,7 @@
             this.executionEngine = new window.WorkflowApp.ExecutionEngine(this.state, this.eventBus);
             this.serializer = new window.WorkflowApp.WorkflowSerializer(this.state);
             this.codeGenerator = new window.WorkflowApp.CodeGenerator(this.state);
-            this.propertiesPanel = new window.WorkflowApp.PropertiesPanel(this.state, this.registry, this.renderer.blockRenderer);
+            this.propertiesPanel = new window.WorkflowApp.PropertiesPanel(this.state, this.registry, this.renderer.blockRenderer, this.eventBus);
             this.contextMenu = new window.WorkflowApp.ContextMenu(this.state);
             this.searchPanel = new window.WorkflowApp.SearchPanel(this.registry, (type) => this.startBlockPlacement(type));
             this.toolbar = new window.WorkflowApp.Toolbar({
@@ -112,6 +112,36 @@
 
             this.eventBus.on('arraySelectionNeeded', (selection) => {
                 this.modalManager.showArraySelection(selection);
+            });
+
+            this.eventBus.on('requestPathSelection', async ({ block, conn, targetBlock, targetInput, targetInputDesc }) => {
+                try {
+                    eda.sys_Message.showToastMessage('正在执行模块以获取输出...', 'info', 1);
+                    const result = await this.executionEngine.executeSingleBlock(block);
+                    if (result === null || result === undefined || typeof result !== 'object') {
+                        eda.sys_Message.showToastMessage('模块输出不是对象，无需选择路径', 'info', 1);
+                        return;
+                    }
+                    const targetLabel = targetBlock ? `${targetBlock.title}.${targetInput}` : targetInput;
+                    const selection = {
+                        blockId: block.id,
+                        blockTitle: `${block.title} → ${targetLabel}`,
+                        data: result,
+                        selectedPath: conn.fromPath || '$',
+                        targetConn: conn,
+                        targetInputDesc,
+                        manualMode: true,
+                        onConfirm: () => {
+                            if (this.propertiesPanel.panel.classList.contains('open') && this.propertiesPanel.currentBlock) {
+                                this.propertiesPanel.open(this.propertiesPanel.currentBlock);
+                            }
+                        }
+                    };
+                    this.modalManager.showArraySelection(selection);
+                } catch (err) {
+                    console.error('Path selection execution error:', err);
+                    eda.sys_Message.showToastMessage(`执行模块出错: ${err.message}`, 'info', 1);
+                }
             });
 
             this.modalManager.bindArraySelectionActions();

@@ -4,10 +4,11 @@
     window.WorkflowApp = window.WorkflowApp || {};
 
     class PropertiesPanel {
-        constructor(state, registry, blockRenderer) {
+        constructor(state, registry, blockRenderer, eventBus) {
             this.state = state;
             this.registry = registry;
             this.blockRenderer = blockRenderer;
+            this.eventBus = eventBus;
             this.panel = document.getElementById('properties-panel');
             this.toggle = document.getElementById('properties-toggle');
             this.content = document.getElementById('properties-content');
@@ -353,18 +354,29 @@
             if (outgoing.length === 0) return '';
 
             if (block.type === 'variable') {
-                const items = outgoing.map(conn => {
+                const items = outgoing.map((conn, index) => {
                     const targetBlock = this.state.blocks.find(b => b.id === conn.toId);
                     const targetInput = targetBlock && targetBlock.inputs[conn.toPort] ? window.WorkflowApp.Helpers.portName(targetBlock.inputs[conn.toPort]) : `input${conn.toPort}`;
                     const fromPath = conn.fromPath || '$';
+                    const hasPath = fromPath !== '$';
+                    const displayPath = hasPath ? fromPath.replace(/^\$/, '') : '';
                     const resolved = window.WorkflowApp.Helpers.getValueAtPath(block.value, fromPath);
                     const displayValue = window.WorkflowApp.Helpers.stringifyForDisplay(resolved);
                     const targetName = targetBlock ? targetBlock.title : '未知模块';
                     const outputName = window.WorkflowApp.Helpers.portName(block.outputs[conn.fromPort] || { name: 'value' });
                     return `
-                        <div class="mapping-row">
-                            <div class="mapping-label"><span class="mapping-source-link" data-source-id="${block.id}" style="color: #66d9ef; cursor: pointer;">${outputName}</span> → <span class="mapping-target-link" data-target-id="${conn.toId}" style="color: #66d9ef; cursor: pointer;">${targetName}.${targetInput}</span></div>
-                            <div class="property-input" style="background:transparent;border:1px solid #3e3d3255;cursor:default;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${displayValue.replace(/"/g, '&quot;')}">${displayValue}</div>
+                        <div class="mapping-row" style="position: relative;">
+                            <div class="mapping-label"><span class="mapping-source-link" data-source-id="${block.id}" style="color: #66d9ef; cursor: pointer;">${outputName}${displayPath}</span> → <span class="mapping-target-link" data-target-id="${conn.toId}" style="color: #66d9ef; cursor: pointer;">${targetName}.${targetInput}</span></div>
+                            <div style="display: flex; gap: 4px; align-items: center;">
+                                <div class="property-input mapping-path-select"
+                                     data-from-id="${conn.fromId}"
+                                     data-from-port="${conn.fromPort}"
+                                     data-to-id="${conn.toId}"
+                                     data-to-port="${conn.toPort}"
+                                     style="flex: 1; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 36px;"
+                                     title="${displayPath || '点击选择路径'}">${displayPath ? `<span style="color: #a6e22e;">${displayPath}</span> = ${displayValue}` : '<span style="color: #75715e;">点击选择路径...</span>'}</div>
+                                ${hasPath ? `<button class="output-clear-btn" title="清除映射路径" data-from-id="${conn.fromId}" data-from-port="${conn.fromPort}" data-to-id="${conn.toId}" data-to-port="${conn.toPort}">×</button>` : ''}
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -384,18 +396,22 @@
                 const targetInput = targetBlock && targetBlock.inputs[conn.toPort] ? window.WorkflowApp.Helpers.portName(targetBlock.inputs[conn.toPort]) : `input${conn.toPort}`;
                 const fromPath = conn.fromPath || '$';
                 const displayPath = fromPath === '$' ? '' : fromPath.replace(/^\$/, '');
+                const hasPath = fromPath !== '$';
                 const targetName = targetBlock ? targetBlock.title : '未知模块';
                 return `
-                    <div class="mapping-row">
+                    <div class="mapping-row" style="position: relative;">
                         <div class="mapping-label"><span class="mapping-source-link" data-source-id="${block.id}" style="color: #66d9ef; cursor: pointer;">${outputName}${displayPath}</span> → <span class="mapping-target-link" data-target-id="${conn.toId}" style="color: #66d9ef; cursor: pointer;">${targetName}.${targetInput}</span></div>
-                        <input type="text" class="property-input mapping-path-input"
-                               data-conn-index="${index}"
-                               data-from-id="${conn.fromId}"
-                               data-from-port="${conn.fromPort}"
-                               data-to-id="${conn.toId}"
-                               data-to-port="${conn.toPort}"
-                               value="${displayPath}"
-                               placeholder="例如：.name 或 [0] 或 .data.uuid">
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <div class="property-input mapping-path-select"
+                                 data-conn-index="${index}"
+                                 data-from-id="${conn.fromId}"
+                                 data-from-port="${conn.fromPort}"
+                                 data-to-id="${conn.toId}"
+                                 data-to-port="${conn.toPort}"
+                                 style="flex: 1; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 36px;"
+                                 title="${displayPath || '点击选择路径'}">${displayPath || '<span style="color: #75715e;">点击选择路径...</span>'}</div>
+                            ${hasPath ? `<button class="output-clear-btn" title="清除映射路径" data-from-id="${conn.fromId}" data-from-port="${conn.fromPort}" data-to-id="${conn.toId}" data-to-port="${conn.toPort}">×</button>` : ''}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -436,31 +452,49 @@
         }
 
         attachOutputMappingHandlers(block) {
-            const fields = this.content.querySelectorAll('.mapping-path-input');
-            fields.forEach(field => {
-                const apply = () => {
-                    const fromId = parseInt(field.dataset.fromId);
-                    const fromPort = parseInt(field.dataset.fromPort);
-                    const toId = parseInt(field.dataset.toId);
-                    const toPort = parseInt(field.dataset.toPort);
-                    const raw = field.value.trim();
-                    const normalized = !raw ? '$' : (raw.startsWith('$') ? raw : `$${raw}`);
-                    const conn = this.state.connections.find(c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort);
+            const pathSelects = this.content.querySelectorAll('.mapping-path-select');
+            pathSelects.forEach(el => {
+                el.addEventListener('click', () => {
+                    const fromId = parseInt(el.dataset.fromId);
+                    const fromPort = parseInt(el.dataset.fromPort);
+                    const toId = parseInt(el.dataset.toId);
+                    const toPort = parseInt(el.dataset.toPort);
+                    const conn = this.state.connections.find(
+                        c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort
+                    );
                     if (conn) {
-                        conn.fromPath = normalized;
-                        conn.pathSelected = !!raw;
-                        if (this.panel.classList.contains('open') && this.currentBlock && this.currentBlock.id === block.id) {
-                            this.open(block);
-                        }
-                    }
-                };
-                field.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        apply();
+                        const targetBlock = this.state.blocks.find(b => b.id === toId);
+                        const targetInput = targetBlock && targetBlock.inputs[toPort]
+                            ? window.WorkflowApp.Helpers.portName(targetBlock.inputs[toPort]) : `input${toPort}`;
+                        const targetInputDesc = targetBlock && targetBlock.inputs[toPort]
+                            ? window.WorkflowApp.Helpers.portDesc(targetBlock.inputs[toPort]) : '';
+                        this.eventBus.emit('requestPathSelection', {
+                            block,
+                            conn,
+                            targetBlock,
+                            targetInput,
+                            targetInputDesc
+                        });
                     }
                 });
-                field.addEventListener('blur', apply);
+            });
+
+            const outputClearBtns = this.content.querySelectorAll('.output-clear-btn');
+            outputClearBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const fromId = parseInt(btn.dataset.fromId);
+                    const fromPort = parseInt(btn.dataset.fromPort);
+                    const toId = parseInt(btn.dataset.toId);
+                    const toPort = parseInt(btn.dataset.toPort);
+                    const conn = this.state.connections.find(
+                        c => c.fromId === fromId && c.fromPort === fromPort && c.toId === toId && c.toPort === toPort
+                    );
+                    if (conn) {
+                        conn.fromPath = '$';
+                        conn.pathSelected = false;
+                    }
+                    this.open(block);
+                });
             });
 
             // Attach click handlers to target links

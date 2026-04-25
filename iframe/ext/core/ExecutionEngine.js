@@ -145,7 +145,8 @@
                             this.executionState.pendingConnections = needSelection.map(c => {
                                 const targetBlock = this.state.blocks.find(b => b.id === c.toId);
                                 const targetInput = targetBlock && targetBlock.inputs[c.toPort] ? window.WorkflowApp.Helpers.portName(targetBlock.inputs[c.toPort]) : `input${c.toPort}`;
-                                return { conn: c, targetBlock, targetInput };
+                                const targetInputDesc = targetBlock && targetBlock.inputs[c.toPort] ? window.WorkflowApp.Helpers.portDesc(targetBlock.inputs[c.toPort]) : '';
+                                return { conn: c, targetBlock, targetInput, targetInputDesc };
                             });
                             const first = this.executionState.pendingConnections.shift();
                             const targetLabel = first.targetBlock ? `${first.targetBlock.title}.${first.targetInput}` : first.targetInput;
@@ -154,7 +155,8 @@
                                 blockTitle: `${block.title} → ${targetLabel}`,
                                 data: result,
                                 selectedPath: '$',
-                                targetConn: first.conn
+                                targetConn: first.conn,
+                                targetInputDesc: first.targetInputDesc
                             };
                             this.eventBus.emit('arraySelectionNeeded', this.executionState.pendingArraySelection);
                             return;
@@ -289,7 +291,8 @@
                     blockTitle: `${block ? block.title : ''} → ${targetLabel}`,
                     data,
                     selectedPath: '$',
-                    targetConn: next.conn
+                    targetConn: next.conn,
+                    targetInputDesc: next.targetInputDesc
                 };
                 this.eventBus.emit('arraySelectionNeeded', this.executionState.pendingArraySelection);
                 return;
@@ -304,6 +307,29 @@
             this.executionState.running = false;
             this.executionState.pendingArraySelection = null;
             this.executionState.pendingConnections = [];
+        }
+
+        async executeSingleBlock(block) {
+            const args = {};
+            const inputNames = block.inputs.map(window.WorkflowApp.Helpers.portName);
+
+            for (let i = 0; i < block.inputs.length; i++) {
+                const conn = this.state.connections.find(c => c.toId === block.id && c.toPort === i);
+                if (conn) {
+                    const sourceBlock = this.state.blocks.find(b => b.id === conn.fromId);
+                    if (sourceBlock) {
+                        const sourceResult = await this.executeSingleBlock(sourceBlock);
+                        let value = sourceResult;
+                        if (conn.fromPath && conn.fromPath !== '$') {
+                            value = window.WorkflowApp.Helpers.getValueAtPath(value, conn.fromPath);
+                        }
+                        args[inputNames[i]] = value;
+                    }
+                }
+            }
+
+            const fn = new this.AsyncFunction(...inputNames, block.code);
+            return await fn(...inputNames.map(k => args[k]));
         }
     }
 

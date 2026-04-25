@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "blocks": [
+    {
+      "id": 4,
+      "type": "custom",
+      "title": "自定义代码",
+      "color": "#f92672",
+      "x": 1044.9578475830394,
+      "y": 202.89285044765575,
+      "w": 200,
+      "inputs": [
+        {
+          "name": "input",
+          "description": "输入值"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "description": "输出值"
+        }
+      ],
+      "code": "const output = input;\nconsole.log(input)",
+      "description": "",
+      "rotation": 0
+    },
+    {
+      "id": 7,
+      "type": "eda_lib_LibrariesList_getProjectLibraryUuid",
+      "title": "getProjectLibraryUuid",
+      "color": "#75715e",
+      "x": -199.4397400942359,
+      "y": 192.90134431852243,
+      "w": 200,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "result",
+          "description": "工程库的 UUID"
+        }
+      ],
+      "code": "const result = await eda.lib_LibrariesList.getProjectLibraryUuid();\nreturn result;",
+      "description": "获取工程库的 UUID",
+      "rotation": 0
+    },
+    {
+      "id": 9,
+      "type": "eda_lib_LibrariesList_getAllLibrariesList",
+      "title": "getAllLibrariesList",
+      "color": "#75715e",
+      "x": -112.35959981894936,
+      "y": -258.7939084825058,
+      "w": 200,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "result",
+          "description": "库信息列表"
+        }
+      ],
+      "code": "const result = await eda.lib_LibrariesList.getAllLibrariesList();\nreturn result;",
+      "description": "获取所有库的列表",
+      "rotation": 0
+    },
+    {
+      "id": 5,
+      "type": "variable",
+      "title": "变量",
+      "color": "#e6db74",
+      "x": -530.1907098953802,
+      "y": -238.18933627547915,
+      "w": 200,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "description": "变量值"
+        }
+      ],
+      "code": "const value = 150;\nreturn value;",
+      "description": "自动创建",
+      "value": 150,
+      "varName": "auto_5",
+      "varScope": "local",
+      "rotation": 0
+    },
+    {
+      "id": 6,
+      "type": "variable",
+      "title": "变量",
+      "color": "#e6db74",
+      "x": -512.5401937938633,
+      "y": -32.598252470941155,
+      "w": 200,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "value",
+          "description": "变量值"
+        }
+      ],
+      "code": "const value = 1;\nreturn value;",
+      "description": "自动创建",
+      "value": 1,
+      "varName": "auto_6",
+      "varScope": "local",
+      "rotation": 0
+    },
+    {
+      "id": 3,
+      "type": "eda_lib_Device_search",
+      "title": "search",
+      "color": "#75715e",
+      "x": 196.56022361785472,
+      "y": -79.12458384253905,
+      "w": 338.553466796875,
+      "inputs": [
+        {
+          "name": "key",
+          "description": "搜索关键字"
+        },
+        {
+          "name": "libraryUuid",
+          "description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+        },
+        {
+          "name": "classification",
+          "description": "分类，默认为全部"
+        },
+        {
+          "name": "symbolType",
+          "description": "符号类型，默认为全部"
+        },
+        {
+          "name": "itemsOfPage",
+          "description": "一页搜索结果的数量"
+        },
+        {
+          "name": "page",
+          "description": "页数"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "description": "搜索到的器件属性的列表"
+        }
+      ],
+      "code": "const result = await eda.lib_Device.search(key, libraryUuid, classification, symbolType, itemsOfPage, page);\nreturn result;",
+      "description": "搜索器件",
+      "rotation": 0
+    },
+    {
+      "id": 8,
+      "type": "eda_lib_Device_copy",
+      "title": "copy",
+      "color": "#75715e",
+      "x": 656.7982385086392,
+      "y": 173.42878212878662,
+      "w": 275.55348205566406,
+      "inputs": [
+        {
+          "name": "deviceUuid",
+          "description": "器件 UUID"
+        },
+        {
+          "name": "libraryUuid",
+          "description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+        },
+        {
+          "name": "targetLibraryUuid",
+          "description": "目标库 UUID"
+        },
+        {
+          "name": "targetClassification",
+          "description": "目标库内的分类"
+        },
+        {
+          "name": "newDeviceName",
+          "description": "新器件名称，如若目标库内存在重名器件将导致复制失败"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "description": "目标库内新器件的 UUID"
+        }
+      ],
+      "code": "const result = await eda.lib_Device.copy(deviceUuid, libraryUuid, targetLibraryUuid, targetClassification, newDeviceName);\nreturn result;",
+      "description": "复制器件",
+      "rotation": 0
+    }
+  ],
+  "connections": [
+    {
+      "fromId": 5,
+      "fromPort": 0,
+      "toId": 3,
+      "toPort": 4,
+      "pathSelected": false
+    },
+    {
+      "fromId": 6,
+      "fromPort": 0,
+      "toId": 3,
+      "toPort": 5,
+      "pathSelected": false
+    },
+    {
+      "fromId": 9,
+      "fromPort": 0,
+      "toId": 3,
+      "toPort": 1,
+      "pathSelected": false,
+      "fromPath": "$[1].uuid"
+    },
+    {
+      "fromId": 3,
+      "fromPort": 0,
+      "toId": 8,
+      "toPort": 0,
+      "pathSelected": false,
+      "fromPath": "$[0].uuid"
+    },
+    {
+      "fromId": 8,
+      "fromPort": 0,
+      "toId": 4,
+      "toPort": 0,
+      "pathSelected": false
+    },
+    {
+      "fromId": 3,
+      "fromPort": 0,
+      "toId": 8,
+      "toPort": 1,
+      "pathSelected": false,
+      "fromPath": "$[0].libraryUuid"
+    }
+  ],
+  "nextId": 11
+}
