@@ -92,6 +92,20 @@ class ProjectManager {
 		});
 	}
 
+	// 按 ID 读取项目（不改变 currentProject）
+	async loadProjectById(projectId) {
+		if (!this.db) await this.initDB();
+
+		return new Promise((resolve, reject) => {
+			const transaction = this.db.transaction([STORE_NAME], 'readonly');
+			const store = transaction.objectStore(STORE_NAME);
+			const request = store.get(projectId);
+
+			request.onsuccess = () => resolve(request.result || null);
+			request.onerror = () => reject(request.error);
+		});
+	}
+
 	// 保存项目
 	async saveProject(project) {
 		if (!this.db) await this.initDB();

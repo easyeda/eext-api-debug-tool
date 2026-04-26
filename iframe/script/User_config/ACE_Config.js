@@ -436,6 +436,142 @@ async function deleteBtnFromDB(name) {
 }
 
 // ==========================
+// 项目快捷按钮：保存项目快照到快捷按钮
+// ==========================
+const PROJECT_BTN_PREFIX = '__PROJECT_BTN__';
+
+function isProjectBtn(code) {
+	return typeof code === 'string' && code.startsWith(PROJECT_BTN_PREFIX);
+}
+
+function parseProjectBtnData(code) {
+	try {
+		return JSON.parse(code.slice(PROJECT_BTN_PREFIX.length));
+	} catch (e) {
+		return null;
+	}
+}
+
+function buildProjectBtnCode(data) {
+	return PROJECT_BTN_PREFIX + JSON.stringify(data);
+}
+
+function runProjectBtn(data) {
+	const renderer = new HTMLRenderer();
+	const fakeProject = { files: data.files };
+	const entryFile = data.files.find((f) => f.fileName === data.entryFile);
+	if (!entryFile) {
+		eda.sys_Message.showToastMessage('入口文件不存在', 'error', 2);
+		return;
+	}
+	const htmlContent = renderer.buildHTMLContent(entryFile, { currentProject: fakeProject });
+	const finalContent = typeof injectEdaBridge === 'function' ? injectEdaBridge(htmlContent) : htmlContent;
+
+	const editorDiv = document.getElementById('editor');
+	const previewContainer = document.getElementById('html-preview-container');
+	const previewFrame = document.getElementById('html-preview-frame');
+	const runBtn = document.getElementById('run-btn');
+
+	const blob = new Blob([finalContent], { type: 'text/html' });
+	const url = URL.createObjectURL(blob);
+
+	previewFrame.src = url;
+	editorDiv.style.display = 'none';
+	previewContainer.classList.add('active');
+	runBtn.textContent = '停止';
+
+	previewFrame.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+	eda.sys_Message.showToastMessage(`正在预览：${data.projectName} / ${data.entryFile}`, 'success', 2);
+}
+
+async function Project_SaveToBtnList(projectId) {
+	const project = await window.projectManager.loadProjectById(projectId);
+	if (!project) {
+		eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+		return;
+	}
+
+	const htmlFiles = project.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
+	if (htmlFiles.length === 0) {
+		eda.sys_Message.showToastMessage('项目中没有 HTML 文件', 'warn', 2);
+		return;
+	}
+
+	let entryFileName;
+	if (htmlFiles.length === 1) {
+		entryFileName = htmlFiles[0].fileName;
+	} else {
+		const options = {};
+		htmlFiles.forEach((f) => {
+			options[f.fileName] = f.fileName;
+		});
+		const result = await Swal.fire({
+			title: '选择入口 HTML 文件',
+			input: 'select',
+			inputOptions: options,
+			showCancelButton: true,
+			confirmButtonText: '确定',
+			cancelButtonText: '取消',
+			inputValidator: (value) => {
+				if (!value) return '请选择一个 HTML 文件';
+			},
+		});
+		if (!result.isConfirmed) return;
+		entryFileName = result.value;
+	}
+
+	const nameResult = await Swal.fire({
+		title: '保存到快捷按钮',
+		input: 'text',
+		inputLabel: '按钮名称',
+		inputValue: project.projectName,
+		inputPlaceholder: '例如：我的工具',
+		showCancelButton: true,
+		confirmButtonText: '保存',
+		cancelButtonText: '取消',
+		inputValidator: (value) => {
+			if (!value || !value.trim()) return '请输入按钮名称';
+		},
+	});
+	if (!nameResult.isConfirmed) return;
+	const btnName = nameResult.value.trim();
+
+	const data = {
+		projectName: project.projectName,
+		entryFile: entryFileName,
+		files: project.files.map((f) => ({ fileName: f.fileName, content: f.content })),
+	};
+	const code = buildProjectBtnCode(data);
+
+	try {
+		const db = await BtnStore_Init();
+		const tx = db.transaction(['BtnList'], 'readwrite');
+		const store = tx.objectStore('BtnList');
+
+		const existing = await new Promise((res) => {
+			const req = store.index('name').get(btnName);
+			req.onsuccess = () => res(!!req.result);
+		});
+		if (existing) {
+			eda.sys_Message.showToastMessage(`按钮名称 "${btnName}" 已存在`, 'warn', 2);
+			return;
+		}
+
+		await new Promise((resolve, reject) => {
+			const req = store.add({ name: btnName, code, createdAt: new Date().toISOString() });
+			req.onsuccess = resolve;
+			req.onerror = reject;
+		});
+
+		const li = createQuickButton(window.editor, btnName, code);
+		document.getElementById('quick-btn-list')?.appendChild(li);
+		eda.sys_Message.showToastMessage(`快捷按钮 "${btnName}" 已添加`, 'success', 2);
+	} catch (error) {
+		eda.sys_Message.showToastMessage(`保存失败: ${error.message}`, 'error', 2);
+	}
+}
+
+// ==========================
 // 创建一个快捷按钮元素（含右键删除）
 // ==========================
 function createQuickButton(editor, name, code) {
@@ -444,12 +580,15 @@ function createQuickButton(editor, name, code) {
 	btn.textContent = name;
 	btn.setAttribute('data-btn-name', name);
 
-	// 左键：加载代码 2026.1.5 修改为直接执行代码
+	// 左键：项目按钮打开 HTML 预览，普通按钮执行代码
 	btn.onclick = () => {
-		eval(code);
-		// editor.setValue(code, -1);
-		// editor.clearSelection();
-		// eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
+		if (isProjectBtn(code)) {
+			const data = parseProjectBtnData(code);
+			if (data) runProjectBtn(data);
+			else eda.sys_Message.showToastMessage('快捷按钮数据损坏', 'error', 2);
+		} else {
+			eval(code);
+		}
 	};
 
 	// 右键：显示快捷菜单（加载 / 删除）

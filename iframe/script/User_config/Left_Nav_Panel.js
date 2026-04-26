@@ -286,6 +286,8 @@ class LeftNavPanel {
 
 		const menuItems = [
 			{ text: '打开项目', action: () => this.openProject(projectId) },
+			{ text: '保存到快捷按钮', action: () => Project_SaveToBtnList(projectId) },
+			{ text: '导出项目文件', action: () => this.exportProjectAsZip(projectId) },
 			{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
 			{ text: '---', action: null },
 			{ text: '删除项目', action: () => this.showDeleteProjectConfirm(projectId) },
@@ -884,6 +886,41 @@ class LeftNavPanel {
 			}
 		} else if (this.currentView === 'common-code') {
 			await this.loadCompleterStore();
+		}
+	}
+
+	// 导出项目为 ZIP 文件
+	async exportProjectAsZip(projectId) {
+		try {
+			const project = await window.projectManager.loadProjectById(projectId);
+			if (!project) {
+				eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+				return;
+			}
+			if (project.files.length === 0) {
+				eda.sys_Message.showToastMessage('项目中没有文件', 'warn', 2);
+				return;
+			}
+
+			const zip = new JSZip();
+			const folder = zip.folder(project.projectName);
+			project.files.forEach((file) => {
+				folder.file(file.fileName, file.content || '');
+			});
+
+			const blob = await zip.generateAsync({ type: 'blob' });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = `${project.projectName}.zip`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+
+			eda.sys_Message.showToastMessage(`项目 "${project.projectName}" 已导出`, 'success', 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage('导出失败: ' + error.message, 'error', 3);
 		}
 	}
 
