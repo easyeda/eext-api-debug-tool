@@ -263,10 +263,10 @@
 							toPort: port.index,
 						});
 					}
-				} else if (fromBlock && fromBlock.type === 'loop') {
+				} else if (fromBlock && (fromBlock.type === 'loop' || fromBlock.type === 'condition' || fromBlock.type === 'switch' || fromBlock.type === 'foreach')) {
 					const targetBlock = this.hitTestBlock(w.x, w.y);
 					if (targetBlock && targetBlock.id !== fromBlock.id) {
-						const exists = this.state.connections.some((c) => c.fromId === fromBlock.id && c.toId === targetBlock.id && c.toPort === -1);
+						const exists = this.state.connections.some((c) => c.fromId === fromBlock.id && c.fromPort === this.state.connecting.fromPort && c.toId === targetBlock.id && c.toPort === -1);
 						if (!exists) {
 							this.state.connections.push({
 								fromId: fromBlock.id,

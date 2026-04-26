@@ -12,11 +12,11 @@
 				color: '#e6db74',
 				inputs: [{ name: 'input', description: '输入值' }],
 				outputs: [
-					{ name: 'trueResult', description: '条件为真时的输出' },
-					{ name: 'falseResult', description: '条件为假时的输出' },
+					{ name: 'true', description: '条件为真时执行' },
+					{ name: 'false', description: '条件为假时执行' },
 				],
-				code: 'const condition = !!input;\nreturn condition;',
-				description: '根据条件分支执行',
+				code: 'return !!input;',
+				description: '根据条件分支执行下游模块',
 			};
 		}
 	}

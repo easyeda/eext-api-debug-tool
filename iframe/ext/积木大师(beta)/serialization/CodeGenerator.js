@@ -14,7 +14,7 @@
 				if (c.toPort === -1) continue;
 				edges.push({ from: c.fromId, to: c.toId });
 			}
-			for (const lb of this.state.blocks.filter((b) => b.type === 'loop')) {
+			for (const lb of this.state.blocks.filter((b) => b.type === 'loop' || b.type === 'foreach' || b.type === 'condition' || b.type === 'switch')) {
 				const downstreamIds = this.getDownstreamIds(lb.id);
 				const externalSources = new Set();
 				for (const did of downstreamIds) {
@@ -63,7 +63,7 @@
 		}
 
 		_isMultiOutput(block) {
-			return block.type === 'condition' || block.type === 'trycatch';
+			return block.type === 'trycatch';
 		}
 
 		_genInputs(block, indent) {
@@ -93,7 +93,11 @@
 		_transformCode(block, indent) {
 			let blockCode = block.code;
 			if (block.outputs.length > 0) {
-				if (this._isMultiOutput(block)) {
+				if (block.type === 'condition') {
+					blockCode = blockCode.replace(/\breturn\s+([\s\S]*?);/g, `_cond_${block.id} = $1;`).replace(/\breturn\s*;/g, `_cond_${block.id} = undefined;`);
+				} else if (block.type === 'switch') {
+					blockCode = blockCode.replace(/\breturn\s+([\s\S]*?);/g, `_sw_${block.id} = $1;`).replace(/\breturn\s*;/g, `_sw_${block.id} = undefined;`);
+				} else if (block.type === 'trycatch') {
 					blockCode = blockCode.replace(/\breturn\s+([\s\S]*?);/g, `_cond_${block.id} = $1;`).replace(/\breturn\s*;/g, `_cond_${block.id} = undefined;`);
 				} else {
 					blockCode = blockCode.replace(/\breturn\s+([\s\S]*?);/g, `_out_${block.id} = $1;`).replace(/\breturn\s*;/g, `_out_${block.id} = undefined;`);
@@ -106,9 +110,6 @@
 		}
 
 		_genBlock(block, indent) {
-			if (block.type === 'condition') {
-				return this._genConditionBlock(block, indent);
-			}
 			if (block.type === 'trycatch') {
 				return this._genTryCatchBlock(block, indent);
 			}
@@ -125,22 +126,74 @@
 			return out;
 		}
 
-		_genConditionBlock(block, indent) {
-			const inputNames = block.inputs.map(window.WorkflowApp.Helpers.portName);
+		_genBranch(block, order, processed) {
+			const allBranchTargets = new Set();
+			for (const c of this.state.connections) {
+				if (c.fromId === block.id && c.toPort === -1) {
+					allBranchTargets.add(c.toId);
+					const downstream = this.getDownstreamIds(c.toId);
+					for (const did of downstream) allBranchTargets.add(did);
+				}
+			}
+			for (const tid of allBranchTargets) processed.add(tid);
+
 			let out = '';
-			out += `${indent}// Block: ${block.title} (条件判断)\n`;
-			out += `${indent}let _out_${block.id}_0; // true\n`;
-			out += `${indent}let _out_${block.id}_1; // false\n`;
-			out += `${indent}{\n`;
-			out += this._genInputs(block, indent + '  ');
-			out += `${indent}  let _cond_${block.id};\n`;
-			out += this._transformCode(block, indent + '  ');
-			out += `${indent}  if (!!_cond_${block.id}) {\n`;
-			out += `${indent}    _out_${block.id}_0 = ${inputNames[0] || 'undefined'};\n`;
-			out += `${indent}  } else {\n`;
-			out += `${indent}    _out_${block.id}_1 = ${inputNames[0] || 'undefined'};\n`;
-			out += `${indent}  }\n`;
-			out += `${indent}}\n\n`;
+			out += `// Block: ${block.title} (${block.type === 'condition' ? '条件判断' : '多路分支'})\n`;
+
+			out += this._genInputs(block, '');
+
+			if (block.type === 'condition') {
+				out += `let _cond_${block.id};\n`;
+				out += this._transformCode(block, '');
+				const trueTargets = this._getBranchTargetIds(block.id, 0);
+				const falseTargets = this._getBranchTargetIds(block.id, 1);
+				const trueOrder = order.filter((oid) => trueTargets.has(oid));
+				const falseOrder = order.filter((oid) => falseTargets.has(oid));
+
+				out += `if (!!_cond_${block.id}) {\n`;
+				out += this._genBranchBody(trueOrder, '  ');
+				if (falseOrder.length > 0) {
+					out += `} else {\n`;
+					out += this._genBranchBody(falseOrder, '  ');
+				}
+				out += `}\n\n`;
+			} else {
+				out += `let _sw_${block.id};\n`;
+				out += this._transformCode(block, '');
+				for (let i = 0; i < block.outputs.length; i++) {
+					const targets = this._getBranchTargetIds(block.id, i);
+					const branchOrder = order.filter((oid) => targets.has(oid));
+					if (branchOrder.length === 0) continue;
+					const label = window.WorkflowApp.Helpers.portName(block.outputs[i]);
+					const cond = i === 0 ? 'if' : '} else if';
+					out += `${cond} (_sw_${block.id} === ${i}) { // ${label}\n`;
+					out += this._genBranchBody(branchOrder, '  ');
+				}
+				out += `}\n\n`;
+			}
+
+			return out;
+		}
+
+		_getBranchTargetIds(blockId, fromPort) {
+			const targets = new Set();
+			for (const c of this.state.connections) {
+				if (c.fromId === blockId && c.fromPort === fromPort && c.toPort === -1) {
+					targets.add(c.toId);
+					const downstream = this.getDownstreamIds(c.toId);
+					for (const did of downstream) targets.add(did);
+				}
+			}
+			return targets;
+		}
+
+		_genBranchBody(blockOrder, indent) {
+			let out = '';
+			for (const did of blockOrder) {
+				const dBlock = this.state.blocks.find((b) => b.id === did);
+				if (!dBlock || dBlock.type === 'annotation') continue;
+				out += this._genBlock(dBlock, indent);
+			}
 			return out;
 		}
 
@@ -280,6 +333,118 @@
 			return out;
 		}
 
+		_genForEach(forEachBlock, order, processed) {
+			const loopDelay = forEachBlock.loopDelay || 0;
+			const downstreamIds = this.getDownstreamIds(forEachBlock.id);
+			const downstreamOrder = order.filter((oid) => downstreamIds.has(oid));
+			let out = '';
+
+			out += `\n// ForEach: ${forEachBlock.title}\n`;
+
+			const inputNames = forEachBlock.inputs.map(window.WorkflowApp.Helpers.portName);
+			const conn = this.state.connections.find((c) => c.toId === forEachBlock.id && c.toPort === 0);
+			if (conn) {
+				const fromBlock = this.state.blocks.find((b) => b.id === conn.fromId);
+				const fromLabel = fromBlock ? fromBlock.title : `block_${conn.fromId}`;
+				const baseRef = fromBlock && this._isMultiOutput(fromBlock) ? `_out_${conn.fromId}_${conn.fromPort}` : `_out_${conn.fromId}`;
+				const pathSuffix = window.WorkflowApp.Helpers.pathToAccessor(conn.fromPath);
+				if (pathSuffix) {
+					out += `const _raw_arr_${forEachBlock.id} = ${baseRef}; // ← ${fromLabel}\n`;
+					out += `const _arr_${forEachBlock.id} = _raw_arr_${forEachBlock.id}${pathSuffix}; // 路径映射: ${conn.fromPath}\n`;
+				} else {
+					out += `const _arr_${forEachBlock.id} = ${baseRef}; // ← ${fromLabel}\n`;
+				}
+			} else {
+				out += `const _arr_${forEachBlock.id} = [];\n`;
+			}
+
+			for (const did of downstreamOrder) {
+				const dBlock = this.state.blocks.find((b) => b.id === did);
+				if (!dBlock) continue;
+				const dInputNames = dBlock.inputs.map(window.WorkflowApp.Helpers.portName);
+				for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+					const c = this.state.connections.find((cn) => cn.toId === did && cn.toPort === pi);
+					if (!c) continue;
+					const fromInLoop = c.fromId === forEachBlock.id || downstreamIds.has(c.fromId);
+					if (!fromInLoop) {
+						const fromBlock = this.state.blocks.find((b) => b.id === c.fromId);
+						const fromLabel = fromBlock ? fromBlock.title : `block_${c.fromId}`;
+						const baseRef = fromBlock && this._isMultiOutput(fromBlock) ? `_out_${c.fromId}_${c.fromPort}` : `_out_${c.fromId}`;
+						const pathSuffix = window.WorkflowApp.Helpers.pathToAccessor(c.fromPath);
+						if (pathSuffix) {
+							out += `const _ext_raw_${did}_${dInputNames[pi]} = ${baseRef}; // ← ${fromLabel}\n`;
+							out += `const _ext_${did}_${dInputNames[pi]} = _ext_raw_${did}_${dInputNames[pi]}${pathSuffix}; // 路径映射: ${c.fromPath}\n`;
+						} else {
+							out += `const _ext_${did}_${dInputNames[pi]} = ${baseRef}; // ← ${fromLabel}\n`;
+						}
+					}
+				}
+			}
+
+			const idxVar = `_fi_${forEachBlock.id}`;
+			out += `for (let ${idxVar} = 0; ${idxVar} < _arr_${forEachBlock.id}.length; ${idxVar}++) {\n`;
+
+			if (loopDelay > 0) {
+				out += `  if (${idxVar} > 0) await new Promise(r => setTimeout(r, ${loopDelay}));\n`;
+			}
+
+			out += `  let _out_${forEachBlock.id} = _arr_${forEachBlock.id}[${idxVar}];\n`;
+
+			for (const did of downstreamOrder) {
+				const dBlock = this.state.blocks.find((b) => b.id === did);
+				if (!dBlock || dBlock.type === 'annotation') continue;
+				processed.add(did);
+
+				out += `\n  // Block: ${dBlock.title}\n`;
+
+				if (this._isMultiOutput(dBlock)) {
+					out += `  let _out_${did}_0;\n`;
+					out += `  let _out_${did}_1;\n`;
+				} else if (dBlock.outputs.length > 0) {
+					out += `  let _out_${did};\n`;
+				}
+				out += `  {\n`;
+
+				const dInputNames = dBlock.inputs.map(window.WorkflowApp.Helpers.portName);
+				for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+					const c = this.state.connections.find((cn) => cn.toId === did && cn.toPort === pi);
+					if (!c) {
+						out += `    const ${dInputNames[pi]} = undefined;\n`;
+						continue;
+					}
+					const fromInLoop = c.fromId === forEachBlock.id || downstreamIds.has(c.fromId);
+					if (fromInLoop) {
+						const fromBlock = this.state.blocks.find((b) => b.id === c.fromId);
+						const fromLabel = fromBlock ? fromBlock.title : `block_${c.fromId}`;
+						const baseRef = fromBlock && this._isMultiOutput(fromBlock) ? `_out_${c.fromId}_${c.fromPort}` : `_out_${c.fromId}`;
+						const pathSuffix = window.WorkflowApp.Helpers.pathToAccessor(c.fromPath);
+						if (pathSuffix) {
+							out += `    const _raw_${dInputNames[pi]} = ${baseRef}; // ← ${fromLabel}\n`;
+							out += `    const ${dInputNames[pi]} = _raw_${dInputNames[pi]}${pathSuffix}; // 路径映射: ${c.fromPath}\n`;
+						} else {
+							out += `    const ${dInputNames[pi]} = ${baseRef}; // ← ${fromLabel}\n`;
+						}
+					} else {
+						out += `    const ${dInputNames[pi]} = _ext_${did}_${dInputNames[pi]}; // 外部缓存\n`;
+					}
+				}
+
+				let blockCode = dBlock.code;
+				if (dBlock.outputs.length > 0) {
+					blockCode = blockCode.replace(/\breturn\s+([\s\S]*?);/g, `_out_${did} = $1;`).replace(/\breturn\s*;/g, `_out_${did} = undefined;`);
+				}
+				out += blockCode
+					.split('\n')
+					.map((line) => '    ' + line)
+					.join('\n') + '\n';
+
+				out += `  }\n`;
+			}
+
+			out += `}\n\n`;
+			return out;
+		}
+
 		generate() {
 			const order = this.topoSort();
 			const processed = new Set();
@@ -293,6 +458,16 @@
 
 				if (block.type === 'loop') {
 					code += this._genLoop(block, order, processed);
+					continue;
+				}
+
+				if (block.type === 'foreach') {
+					code += this._genForEach(block, order, processed);
+					continue;
+				}
+
+				if (block.type === 'condition' || block.type === 'switch') {
+					code += this._genBranch(block, order, processed);
 					continue;
 				}
 

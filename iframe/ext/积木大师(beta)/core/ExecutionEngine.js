@@ -26,7 +26,7 @@
 				if (c.toPort === -1) continue;
 				edges.push({ from: c.fromId, to: c.toId });
 			}
-			for (const lb of this.state.blocks.filter((b) => b.type === 'loop')) {
+			for (const lb of this.state.blocks.filter((b) => b.type === 'loop' || b.type === 'foreach' || b.type === 'condition' || b.type === 'switch')) {
 				const downstreamIds = this.getDownstreamIds(lb.id);
 				const externalSources = new Set();
 				for (const did of downstreamIds) {
@@ -111,6 +111,21 @@
 					continue;
 				}
 
+				if (block.type === 'foreach') {
+					await this.executeForEach(block);
+					continue;
+				}
+
+				if (block.type === 'condition') {
+					await this.executeBranch(block);
+					continue;
+				}
+
+				if (block.type === 'switch') {
+					await this.executeBranch(block);
+					continue;
+				}
+
 				const args = {};
 				const inputNames = block.inputs.map(window.WorkflowApp.Helpers.portName);
 
@@ -150,17 +165,6 @@
 					}
 
 					const result = await fn(...inputNames.map((k) => args[k]));
-
-					if (block.type === 'condition') {
-						const conditionResult = !!result;
-						this.executionState.outputs.set(id, [
-							conditionResult ? args[inputNames[0]] : undefined,
-							conditionResult ? undefined : args[inputNames[0]],
-						]);
-						this.executionState.outputPaths.set(id, ['$', '$']);
-						this.executionState.currentIndex++;
-						continue;
-					}
 
 					this.executionState.outputs.set(id, block.outputs.length ? [result] : []);
 					this.executionState.outputPaths.set(id, block.outputs.length ? ['$'] : []);
@@ -294,6 +298,221 @@
 			while (
 				this.executionState.currentIndex < this.executionState.order.length &&
 				downstreamIds.has(this.executionState.order[this.executionState.currentIndex])
+			) {
+				this.executionState.currentIndex++;
+			}
+		}
+
+		async executeForEach(block) {
+			const inputNames = block.inputs.map(window.WorkflowApp.Helpers.portName);
+			const conn = this.state.connections.find((c) => c.toId === block.id && c.toPort === 0);
+			let array = [];
+			if (conn && this.executionState.outputs.has(conn.fromId)) {
+				const fromOutputs = this.executionState.outputs.get(conn.fromId) || [];
+				if (conn.fromPort < fromOutputs.length) {
+					let value = await window.WorkflowApp.Helpers.resolveExecutionValue(fromOutputs[conn.fromPort]);
+					if (conn.fromPath && conn.fromPath !== '$') {
+						value = window.WorkflowApp.Helpers.getValueAtPath(value, conn.fromPath);
+					}
+					array = Array.isArray(value) ? value : [value];
+				}
+			}
+
+			const loopDelay = block.loopDelay || 0;
+			const downstreamIds = this.getDownstreamIds(block.id);
+			const downstreamOrder = this.executionState.order.filter((oid) => downstreamIds.has(oid));
+
+			const cachedArgs = new Map();
+			for (const did of downstreamOrder) {
+				const dBlock = this.state.blocks.find((b) => b.id === did);
+				if (!dBlock) continue;
+				const dInputNames = dBlock.inputs.map(window.WorkflowApp.Helpers.portName);
+				for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+					const c = this.state.connections.find((cn) => cn.toId === did && cn.toPort === pi);
+					if (!c) continue;
+					const fromInLoop = c.fromId === block.id || downstreamIds.has(c.fromId);
+					if (!fromInLoop) {
+						const fromOutputs = this.executionState.outputs.get(c.fromId) || [];
+						if (c.fromPort < fromOutputs.length) {
+							let val = await window.WorkflowApp.Helpers.resolveExecutionValue(fromOutputs[c.fromPort]);
+							if (c.fromPath && c.fromPath !== '$') {
+								val = window.WorkflowApp.Helpers.getValueAtPath(val, c.fromPath);
+							}
+							if (!cachedArgs.has(did)) cachedArgs.set(did, {});
+							cachedArgs.get(did)[dInputNames[pi]] = val;
+						}
+					}
+				}
+			}
+
+			for (let i = 0; i < array.length; i++) {
+				if (i > 0 && loopDelay > 0) {
+					await new Promise((r) => setTimeout(r, loopDelay));
+				}
+				this.executionState.outputs.set(block.id, [array[i]]);
+				this.executionState.outputPaths.set(block.id, ['$']);
+
+				for (const did of downstreamOrder) {
+					const dBlock = this.state.blocks.find((b) => b.id === did);
+					if (!dBlock) continue;
+
+					const args = {};
+					const dInputNames = dBlock.inputs.map(window.WorkflowApp.Helpers.portName);
+
+					for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+						const c = this.state.connections.find((cn) => cn.toId === did && cn.toPort === pi);
+						if (!c) {
+							args[dInputNames[pi]] = undefined;
+							continue;
+						}
+						const fromInLoop = c.fromId === block.id || downstreamIds.has(c.fromId);
+						if (fromInLoop) {
+							const fromOutputs = this.executionState.outputs.get(c.fromId) || [];
+							if (c.fromPort < fromOutputs.length) {
+								let value = await window.WorkflowApp.Helpers.resolveExecutionValue(fromOutputs[c.fromPort]);
+								if (c.fromPath && c.fromPath !== '$') {
+									value = window.WorkflowApp.Helpers.getValueAtPath(value, c.fromPath);
+								}
+								args[dInputNames[pi]] = value;
+							} else {
+								args[dInputNames[pi]] = undefined;
+							}
+						} else {
+							const cached = cachedArgs.get(did);
+							args[dInputNames[pi]] = cached ? cached[dInputNames[pi]] : undefined;
+						}
+					}
+
+					try {
+						const fn = new this.AsyncFunction(...dInputNames, dBlock.code);
+						const result = await fn(...dInputNames.map((k) => args[k]));
+						this.executionState.outputs.set(did, dBlock.outputs.length ? [result] : []);
+						this.executionState.outputPaths.set(did, dBlock.outputs.length ? ['$'] : []);
+					} catch (err) {
+						console.error(`Block "${dBlock.title}" error (forEach ${i + 1}/${array.length}):`, err);
+						eda.sys_Message.showToastMessage(`模块 "${dBlock.title}" 出错 (遍历 ${i + 1}/${array.length}): ${err.message}`, 'info', 1);
+						this.executionState.running = false;
+						return;
+					}
+				}
+			}
+
+			this.executionState.currentIndex++;
+			while (
+				this.executionState.currentIndex < this.executionState.order.length &&
+				downstreamIds.has(this.executionState.order[this.executionState.currentIndex])
+			) {
+				this.executionState.currentIndex++;
+			}
+		}
+
+		async executeBranch(block) {
+			const id = block.id;
+			const inputNames = block.inputs.map(window.WorkflowApp.Helpers.portName);
+			const args = {};
+
+			for (let i = 0; i < block.inputs.length; i++) {
+				const conn = this.state.connections.find((c) => c.toId === id && c.toPort === i);
+				if (conn && this.executionState.outputs.has(conn.fromId)) {
+					const fromOutputs = this.executionState.outputs.get(conn.fromId) || [];
+					if (conn.fromPort < fromOutputs.length) {
+						let value = await window.WorkflowApp.Helpers.resolveExecutionValue(fromOutputs[conn.fromPort]);
+						if (conn.fromPath && conn.fromPath !== '$') {
+							value = window.WorkflowApp.Helpers.getValueAtPath(value, conn.fromPath);
+						}
+						args[inputNames[i]] = value;
+					}
+				} else {
+					args[inputNames[i]] = undefined;
+				}
+			}
+
+			let selectedPort;
+			try {
+				const fn = new this.AsyncFunction(...inputNames, block.code);
+				const result = await fn(...inputNames.map((k) => args[k]));
+
+				if (block.type === 'condition') {
+					selectedPort = result ? 0 : 1;
+				} else {
+					selectedPort = typeof result === 'number' ? result : block.outputs.length - 1;
+				}
+			} catch (err) {
+				console.error(`Block "${block.title}" error:`, err);
+				eda.sys_Message.showToastMessage(`模块 "${block.title}" 出错: ${err.message}`, 'info', 1);
+				this.executionState.running = false;
+				return;
+			}
+
+			const allBranchTargets = new Set();
+			for (const c of this.state.connections) {
+				if (c.fromId === id && c.toPort === -1) {
+					allBranchTargets.add(c.toId);
+					const downstream = this.getDownstreamIds(c.toId);
+					for (const did of downstream) allBranchTargets.add(did);
+				}
+			}
+
+			const selectedTargets = new Set();
+			for (const c of this.state.connections) {
+				if (c.fromId === id && c.fromPort === selectedPort && c.toPort === -1) {
+					selectedTargets.add(c.toId);
+					const downstream = this.getDownstreamIds(c.toId);
+					for (const did of downstream) selectedTargets.add(did);
+				}
+			}
+
+			const branchOrder = this.executionState.order.filter((oid) => selectedTargets.has(oid));
+
+			for (const did of branchOrder) {
+				const dBlock = this.state.blocks.find((b) => b.id === did);
+				if (!dBlock) continue;
+
+				if (dBlock.type === 'loop') {
+					await this.executeLoop(dBlock);
+					continue;
+				}
+				if (dBlock.type === 'foreach') {
+					await this.executeForEach(dBlock);
+					continue;
+				}
+
+				const dArgs = {};
+				const dInputNames = dBlock.inputs.map(window.WorkflowApp.Helpers.portName);
+
+				for (let pi = 0; pi < dBlock.inputs.length; pi++) {
+					const conn = this.state.connections.find((c) => c.toId === did && c.toPort === pi);
+					if (conn && this.executionState.outputs.has(conn.fromId)) {
+						const fromOutputs = this.executionState.outputs.get(conn.fromId) || [];
+						if (conn.fromPort < fromOutputs.length) {
+							let value = await window.WorkflowApp.Helpers.resolveExecutionValue(fromOutputs[conn.fromPort]);
+							if (conn.fromPath && conn.fromPath !== '$') {
+								value = window.WorkflowApp.Helpers.getValueAtPath(value, conn.fromPath);
+							}
+							dArgs[dInputNames[pi]] = value;
+						}
+					} else {
+						dArgs[dInputNames[pi]] = undefined;
+					}
+				}
+
+				try {
+					const fn = new this.AsyncFunction(...dInputNames, dBlock.code);
+					const result = await fn(...dInputNames.map((k) => dArgs[k]));
+					this.executionState.outputs.set(did, dBlock.outputs.length ? [result] : []);
+					this.executionState.outputPaths.set(did, dBlock.outputs.length ? ['$'] : []);
+				} catch (err) {
+					console.error(`Block "${dBlock.title}" error:`, err);
+					eda.sys_Message.showToastMessage(`模块 "${dBlock.title}" 出错: ${err.message}`, 'info', 1);
+					this.executionState.running = false;
+					return;
+				}
+			}
+
+			this.executionState.currentIndex++;
+			while (
+				this.executionState.currentIndex < this.executionState.order.length &&
+				allBranchTargets.has(this.executionState.order[this.executionState.currentIndex])
 			) {
 				this.executionState.currentIndex++;
 			}

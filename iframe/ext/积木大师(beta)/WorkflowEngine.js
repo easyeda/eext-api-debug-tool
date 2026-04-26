@@ -57,6 +57,9 @@
 			this.registry.register(window.WorkflowApp.TryCatchBlock);
 			this.registry.register(window.WorkflowApp.DelayBlock);
 			this.registry.register(window.WorkflowApp.ConsoleBlock);
+			this.registry.register(window.WorkflowApp.SwitchBlock);
+			this.registry.register(window.WorkflowApp.MergeBlock);
+			this.registry.register(window.WorkflowApp.ForEachBlock);
 		}
 
 		registerApiBlocks() {

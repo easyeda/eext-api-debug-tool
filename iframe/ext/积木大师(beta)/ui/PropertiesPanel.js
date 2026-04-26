@@ -47,6 +47,8 @@
 					this.buildFunctionProperties(block);
 				} else if (block.type === 'annotation') {
 					this.buildAnnotationProperties(block);
+				} else if (block.type === 'switch') {
+					this.buildSwitchProperties(block);
 				} else {
 					this.buildCodeProperties(block);
 				}
@@ -305,6 +307,82 @@
 
 		saveCodeProperties() {
 			this.currentBlock.code = document.getElementById('prop-code').value;
+			this.currentBlock.w = this.blockRenderer.measureBlockWidth(this.currentBlock);
+			eda.sys_Message.showToastMessage('保存成功', 'info', 1);
+			this.open(this.currentBlock);
+		}
+
+		buildSwitchProperties(block) {
+			const inputFieldsHtml = this.buildInputFields(block);
+			let casesHtml = '';
+			block.outputs.forEach((output, i) => {
+				const name = window.WorkflowApp.Helpers.portName(output);
+				const desc = (typeof output === 'object' && output.description) || '';
+				casesHtml += `
+					<div style="display:flex;gap:4px;align-items:center;margin-bottom:8px;">
+						<span style="color:#75715e;min-width:16px;font-size:12px;">${i}</span>
+						<input type="text" class="property-input switch-case-name" data-index="${i}" value="${this.escapeAttribute(name)}" placeholder="名称" style="flex:1;height:30px;font-size:12px;">
+						<input type="text" class="property-input switch-case-desc" data-index="${i}" value="${this.escapeAttribute(desc)}" placeholder="描述" style="flex:1;height:30px;font-size:12px;">
+						${block.outputs.length > 2 ? `<button class="switch-case-remove" data-index="${i}" style="background:none;border:1px solid #49483e;color:#f8f8f2;cursor:pointer;border-radius:4px;width:24px;height:24px;font-size:14px;line-height:1;padding:0;flex-shrink:0;" title="删除分支">×</button>` : ''}
+					</div>
+				`;
+			});
+
+			this.content.innerHTML = `
+				${inputFieldsHtml}
+				<div class="property-section">
+					<div class="stats-section-title">分支列表</div>
+					<div style="color:#75715e;font-size:11px;margin-bottom:6px;">代码返回分支索引 (0, 1, 2...) 来选择执行哪个分支</div>
+					<div id="switch-cases-list">${casesHtml}</div>
+					<button class="property-button secondary" id="prop-add-case" style="margin-top:6px;width:100%;">+ 添加分支</button>
+				</div>
+				<div class="property-section">
+					<label class="property-label">判断代码</label>
+					<textarea id="prop-switch-code" class="property-textarea" placeholder="返回分支索引...">${this.escapeHtml(block.code)}</textarea>
+				</div>
+				<div class="property-actions">
+					<button class="property-button secondary" id="prop-cancel">取消</button>
+					<button class="property-button" id="prop-save-switch">保存</button>
+				</div>
+			`;
+
+			document.getElementById('prop-cancel').onclick = () => this.close();
+			document.getElementById('prop-save-switch').onclick = () => this.saveSwitchProperties();
+			document.getElementById('prop-add-case').onclick = () => {
+				const idx = block.outputs.length;
+				block.outputs.push({ name: `case${idx}`, description: `分支 ${idx}` });
+				block.w = this.blockRenderer.measureBlockWidth(block);
+				this.open(block);
+			};
+
+			this.content.querySelectorAll('.switch-case-remove').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const idx = parseInt(btn.dataset.index);
+					block.outputs.splice(idx, 1);
+					this.state.connections = this.state.connections.filter((c) => {
+						if (c.fromId === block.id && c.fromPort === idx) return false;
+						if (c.fromId === block.id && c.fromPort > idx) {
+							c.fromPort--;
+						}
+						return true;
+					});
+					block.w = this.blockRenderer.measureBlockWidth(block);
+					this.open(block);
+				});
+			});
+
+			this.attachInputFieldHandlers(block);
+		}
+
+		saveSwitchProperties() {
+			const names = this.content.querySelectorAll('.switch-case-name');
+			const descs = this.content.querySelectorAll('.switch-case-desc');
+			names.forEach((input, i) => {
+				const name = input.value.trim() || `case${i}`;
+				const desc = descs[i] ? descs[i].value.trim() : '';
+				this.currentBlock.outputs[i] = { name, description: desc };
+			});
+			this.currentBlock.code = document.getElementById('prop-switch-code').value;
 			this.currentBlock.w = this.blockRenderer.measureBlockWidth(this.currentBlock);
 			eda.sys_Message.showToastMessage('保存成功', 'info', 1);
 			this.open(this.currentBlock);

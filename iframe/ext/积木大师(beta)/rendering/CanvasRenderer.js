@@ -36,7 +36,20 @@
 				} else {
 					to = window.WorkflowApp.Geometry.getPortPos(toBlock, 'input', c.toPort);
 				}
-				this.connectionRenderer.drawConnection(from, to, c.toPort === -1 ? '#ae81ff' : undefined);
+				let color;
+				if (c.toPort === -1) {
+					if (fromBlock.type === 'condition') {
+						color = c.fromPort === 0 ? '#a6e22e' : '#f92672';
+					} else if (fromBlock.type === 'switch') {
+						const switchColors = ['#fd971f', '#e6db74', '#ae81ff', '#66d9ef'];
+						color = switchColors[c.fromPort % switchColors.length];
+					} else if (fromBlock.type === 'foreach') {
+						color = '#66d9ef';
+					} else {
+						color = '#ae81ff';
+					}
+				}
+				this.connectionRenderer.drawConnection(from, to, color);
 			}
 
 			if (this.state.connecting) {
