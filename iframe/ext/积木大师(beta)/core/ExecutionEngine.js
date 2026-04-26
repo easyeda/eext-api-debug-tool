@@ -136,7 +136,32 @@
 
 				try {
 					const fn = new this.AsyncFunction(...inputNames, block.code);
+
+					if (block.type === 'trycatch') {
+						try {
+							const result = await fn(...inputNames.map((k) => args[k]));
+							this.executionState.outputs.set(id, [result, undefined]);
+						} catch (innerErr) {
+							this.executionState.outputs.set(id, [undefined, innerErr.message]);
+						}
+						this.executionState.outputPaths.set(id, ['$', '$']);
+						this.executionState.currentIndex++;
+						continue;
+					}
+
 					const result = await fn(...inputNames.map((k) => args[k]));
+
+					if (block.type === 'condition') {
+						const conditionResult = !!result;
+						this.executionState.outputs.set(id, [
+							conditionResult ? args[inputNames[0]] : undefined,
+							conditionResult ? undefined : args[inputNames[0]],
+						]);
+						this.executionState.outputPaths.set(id, ['$', '$']);
+						this.executionState.currentIndex++;
+						continue;
+					}
+
 					this.executionState.outputs.set(id, block.outputs.length ? [result] : []);
 					this.executionState.outputPaths.set(id, block.outputs.length ? ['$'] : []);
 

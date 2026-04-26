@@ -56,6 +56,11 @@
 			return current;
 		},
 
+		pathToAccessor(path) {
+			if (!path || path === '$') return '';
+			return path.replace(/^\$/, '');
+		},
+
 		stringifyForDisplay(value, space = 0) {
 			if (value === undefined) return 'undefined';
 			if (typeof value === 'function') return '[Function]';
