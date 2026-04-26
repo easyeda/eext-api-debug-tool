@@ -243,9 +243,9 @@ body.dark-theme .project-list-empty {
 
 .import-project-btn {
 	padding: 8px 16px;
-	background: #0969da;
-	color: #ffffff;
-	border: 1px solid #0969da;
+	background: #ffffff;
+	color: #5588ff;
+	border: 1px solid #5588ff;
 	border-radius: 6px;
 	cursor: pointer;
 	font-size: 13px;
@@ -256,19 +256,20 @@ body.dark-theme .project-list-empty {
 }
 
 .import-project-btn:hover {
-	background: #0860ca;
-	border-color: #0860ca;
+	background: #f0f4ff;
+	border-color: #5588ff;
 }
 
 body.dark-theme .import-project-btn {
-	background: #1e1f1c;
-	color: #66d9ef;
-	border-color: #66d9ef;
+	background: #272822;
+	color: #f8f8f2;
+	border-color: #49483e;
 }
 
 body.dark-theme .import-project-btn:hover {
-	background: #2d2e27;
+	background: #3e3d32;
 	border-color: #66d9ef;
+	color: #66d9ef;
 }
 
 .project-list-empty p {
