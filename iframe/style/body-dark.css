@@ -4,6 +4,10 @@
 	box-sizing: border-box;
 }
 
+.swal2-container {
+	z-index: 20000 !important;
+}
+
 html,
 body {
 	height: 100%;
@@ -46,6 +50,21 @@ body {
 	background: #3e3d32;
 	border-color: #66d9ef;
 	color: #66d9ef;
+}
+
+#quick-btn-list {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	overflow-x: auto;
+	flex: 1;
+}
+
+#quick-btn-list::-webkit-scrollbar {
+	height: 0;
 }
 
 /* 主内容区 */

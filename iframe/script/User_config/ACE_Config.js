@@ -564,7 +564,7 @@ async function Code_SaveToBtnList(editor) {
 
 				// 创建并追加按钮
 				const li = createQuickButton(editor, name, currentCode);
-				document.querySelector('#sidebar ul')?.appendChild(li);
+				document.getElementById('quick-btn-list')?.appendChild(li);
 
 				eda.sys_Message.showToastMessage(`快捷按钮 "${name}" 已添加`, 'success', 1);
 			} catch (error) {
@@ -587,7 +587,7 @@ async function Code_LoadBtnListFromDB(editor) {
 			req.onerror = reject;
 		});
 
-		const ul = document.querySelector('#sidebar ul');
+		const ul = document.getElementById('quick-btn-list');
 		if (!ul) return;
 
 		records.forEach((record) => {
@@ -695,6 +695,29 @@ async function ExtStore_DeleteExt(name) {
 	});
 }
 
+// 重命名启动项
+async function ExtStore_RenameExt(oldName, newName) {
+	const db = await ExtStore_Init();
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction(['ExtStore'], 'readwrite');
+		const store = transaction.objectStore('ExtStore');
+		const getRequest = store.index('name').get(oldName);
+
+		getRequest.onsuccess = (e) => {
+			const record = e.target.result;
+			if (!record) {
+				reject(new Error(`未找到名称为 "${oldName}" 的启动项`));
+				return;
+			}
+			record.name = newName;
+			const putRequest = store.put(record);
+			putRequest.onsuccess = () => resolve(true);
+			putRequest.onerror = (ev) => reject(ev.target.error);
+		};
+		getRequest.onerror = (e) => reject(e.target.error);
+	});
+}
+
 /**
  * 查询所有插件简要信息（id, name）
  * @returns {Promise<Array<{id: number, name: string}>>}
@@ -728,7 +751,7 @@ async function ExtStore_GetExtList() {
 }
 
 // ==========================
-// 显示插件管理模态框 (重构版 - 使用 CSS 类)
+// 显示启动项管理模态框 (重构版 - 使用 CSS 类)
 // ==========================
 async function showPluginManagerModal(editor, onBackCallback) {
 	if (document.getElementById('plugin-manager-modal')) return;
@@ -742,7 +765,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	// 3. 头部
 	const header = document.createElement('div');
 	header.className = 'plugin-manager-header';
-	header.textContent = '插件管理';
+	header.textContent = '启动项管理';
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'plugin-manager-close-btn';
 	closeBtn.textContent = '×';
@@ -757,33 +780,33 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	const body = document.createElement('div');
 	body.className = 'plugin-manager-body';
 	container.appendChild(body);
-	// --- 保存区域 ---
+	// --- 添加启动项区域 ---
 	const saveSection = document.createElement('div');
 	saveSection.className = 'plugin-manager-save-section';
 	const saveLabel = document.createElement('div');
 	saveLabel.className = 'plugin-manager-label';
-	saveLabel.textContent = '保存当前代码为插件：';
+	saveLabel.textContent = '添加启动项：';
 	saveSection.appendChild(saveLabel);
 	const inputGroup = document.createElement('div');
 	inputGroup.className = 'plugin-manager-input-group';
 	const nameInput = document.createElement('input');
 	nameInput.type = 'text';
-	nameInput.placeholder = '插件名称（不可重复）';
+	nameInput.placeholder = '启动项名称（不可重复）';
 	nameInput.className = 'plugin-manager-input';
 	inputGroup.appendChild(nameInput);
 	const saveBtn = document.createElement('button');
-	saveBtn.textContent = '保存';
-	saveBtn.className = 'plugin-manager-btn save'; // 添加 'save' 修饰类
+	saveBtn.textContent = '添加';
+	saveBtn.className = 'plugin-manager-btn save';
 	saveBtn.onclick = async () => {
 		const originalText = saveBtn.textContent;
-		saveBtn.textContent = '保存中...';
+		saveBtn.textContent = '添加中...';
 		saveBtn.disabled = true;
 		try {
 			await saveCurrentCodeAsPlugin(editor, nameInput, (msg, type) => {
 				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(msg, type, 2);
 			});
 			await renderPluginList(pluginList);
-			nameInput.value = ''; // 清空输入框
+			nameInput.value = '';
 		} catch (e) {
 			console.error(e);
 		} finally {
@@ -794,21 +817,21 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	inputGroup.appendChild(saveBtn);
 	saveSection.appendChild(inputGroup);
 	body.appendChild(saveSection);
-	// --- 插件列表标题 ---
+	// --- 启动项列表标题 ---
 	const listTitle = document.createElement('div');
 	listTitle.className = 'plugin-manager-list-title';
-	listTitle.textContent = '已有插件：';
+	listTitle.textContent = '已有启动项：';
 	body.appendChild(listTitle);
 	const pluginList = document.createElement('div');
 	pluginList.className = 'plugin-manager-list';
 	body.appendChild(pluginList);
-	// --- 渲染插件列表函数 ---
+	// --- 渲染启动项列表函数 ---
 	async function renderPluginList(listEl) {
 		listEl.innerHTML = '<div class="plugin-manager-status">加载中...</div>';
 		try {
 			const plugins = await ExtStore_GetExtList();
 			if (plugins.length === 0) {
-				listEl.innerHTML = '<div class="plugin-manager-status">暂无插件</div>';
+				listEl.innerHTML = '<div class="plugin-manager-status">暂无启动项</div>';
 			} else {
 				listEl.innerHTML = '';
 				for (const plugin of plugins) {
@@ -817,28 +840,87 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					const nameSpan = document.createElement('span');
 					nameSpan.className = 'plugin-manager-item-name';
 					nameSpan.textContent = plugin.name;
-					nameSpan.title = plugin.name; // 鼠标悬停显示全名
+					nameSpan.title = plugin.name;
 					item.appendChild(nameSpan);
+					const renameBtn = document.createElement('button');
+					renameBtn.textContent = '重命名';
+					renameBtn.className = 'plugin-manager-btn';
+					renameBtn.onclick = async (e) => {
+						e.stopPropagation();
+						const result = await Swal.fire({
+							title: '重命名启动项',
+							input: 'text',
+							inputValue: plugin.name,
+							inputLabel: '新名称',
+							showCancelButton: true,
+							confirmButtonText: '确定',
+							cancelButtonText: '取消',
+							inputValidator: (value) => {
+								if (!value || !value.trim()) return '请输入名称';
+								if (value.trim() === plugin.name) return '名称未改变';
+							},
+						});
+						if (result.isConfirmed) {
+							try {
+								await ExtStore_RenameExt(plugin.name, result.value.trim());
+								await renderPluginList(pluginList);
+								eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
+							} catch (err) {
+								eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+							}
+						}
+					};
+					item.appendChild(renameBtn);
+					const loadBtn = document.createElement('button');
+					loadBtn.textContent = '加载';
+					loadBtn.className = 'plugin-manager-btn';
+					loadBtn.onclick = async (e) => {
+						e.stopPropagation();
+						try {
+							const db = await ExtStore_Init();
+							const tx = db.transaction(['ExtStore'], 'readonly');
+							const store = tx.objectStore('ExtStore');
+							const req = store.index('name').get(plugin.name);
+							req.onsuccess = () => {
+								if (req.result && req.result.code) {
+									editor.setValue(req.result.code, -1);
+									editor.clearSelection();
+									eda.sys_Message.showToastMessage(`已加载：${plugin.name}`, 'success', 1);
+								}
+							};
+						} catch (err) {
+							eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
+						}
+					};
+					item.appendChild(loadBtn);
 					const delBtn = document.createElement('button');
 					delBtn.textContent = '删除';
-					delBtn.className = 'plugin-manager-btn delete'; // 添加 'delete' 修饰类
+					delBtn.className = 'plugin-manager-btn delete';
 					delBtn.onclick = async (e) => {
 						e.stopPropagation();
-						if (!confirm(`确定删除插件 "${plugin.name}"？`)) return;
+						const confirmResult = await Swal.fire({
+							title: '确认删除',
+							html: `确定删除启动项 "<strong>${plugin.name}</strong>"？`,
+							icon: 'warning',
+							showCancelButton: true,
+							confirmButtonText: '删除',
+							cancelButtonText: '取消',
+							confirmButtonColor: '#d33',
+						});
+						if (!confirmResult.isConfirmed) return;
 						delBtn.textContent = '删除中...';
 						delBtn.disabled = true;
 						try {
 							await ExtStore_DeleteExt(plugin.name);
 							await renderPluginList(pluginList);
 							if (eda && eda.sys_Message) {
-								eda.sys_Message.showToastMessage(`插件 "${plugin.name}" 已删除`, 'info', 1);
+								eda.sys_Message.showToastMessage(`启动项 "${plugin.name}" 已删除`, 'info', 1);
 							}
 						} catch (err) {
 							console.error('删除失败:', err);
 							if (eda && eda.sys_Message) {
 								eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 2);
 							}
-							// 恢复按钮状态
 							delBtn.textContent = '删除';
 							delBtn.disabled = false;
 						}
@@ -848,7 +930,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 				}
 			}
 		} catch (err) {
-			listEl.innerHTML = `<div class="plugin-manager-status error">加载插件失败：${err.message}</div>`;
+			listEl.innerHTML = `<div class="plugin-manager-status error">加载启动项失败：${err.message}</div>`;
 		}
 	}
 	// 初始加载
@@ -886,7 +968,7 @@ async function saveCurrentCodeAsPlugin(editor, nameInput, messageCallback) {
 	const code = editor.getValue().trim();
 
 	if (!name) {
-		messageCallback('请输入插件名称', 'warn');
+		messageCallback('请输入启动项名称', 'warn');
 		return;
 	}
 	if (!code) {
@@ -896,11 +978,42 @@ async function saveCurrentCodeAsPlugin(editor, nameInput, messageCallback) {
 
 	try {
 		await ExtStore_SaveExt(name, code);
-		messageCallback(`插件 "${name}" 已保存`, 'success');
+		messageCallback(`启动项 "${name}" 已保存`, 'success');
 		nameInput.value = '';
 	} catch (err) {
-		console.error('保存插件失败:', err);
+		console.error('保存启动项失败:', err);
 		messageCallback(`保存失败: ${err.message}`, 'error');
+	}
+}
+
+// 保存到启动项（从文件菜单/快捷键调用）
+async function ExtStore_SavePlugin(editor) {
+	const code = editor.getValue().trim();
+	if (!code) {
+		eda.sys_Message.showToastMessage('当前编辑器为空，无法保存', 'info', 2);
+		return;
+	}
+
+	const result = await Swal.fire({
+		title: '保存到启动项',
+		input: 'text',
+		inputLabel: '启动项名称',
+		inputPlaceholder: '例如：自动初始化脚本',
+		showCancelButton: true,
+		confirmButtonText: '保存',
+		cancelButtonText: '取消',
+		inputValidator: (value) => {
+			if (!value || !value.trim()) return '请输入启动项名称';
+		},
+	});
+
+	if (result.isConfirmed) {
+		try {
+			await ExtStore_SaveExt(result.value.trim(), code);
+			eda.sys_Message.showToastMessage(`启动项 "${result.value.trim()}" 已保存`, 'success', 2);
+		} catch (err) {
+			eda.sys_Message.showToastMessage(`保存失败: ${err.message}`, 'error', 2);
+		}
 	}
 }
 

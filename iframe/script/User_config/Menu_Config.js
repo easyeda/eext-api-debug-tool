@@ -45,7 +45,8 @@ function showFileContextMenu(e, editor) {
 				Code_OpenDeleteWindow(editor);
 			},
 		},
-		{ text: '保存到列表', action: () => Code_SaveToBtnList(editor) },
+		{ text: '保存到快捷按钮', action: () => Code_SaveToBtnList(editor) },
+		{ text: '保存到启动项', action: () => ExtStore_SavePlugin(editor) },
 	];
 
 	menu.innerHTML = '';
@@ -474,7 +475,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				},
 			},
 			{
-				text: '插件管理',
+				text: '启动项管理',
 				action: () => {
 					overlay.style.display = 'none';
 					showPluginManagerModal(editor, () => {

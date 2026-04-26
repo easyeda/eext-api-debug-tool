@@ -14,8 +14,8 @@ const DEFAULT_SHORTCUTS = {
 	export: { win: 'Ctrl+E', mac: 'Command+E', description: '导出文件' },
 	load: { win: 'Ctrl+L', mac: 'Command+L', description: '加载代码' },
 	delete: { win: 'Ctrl+D', mac: 'Command+D', description: '删除代码' },
-	saveToList: { win: 'Ctrl+Shift+S', mac: 'Command+Shift+S', description: '保存到列表' },
-	saveAsPlugin: { win: 'Ctrl+Shift+P', mac: 'Command+Shift+P', description: '保存为插件' },
+	saveToList: { win: 'Ctrl+Shift+S', mac: 'Command+Shift+S', description: '保存到快捷按钮' },
+	saveAsPlugin: { win: 'Ctrl+Shift+P', mac: 'Command+Shift+P', description: '保存到启动项' },
 };
 
 /**
