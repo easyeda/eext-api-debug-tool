@@ -29,15 +29,16 @@ function _buildCompletionInsertText(item) {
 // 获取编辑器主题
 async function GetTheme(editor, light_theme, dark_theme) {
 	const theme = eda.sys_Storage.getExtensionUserConfig('theme');
-	if (theme == undefined) {
-		await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
-	} else if (theme == 'light') {
+	if (theme == 'light') {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
 		editor.setTheme('ace/theme/github');
 		document.body.classList.remove('dark-theme');
 		document.body.classList.add('light-theme');
 	} else {
+		if (theme == undefined) {
+			await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+		}
 		light_theme.disabled = true;
 		dark_theme.disabled = false;
 		editor.setTheme('ace/theme/monokai');
