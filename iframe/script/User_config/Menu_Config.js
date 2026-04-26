@@ -300,7 +300,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 		const widthInput = document.createElement('input');
 		widthInput.type = 'number';
-		widthInput.placeholder = '1200';
+		widthInput.placeholder = window.innerWidth;
 		widthInput.id = 'ui-width-input';
 		widthInput.style.cssText = `width:80px;padding:6px 8px;background:${colors.modalBg};color:${colors.textColor};border:1px solid ${colors.modalBorder};border-radius:4px;font-size:13px;outline:none;transition:all 0.2s ease;-moz-appearance:textfield;`;
 		widthInput.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
@@ -317,7 +317,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 		const heightInput = document.createElement('input');
 		heightInput.type = 'number';
-		heightInput.placeholder = '700';
+		heightInput.placeholder = window.innerHeight;
 		heightInput.id = 'ui-height-input';
 		heightInput.style.cssText = `width:80px;padding:6px 8px;background:${colors.modalBg};color:${colors.textColor};border:1px solid ${colors.modalBorder};border-radius:4px;font-size:13px;outline:none;transition:all 0.2s ease;-moz-appearance:textfield;`;
 		heightInput.onfocus = () => (heightInput.style.borderColor = isDark ? '#66d9ef' : '#0969da');
@@ -329,14 +329,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			}
 		});
 
-		// 加载当前设置
-		(async () => {
-			const savedWidth = await eda.sys_Storage.getExtensionUserConfig('UI_width');
-			const savedHeight = await eda.sys_Storage.getExtensionUserConfig('UI_height');
-			if (savedWidth) widthInput.value = savedWidth;
-			if (savedHeight) heightInput.value = savedHeight;
-		})();
-
 		const applyBtn = document.createElement('button');
 		applyBtn.id = 'ui-apply-btn';
 		applyBtn.textContent = '应用';
@@ -344,13 +336,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		applyBtn.onmouseenter = () => (applyBtn.style.opacity = '0.85');
 		applyBtn.onmouseleave = () => (applyBtn.style.opacity = '1');
 		applyBtn.onclick = async () => {
-			const width = widthInput.value.trim();
-			const height = heightInput.value.trim();
-
-			if (!width || !height) {
-				eda.sys_Message.showToastMessage('请输入宽度和高度', 'warn', 2);
-				return;
-			}
+			const width = widthInput.value.trim() || String(window.innerWidth);
+			const height = heightInput.value.trim() || String(window.innerHeight);
 
 			if (parseInt(width) < 400 || parseInt(height) < 300) {
 				eda.sys_Message.showToastMessage('窗口尺寸过小，最小宽度400，最小高度300', 'warn', 2);
