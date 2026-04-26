@@ -1,189 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workflow Canvas</title>
-    <link rel="stylesheet" href="workflow.css">
-</head>
-<body>
-    <div id="toolbar">
-        <input type="text" id="search-blocks" placeholder="搜索模块...">
-        <button id="run">运行</button>
-        <button id="view-code">查看代码</button>
-        <button id="export">导出</button>
-        <button id="import">导入</button>
-        <button id="clear">清空</button>
-    </div>
-    <canvas id="canvas"></canvas>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Workflow Canvas</title>
+		<link rel="stylesheet" href="workflow.css" />
+	</head>
+	<body>
+		<div id="toolbar">
+			<input type="text" id="search-blocks" placeholder="搜索模块..." />
+			<button id="run">运行</button>
+			<button id="view-code">查看代码</button>
+			<button id="export">导出</button>
+			<button id="import">导入</button>
+			<button id="clear">清空</button>
+		</div>
+		<canvas id="canvas"></canvas>
 
-    <!-- Right Sidebar -->
-    <div id="right-sidebar">
-        <button id="properties-toggle" class="sidebar-button">
-            <span class="vertical-text">属性</span>
-        </button>
-    </div>
+		<!-- Right Sidebar -->
+		<div id="right-sidebar">
+			<button id="properties-toggle" class="sidebar-button">
+				<span class="vertical-text">属性</span>
+			</button>
+		</div>
 
-    <!-- Properties Panel -->
-    <div id="properties-panel">
-        <div class="properties-header">
-            <span id="properties-title">模块属性</span>
-        </div>
-        <div class="properties-content" id="properties-content">
-            <!-- Content will be dynamically populated -->
-        </div>
-    </div>
+		<!-- Properties Panel -->
+		<div id="properties-panel">
+			<div class="properties-header">
+				<span id="properties-title">模块属性</span>
+			</div>
+			<div class="properties-content" id="properties-content">
+				<!-- Content will be dynamically populated -->
+			</div>
+		</div>
 
-    <!-- Context Menu -->
-    <div id="context-menu" class="context-menu">
-        <!-- Dynamically populated -->
-    </div>
+		<!-- Context Menu -->
+		<div id="context-menu" class="context-menu">
+			<!-- Dynamically populated -->
+		</div>
 
-    <div id="search-panel">
-        <div class="search-results" id="search-results"></div>
-    </div>
+		<div id="search-panel">
+			<div class="search-results" id="search-results"></div>
+		</div>
 
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header" id="modal-title">编辑模块</div>
-            <div id="function-editor" style="display:none;">
-                <div class="form-field">
-                    <label for="function-name-editor">模块名称</label>
-                    <input type="text" id="function-name-editor" class="text-input" placeholder="例如：处理项目数据">
-                </div>
-                <div class="form-field">
-                    <label for="function-desc-editor">模块描述</label>
-                    <input type="text" id="function-desc-editor" class="text-input" placeholder="例如：从项目信息中提取设备数据">
-                </div>
-                <div class="form-field">
-                    <label>输入参数</label>
-                    <div class="params-container">
-                        <div class="params-scroll" id="params-scroll"></div>
-                        <button class="param-add-btn" id="param-add-btn" title="添加参数">+</button>
-                    </div>
-                </div>
-                <div class="form-field">
-                    <label for="function-output-editor">输出参数</label>
-                    <input type="text" id="function-output-editor" class="text-input" placeholder="例如：result">
-                </div>
-            </div>
-            <div id="state-editor" style="display:none;">
-                <div class="form-field">
-                    <label for="state-path-editor">已保存的选择路径</label>
-                    <input type="text" id="state-path-editor" class="text-input" readonly>
-                </div>
-                <button id="clear-saved-path" style="background: #f92672; border-color: #f92672;">清除保存的路径</button>
-            </div>
-            <textarea id="code-editor" placeholder="在此编写 JavaScript 代码...&#10;可用变量取决于上方的输入参数&#10;使用 return 输出值"></textarea>
-            <input type="text" id="variable-editor" placeholder="输入值 (字符串、数字、true/false、null 或 JSON)">
-            <div id="variable-extra-editor" style="display:none;">
-                <div class="form-field">
-                    <label for="variable-name-editor">变量名称</label>
-                    <input type="text" id="variable-name-editor" class="text-input" placeholder="例如：myVar">
-                </div>
-                <div class="form-field">
-                    <label for="variable-scope-editor">变量类型</label>
-                    <select id="variable-scope-editor" class="text-input">
-                        <option value="local">局部变量</option>
-                        <option value="global">全局变量</option>
-                    </select>
-                </div>
-            </div>
-            <div id="loop-editor" style="display:none;">
-                <div class="form-field">
-                    <label for="loop-count-editor">循环次数</label>
-                    <input type="number" id="loop-count-editor" class="text-input" min="1" step="1" placeholder="例如：3">
-                </div>
-                <div class="form-field">
-                    <label for="loop-delay-editor">每次循环间隔 (毫秒)</label>
-                    <input type="number" id="loop-delay-editor" class="text-input" min="0" step="100" placeholder="例如：1000 (1秒)">
-                </div>
-                <div style="color: #75715e; font-size: 12px; margin-top: 4px;">
-                    输出端口将依次输出 0 到 N-1 的索引值，连接的下游模块将被执行 N 次。
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button id="modal-cancel">取消</button>
-                <button id="modal-save">保存</button>
-            </div>
-        </div>
-    </div>
+		<div id="modal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header" id="modal-title">编辑模块</div>
+				<div id="function-editor" style="display: none">
+					<div class="form-field">
+						<label for="function-name-editor">模块名称</label>
+						<input type="text" id="function-name-editor" class="text-input" placeholder="例如：处理项目数据" />
+					</div>
+					<div class="form-field">
+						<label for="function-desc-editor">模块描述</label>
+						<input type="text" id="function-desc-editor" class="text-input" placeholder="例如：从项目信息中提取设备数据" />
+					</div>
+					<div class="form-field">
+						<label>输入参数</label>
+						<div class="params-container">
+							<div class="params-scroll" id="params-scroll"></div>
+							<button class="param-add-btn" id="param-add-btn" title="添加参数">+</button>
+						</div>
+					</div>
+					<div class="form-field">
+						<label for="function-output-editor">输出参数</label>
+						<input type="text" id="function-output-editor" class="text-input" placeholder="例如：result" />
+					</div>
+				</div>
+				<div id="state-editor" style="display: none">
+					<div class="form-field">
+						<label for="state-path-editor">已保存的选择路径</label>
+						<input type="text" id="state-path-editor" class="text-input" readonly />
+					</div>
+					<button id="clear-saved-path" style="background: #f92672; border-color: #f92672">清除保存的路径</button>
+				</div>
+				<textarea
+					id="code-editor"
+					placeholder="在此编写 JavaScript 代码...&#10;可用变量取决于上方的输入参数&#10;使用 return 输出值"
+				></textarea>
+				<input type="text" id="variable-editor" placeholder="输入值 (字符串、数字、true/false、null 或 JSON)" />
+				<div id="variable-extra-editor" style="display: none">
+					<div class="form-field">
+						<label for="variable-name-editor">变量名称</label>
+						<input type="text" id="variable-name-editor" class="text-input" placeholder="例如：myVar" />
+					</div>
+					<div class="form-field">
+						<label for="variable-scope-editor">变量类型</label>
+						<select id="variable-scope-editor" class="text-input">
+							<option value="local">局部变量</option>
+							<option value="global">全局变量</option>
+						</select>
+					</div>
+				</div>
+				<div id="loop-editor" style="display: none">
+					<div class="form-field">
+						<label for="loop-count-editor">循环次数</label>
+						<input type="number" id="loop-count-editor" class="text-input" min="1" step="1" placeholder="例如：3" />
+					</div>
+					<div class="form-field">
+						<label for="loop-delay-editor">每次循环间隔 (毫秒)</label>
+						<input type="number" id="loop-delay-editor" class="text-input" min="0" step="100" placeholder="例如：1000 (1秒)" />
+					</div>
+					<div style="color: #75715e; font-size: 12px; margin-top: 4px">
+						输出端口将依次输出 0 到 N-1 的索引值，连接的下游模块将被执行 N 次。
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="modal-cancel">取消</button>
+					<button id="modal-save">保存</button>
+				</div>
+			</div>
+		</div>
 
-    <div id="code-view-modal" class="modal">
-        <div class="modal-content" style="width: 700px;">
-            <div class="modal-header">生成代码预览</div>
-            <textarea id="code-view-editor" readonly style="height: 450px; cursor: text;"></textarea>
-            <div class="modal-footer">
-                <button id="code-view-copy">复制代码</button>
-                <button id="code-view-close">关闭</button>
-            </div>
-        </div>
-    </div>
+		<div id="code-view-modal" class="modal">
+			<div class="modal-content" style="width: 700px">
+				<div class="modal-header">生成代码预览</div>
+				<textarea id="code-view-editor" readonly style="height: 450px; cursor: text"></textarea>
+				<div class="modal-footer">
+					<button id="code-view-copy">复制代码</button>
+					<button id="code-view-close">关闭</button>
+				</div>
+			</div>
+		</div>
 
-    <div id="array-selection-modal" class="modal">
-        <div class="modal-content" style="width: 760px; max-height: 85vh;">
-            <div class="modal-header" id="array-selection-title">选择要传递的值</div>
-            <div style="margin-bottom: 8px; color: #75715e; font-size: 12px;">
-                点击任意节点即可选择该值，支持叶子、对象或数组。当前路径：
-                <span id="array-selection-path" style="color: #a6e22e; font-family: monospace;"></span>
-            </div>
-            <div style="display: flex; gap: 12px; min-height: 380px;">
-                <div style="flex: 1; border: 1px solid #49483e; border-radius: 6px; overflow-y: auto; overflow-x: hidden; background: #272822; padding: 8px;">
-                    <div id="array-selection-tree"></div>
-                </div>
-                <textarea id="array-selection-preview" readonly style="width: 260px; min-height: 380px; cursor: text;"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button id="array-selection-back" style="margin-right: auto;">← 返回上一步</button>
-                <button id="array-selection-cancel">取消运行</button>
-                <button id="array-selection-confirm">确认并继续</button>
-            </div>
-        </div>
-    </div>
+		<div id="array-selection-modal" class="modal">
+			<div class="modal-content" style="width: 760px; max-height: 85vh">
+				<div class="modal-header" id="array-selection-title">选择要传递的值</div>
+				<div style="margin-bottom: 8px; color: #75715e; font-size: 12px">
+					点击任意节点即可选择该值，支持叶子、对象或数组。当前路径：
+					<span id="array-selection-path" style="color: #a6e22e; font-family: monospace"></span>
+				</div>
+				<div style="display: flex; gap: 12px; min-height: 380px">
+					<div
+						style="
+							flex: 1;
+							border: 1px solid #49483e;
+							border-radius: 6px;
+							overflow-y: auto;
+							overflow-x: hidden;
+							background: #272822;
+							padding: 8px;
+						"
+					>
+						<div id="array-selection-tree"></div>
+					</div>
+					<textarea id="array-selection-preview" readonly style="width: 260px; min-height: 380px; cursor: text"></textarea>
+				</div>
+				<div class="modal-footer">
+					<button id="array-selection-back" style="margin-right: auto">← 返回上一步</button>
+					<button id="array-selection-cancel">取消运行</button>
+					<button id="array-selection-confirm">确认并继续</button>
+				</div>
+			</div>
+		</div>
 
-    <!-- EDA API definitions (must load before block registration) -->
-    <script src="../script/eda_coder/EDA_Codes.js"></script>
+		<!-- EDA API definitions (must load before block registration) -->
+		<script src="../script/eda_coder/EDA_Codes.js"></script>
 
-    <!-- Utilities -->
-    <script src="utils/Helpers.js"></script>
-    <script src="utils/Geometry.js"></script>
+		<!-- Utilities -->
+		<script src="utils/Helpers.js"></script>
+		<script src="utils/Geometry.js"></script>
 
-    <!-- Core -->
-    <script src="core/EventBus.js"></script>
-    <script src="core/CanvasState.js"></script>
-    <script src="core/BlockRegistry.js"></script>
-    <script src="core/ExecutionEngine.js"></script>
+		<!-- Core -->
+		<script src="core/EventBus.js"></script>
+		<script src="core/CanvasState.js"></script>
+		<script src="core/BlockRegistry.js"></script>
+		<script src="core/ExecutionEngine.js"></script>
 
-    <!-- Blocks -->
-    <script src="blocks/BaseBlock.js"></script>
-    <script src="blocks/CustomBlock.js"></script>
-    <script src="blocks/FunctionBlock.js"></script>
-    <script src="blocks/VariableBlock.js"></script>
-    <script src="blocks/LoopBlock.js"></script>
-    <script src="blocks/AnnotationBlock.js"></script>
-    <script src="blocks/ApiBlock.js"></script>
+		<!-- Blocks -->
+		<script src="blocks/BaseBlock.js"></script>
+		<script src="blocks/CustomBlock.js"></script>
+		<script src="blocks/FunctionBlock.js"></script>
+		<script src="blocks/VariableBlock.js"></script>
+		<script src="blocks/LoopBlock.js"></script>
+		<script src="blocks/AnnotationBlock.js"></script>
+		<script src="blocks/ApiBlock.js"></script>
 
-    <!-- Rendering -->
-    <script src="rendering/GridRenderer.js"></script>
-    <script src="rendering/ConnectionRenderer.js"></script>
-    <script src="rendering/BlockRenderer.js"></script>
-    <script src="rendering/CanvasRenderer.js"></script>
+		<!-- Rendering -->
+		<script src="rendering/GridRenderer.js"></script>
+		<script src="rendering/ConnectionRenderer.js"></script>
+		<script src="rendering/BlockRenderer.js"></script>
+		<script src="rendering/CanvasRenderer.js"></script>
 
-    <!-- UI -->
-    <script src="ui/PropertiesPanel.js"></script>
-    <script src="ui/Toolbar.js"></script>
-    <script src="ui/SearchPanel.js"></script>
-    <script src="ui/ModalManager.js"></script>
-    <script src="ui/ContextMenu.js"></script>
+		<!-- UI -->
+		<script src="ui/PropertiesPanel.js"></script>
+		<script src="ui/Toolbar.js"></script>
+		<script src="ui/SearchPanel.js"></script>
+		<script src="ui/ModalManager.js"></script>
+		<script src="ui/ContextMenu.js"></script>
 
-    <!-- Interaction -->
-    <script src="interaction/InteractionController.js"></script>
+		<!-- Interaction -->
+		<script src="interaction/InteractionController.js"></script>
 
-    <!-- Serialization -->
-    <script src="serialization/WorkflowSerializer.js"></script>
-    <script src="serialization/CodeGenerator.js"></script>
+		<!-- Serialization -->
+		<script src="serialization/WorkflowSerializer.js"></script>
+		<script src="serialization/CodeGenerator.js"></script>
 
-    <!-- Main Orchestrator -->
-    <script src="WorkflowEngine.js"></script>
-</body>
+		<!-- Main Orchestrator -->
+		<script src="WorkflowEngine.js"></script>
+	</body>
 </html>

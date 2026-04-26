@@ -89,15 +89,15 @@ iframe/ext/
 所有类挂载到 `window.WorkflowApp` 命名空间：
 
 ```javascript
-(function() {
-    'use strict';
-    window.WorkflowApp = window.WorkflowApp || {};
-    
-    class MyClass {
-        // 实现
-    }
-    
-    window.WorkflowApp.MyClass = MyClass;
+(function () {
+	'use strict';
+	window.WorkflowApp = window.WorkflowApp || {};
+
+	class MyClass {
+		// 实现
+	}
+
+	window.WorkflowApp.MyClass = MyClass;
 })();
 ```
 
@@ -111,7 +111,7 @@ eventBus.emit('blockSelected', block);
 
 // 监听事件
 eventBus.on('blockSelected', (block) => {
-    // 处理逻辑
+	// 处理逻辑
 });
 ```
 
@@ -120,7 +120,7 @@ eventBus.on('blockSelected', (block) => {
 `CanvasState` 封装状态并通知观察者：
 
 ```javascript
-state.addBlock(block);  // 自动触发 'blockAdded' 和 'stateChanged' 事件
+state.addBlock(block); // 自动触发 'blockAdded' 和 'stateChanged' 事件
 ```
 
 ### 4. 插件式注册
@@ -138,37 +138,39 @@ registry.register(CustomBlock);
 在 `blocks/` 目录创建新文件 `MyBlock.js`：
 
 ```javascript
-(function() {
-    'use strict';
-    
-    window.WorkflowApp = window.WorkflowApp || {};
-    
-    class MyBlock extends window.WorkflowApp.BaseBlock {
-        static getMetadata() {
-            return {
-                type: 'myblock',              // 唯一标识符
-                title: '我的模块',             // 显示名称
-                category: '自定义',            // 分类
-                color: '#ff6600',             // 颜色
-                inputs: [                     // 输入端口
-                    { name: 'input', description: '输入值' }
-                ],
-                outputs: [                    // 输出端口
-                    { name: 'output', description: '输出值' }
-                ],
-                code: 'const output = input * 2;\nreturn output;',  // 默认代码
-                description: '将输入值乘以2'   // 描述
-            };
-        }
-        
-        // 可选：自定义执行逻辑
-        async execute(inputs) {
-            // 自定义执行逻辑
-            return await super.execute(inputs);
-        }
-    }
-    
-    window.WorkflowApp.MyBlock = MyBlock;
+(function () {
+	'use strict';
+
+	window.WorkflowApp = window.WorkflowApp || {};
+
+	class MyBlock extends window.WorkflowApp.BaseBlock {
+		static getMetadata() {
+			return {
+				type: 'myblock', // 唯一标识符
+				title: '我的模块', // 显示名称
+				category: '自定义', // 分类
+				color: '#ff6600', // 颜色
+				inputs: [
+					// 输入端口
+					{ name: 'input', description: '输入值' },
+				],
+				outputs: [
+					// 输出端口
+					{ name: 'output', description: '输出值' },
+				],
+				code: 'const output = input * 2;\nreturn output;', // 默认代码
+				description: '将输入值乘以2', // 描述
+			};
+		}
+
+		// 可选：自定义执行逻辑
+		async execute(inputs) {
+			// 自定义执行逻辑
+			return await super.execute(inputs);
+		}
+	}
+
+	window.WorkflowApp.MyBlock = MyBlock;
 })();
 ```
 
@@ -248,7 +250,7 @@ serialize() {
 
 ```javascript
 eventBus.on('blockSelected', (block) => {
-    console.log('选中模块:', block.title);
+	console.log('选中模块:', block.title);
 });
 ```
 
@@ -306,9 +308,9 @@ state.loadFromJSON(data);
 
 ```javascript
 class MyBlock extends BaseBlock {
-    render(ctx, x, y, w, h) {
-        // 自定义绘制逻辑
-    }
+	render(ctx, x, y, w, h) {
+		// 自定义绘制逻辑
+	}
 }
 ```
 
@@ -340,14 +342,14 @@ executionEngine.cancelExecution();
 ### 导出工作流
 
 ```javascript
-serializer.export();  // 下载 JSON 文件
+serializer.export(); // 下载 JSON 文件
 ```
 
 ### 导入工作流
 
 ```javascript
 serializer.import(file, (data) => {
-    state.loadFromJSON(data);
+	state.loadFromJSON(data);
 });
 ```
 
@@ -383,25 +385,25 @@ const code = codeGenerator.generate();
 
 ```javascript
 // 主引擎
-window.workflowEngine
+window.workflowEngine;
 
 // 状态
-window.workflowEngine.state
+window.workflowEngine.state;
 
 // 注册表
-window.workflowEngine.registry
+window.workflowEngine.registry;
 
 // 事件总线
-window.workflowEngine.eventBus
+window.workflowEngine.eventBus;
 ```
 
 ### 监听所有事件
 
 ```javascript
 const originalEmit = window.workflowEngine.eventBus.emit;
-window.workflowEngine.eventBus.emit = function(event, data) {
-    console.log('Event:', event, data);
-    return originalEmit.call(this, event, data);
+window.workflowEngine.eventBus.emit = function (event, data) {
+	console.log('Event:', event, data);
+	return originalEmit.call(this, event, data);
 };
 ```
 
@@ -435,6 +437,7 @@ window.workflowEngine.eventBus.emit = function(event, data) {
 ### 模块未显示
 
 检查：
+
 1. 文件是否在 HTML 中加载
 2. 类是否正确注册
 3. `getMetadata()` 是否返回有效数据
@@ -442,6 +445,7 @@ window.workflowEngine.eventBus.emit = function(event, data) {
 ### 事件未触发
 
 检查：
+
 1. 事件名称是否正确
 2. 监听器是否在事件触发前注册
 3. EventBus 实例是否正确
@@ -449,6 +453,7 @@ window.workflowEngine.eventBus.emit = function(event, data) {
 ### 渲染问题
 
 检查：
+
 1. Canvas 上下文是否正确传递
 2. 相机变换是否正确应用
 3. 渲染循环是否运行

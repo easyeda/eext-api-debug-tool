@@ -8,11 +8,8 @@ class FileTreeUI {
 		this.editor = editor;
 		this.projectManager = window.projectManager;
 		this.expandedFolders = new Set();
-		this.emptyFolders = new Set(); // 存储空文件夹
 		this.selectedItems = new Set(); // 存储选中的文件/文件夹路径
 		this.lastSelectedItem = null; // 用于 Shift 多选
-		this.draggedItem = null; // 拖拽的项目
-		this.clipboard = null; // 剪贴板 { files: [], mode: 'copy'|'cut' }
 	}
 
 	// 获取文件图标
@@ -56,32 +53,6 @@ class FileTreeUI {
 			current.files.push(file);
 		});
 
-		// 添加空文件夹（从 emptyFolders 中，始终添加）
-		this.emptyFolders.forEach((folderPath) => {
-			const parts = folderPath.split('/');
-			let current = tree;
-			for (let i = 0; i < parts.length; i++) {
-				const folder = parts[i];
-				if (!current.children[folder]) {
-					current.children[folder] = { name: folder, children: {}, files: [] };
-				}
-				current = current.children[folder];
-			}
-		});
-
-		// 添加展开的文件夹（确保展开状态的文件夹也存在于树中）
-		this.expandedFolders.forEach((folderPath) => {
-			const parts = folderPath.split('/');
-			let current = tree;
-			for (let i = 0; i < parts.length; i++) {
-				const folder = parts[i];
-				if (!current.children[folder]) {
-					current.children[folder] = { name: folder, children: {}, files: [] };
-				}
-				current = current.children[folder];
-			}
-		});
-
 		return tree;
 	}
 
@@ -117,12 +88,11 @@ class FileTreeUI {
 			.forEach((file) => {
 				const isActive = this.projectManager.currentFile === file.fileName;
 				const isSelected = this.selectedItems.has(file.fileName);
-				const isCut = this.clipboard && this.clipboard.mode === 'cut' && this.clipboard.files.includes(file.fileName);
 				const indent = level * 16;
 				const displayName = file.fileName.split('/').pop();
 
 				html += `
-				<div class="file-tree-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''} ${isCut ? 'cut' : ''}" data-filename="${this.escapeHtml(file.fileName)}" data-type="file" draggable="true" style="padding-left: ${indent}px;">
+				<div class="file-tree-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" data-filename="${this.escapeHtml(file.fileName)}" data-type="file" style="padding-left: ${indent}px;">
 					<span class="file-icon">${this.getFileIcon(displayName)}</span>
 					<span class="file-name">${this.escapeHtml(displayName)}</span>
 				</div>
@@ -139,13 +109,11 @@ class FileTreeUI {
 
 		if (!this.projectManager.currentProject) {
 			this.container.innerHTML = `
-				<div class="file-tree-empty" id="file-tree-drop-zone">
+				<div class="file-tree-empty">
 					<p>没有打开的项目</p>
 					<p>点击"文件 > 新建"创建项目</p>
-					<p style="margin-top:8px;font-size:12px;opacity:0.6;">或拖拽文件夹到此处导入</p>
 				</div>
 			`;
-			this.attachDropZoneEvents();
 			return;
 		}
 
@@ -155,7 +123,6 @@ class FileTreeUI {
 		let html = `
 			<div class="file-tree-header">
 				<span class="project-name">${this.escapeHtml(project.projectName)}</span>
-				<button class="export-zip-btn" title="导出为 ZIP">📦</button>
 			</div>
 			<div class="file-tree-list" id="file-tree-list">
 				${this.renderTreeNode(tree)}
@@ -176,79 +143,6 @@ class FileTreeUI {
 			this.container.classList.add('light');
 			this.container.classList.remove('dark');
 		}
-	}
-
-	// 绑定拖拽文件夹导入事件（无项目时）
-	attachDropZoneEvents() {
-		const dropZone = this.container.querySelector('#file-tree-drop-zone');
-		if (!dropZone) return;
-
-		this.container.addEventListener('dragover', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			dropZone.classList.add('drag-over');
-		});
-
-		this.container.addEventListener('dragleave', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			dropZone.classList.remove('drag-over');
-		});
-
-		this.container.addEventListener('drop', async (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			dropZone.classList.remove('drag-over');
-
-			if (this.projectManager.currentProject) return; // 仅在无项目时
-
-			const items = Array.from(e.dataTransfer.items);
-			const entry = items[0]?.webkitGetAsEntry?.();
-			if (!entry?.isDirectory) {
-				eda.sys_Message.showToastMessage('请拖入文件夹', 'warning', 2);
-				return;
-			}
-
-			// 递归读取所有文件
-			const files = await this.readDirectoryEntry(entry, '');
-			if (files.length === 0) {
-				eda.sys_Message.showToastMessage('文件夹为空', 'warning', 2);
-				return;
-			}
-
-			const projectName = entry.name;
-			await this.projectManager.createProject(projectName);
-			const allProjects = await this.projectManager.getAllProjects();
-			const project = allProjects.find((p) => p.projectName === projectName);
-			await this.projectManager.loadProject(project.id);
-
-			for (const f of files) {
-				await this.projectManager.addFile(f.path);
-				await this.projectManager.saveFileContent(f.path, f.content);
-			}
-
-			if (window.projectCompleter) window.projectCompleter.updateFiles();
-			await this.render();
-			eda.sys_Message.showToastMessage(`已导入项目 "${projectName}"，共 ${files.length} 个文件`, 'success', 3);
-		});
-	}
-
-	// 递归读取目录条目
-	async readDirectoryEntry(entry, basePath) {
-		const files = [];
-		if (entry.isFile) {
-			const file = await new Promise((r) => entry.file(r));
-			const content = await file.text();
-			files.push({ path: basePath ? `${basePath}/${entry.name}` : entry.name, content });
-		} else if (entry.isDirectory) {
-			const reader = entry.createReader();
-			const entries = await new Promise((r) => reader.readEntries(r));
-			for (const child of entries) {
-				const childPath = basePath ? `${basePath}/${entry.name}` : entry.name;
-				files.push(...(await this.readDirectoryEntry(child, childPath)));
-			}
-		}
-		return files;
 	}
 
 	// 绑定事件
@@ -288,47 +182,9 @@ class FileTreeUI {
 				}
 				this.showContextMenu(e, path, 'folder');
 			});
-
-			// 文件夹拖拽放置目标
-			folder.addEventListener('dragover', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				folder.classList.add('drag-over');
-			});
-
-			folder.addEventListener('dragleave', (e) => {
-				e.stopPropagation();
-				folder.classList.remove('drag-over');
-			});
-
-			folder.addEventListener('drop', async (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				folder.classList.remove('drag-over');
-				const folderPath = folder.dataset.path;
-				if (this.draggedItem && this.draggedItem !== folderPath) {
-					// 不能把文件移到自身所在的同一文件夹
-					const draggedBaseName = this.draggedItem.split('/').pop();
-					const destPath = folderPath ? `${folderPath}/${draggedBaseName}` : draggedBaseName;
-					if (destPath === this.draggedItem) return;
-
-					const movedCurrentFile = this.draggedItem === this.projectManager.currentFile;
-					await this.projectManager.moveFiles([this.draggedItem], folderPath);
-					if (movedCurrentFile) {
-						this.projectManager.currentFile = destPath;
-					}
-					// 展开目标文件夹
-					this.expandedFolders.add(folderPath);
-					if (window.projectCompleter) window.projectCompleter.updateFiles();
-					this.selectedItems.clear();
-					this.draggedItem = null;
-					await this.render();
-					eda.sys_Message.showToastMessage('文件已移动', 'success', 2);
-				}
-			});
 		});
 
-		// 文件项点击与拖拽
+		// 文件项点击
 		this.container.querySelectorAll('.file-tree-item').forEach((item) => {
 			item.addEventListener('click', (e) => {
 				this.handleItemClick(e, item.dataset.filename, 'file');
@@ -346,24 +202,9 @@ class FileTreeUI {
 				}
 				this.showContextMenu(e, fileName, 'file');
 			});
-
-			// 拖拽开始
-			item.addEventListener('dragstart', (e) => {
-				this.draggedItem = item.dataset.filename;
-				e.dataTransfer.effectAllowed = 'move';
-				e.dataTransfer.setData('text/plain', item.dataset.filename);
-				item.classList.add('dragging');
-			});
-
-			item.addEventListener('dragend', () => {
-				item.classList.remove('dragging');
-				this.draggedItem = null;
-				// 清除所有 drag-over 样式
-				this.container.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
-			});
 		});
 
-		// 文件树列表空白区域
+		// 文件树列表空白区域右键菜单
 		const fileTreeList = this.container.querySelector('#file-tree-list');
 		if (fileTreeList) {
 			fileTreeList.addEventListener('contextmenu', (e) => {
@@ -381,169 +222,6 @@ class FileTreeUI {
 					this.render();
 				}
 			});
-
-			// 文件树列表作为拖拽放置目标（移动到根目录）
-			fileTreeList.addEventListener('dragover', (e) => {
-				if (e.target === fileTreeList || e.target.classList.contains('file-tree-list')) {
-					e.preventDefault();
-				}
-			});
-
-			fileTreeList.addEventListener('drop', async (e) => {
-				if (e.target !== fileTreeList && !e.target.classList.contains('file-tree-list')) return;
-				e.preventDefault();
-				if (this.draggedItem) {
-					const draggedBaseName = this.draggedItem.split('/').pop();
-					// 已经在根目录则不操作
-					if (this.draggedItem === draggedBaseName) return;
-
-					const movedCurrentFile = this.draggedItem === this.projectManager.currentFile;
-					await this.projectManager.moveFiles([this.draggedItem], '');
-					if (movedCurrentFile) {
-						this.projectManager.currentFile = draggedBaseName;
-					}
-					if (window.projectCompleter) window.projectCompleter.updateFiles();
-					this.selectedItems.clear();
-					this.draggedItem = null;
-					await this.render();
-					eda.sys_Message.showToastMessage('文件已移动到根目录', 'success', 2);
-				}
-			});
-		}
-
-		// ZIP 导出按钮
-		const exportBtn = this.container.querySelector('.export-zip-btn');
-		if (exportBtn) {
-			exportBtn.addEventListener('click', (e) => {
-				e.stopPropagation();
-				this.exportAsZip();
-			});
-		}
-
-		// 键盘快捷键（剪切/复制/粘贴）
-		if (this._keyboardHandler) {
-			document.removeEventListener('keydown', this._keyboardHandler);
-		}
-		this._keyboardHandler = (e) => this.handleKeyboard(e);
-		document.addEventListener('keydown', this._keyboardHandler);
-	}
-
-	// 键盘事件处理
-	handleKeyboard(e) {
-		// 仅在文件树有焦点或有选中项时处理
-		if (!this.projectManager.currentProject) return;
-		if (this.selectedItems.size === 0) return;
-
-		// 检查焦点是否在编辑器或输入框中，如果是则不处理
-		const activeEl = document.activeElement;
-		if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.classList.contains('ace_text-input'))) {
-			return;
-		}
-
-		if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-			e.preventDefault();
-			this.copyToClipboard();
-		} else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
-			e.preventDefault();
-			this.cutToClipboard();
-		} else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-			e.preventDefault();
-			this.pasteFromClipboard();
-		}
-	}
-
-	// 复制到剪贴板
-	copyToClipboard() {
-		const files = Array.from(this.selectedItems).filter((p) =>
-			this.projectManager.currentProject.files.some((f) => f.fileName === p)
-		);
-		if (files.length === 0) {
-			eda.sys_Message.showToastMessage('没有选中文件', 'warning', 2);
-			return;
-		}
-		this.clipboard = { files: [...files], mode: 'copy' };
-		eda.sys_Message.showToastMessage(`已复制 ${files.length} 个文件`, 'info', 2);
-	}
-
-	// 剪切到剪贴板
-	cutToClipboard() {
-		const files = Array.from(this.selectedItems).filter((p) =>
-			this.projectManager.currentProject.files.some((f) => f.fileName === p)
-		);
-		if (files.length === 0) {
-			eda.sys_Message.showToastMessage('没有选中文件', 'warning', 2);
-			return;
-		}
-		this.clipboard = { files: [...files], mode: 'cut' };
-		this.render(); // 重新渲染以显示剪切样式
-		eda.sys_Message.showToastMessage(`已剪切 ${files.length} 个文件`, 'info', 2);
-	}
-
-	// 从剪贴板粘贴
-	async pasteFromClipboard() {
-		if (!this.clipboard || this.clipboard.files.length === 0) {
-			eda.sys_Message.showToastMessage('剪贴板为空', 'warning', 2);
-			return;
-		}
-
-		// 确定目标文件夹：选中的文件夹，或选中文件的父文件夹，或根目录
-		let destFolder = '';
-		if (this.selectedItems.size > 0) {
-			const selected = Array.from(this.selectedItems)[0];
-			const isFolder = !this.projectManager.currentProject.files.some((f) => f.fileName === selected);
-			if (isFolder) {
-				destFolder = selected;
-			} else {
-				// 文件的父文件夹
-				const parts = selected.split('/');
-				destFolder = parts.length > 1 ? parts.slice(0, -1).join('/') : '';
-			}
-		}
-
-		const fileCount = this.clipboard.files.length;
-		if (this.clipboard.mode === 'copy') {
-			await this.projectManager.copyFiles(this.clipboard.files, destFolder);
-			eda.sys_Message.showToastMessage(`已粘贴 ${fileCount} 个文件`, 'success', 2);
-		} else if (this.clipboard.mode === 'cut') {
-			const movedCurrentFile = this.clipboard.files.includes(this.projectManager.currentFile);
-			await this.projectManager.moveFiles(this.clipboard.files, destFolder);
-			if (movedCurrentFile) {
-				const baseName = this.projectManager.currentFile.split('/').pop();
-				this.projectManager.currentFile = destFolder ? `${destFolder}/${baseName}` : baseName;
-			}
-			this.clipboard = null; // 剪切后清空剪贴板
-		}
-
-		// 展开目标文件夹
-		if (destFolder) {
-			this.expandedFolders.add(destFolder);
-		}
-
-		if (window.projectCompleter) window.projectCompleter.updateFiles();
-		this.selectedItems.clear();
-		await this.render();
-	}
-
-	// 导出为 ZIP
-	async exportAsZip() {
-		if (!this.projectManager.currentProject) return;
-
-		try {
-			const zip = new JSZip();
-			this.projectManager.currentProject.files.forEach((f) => {
-				zip.file(f.fileName, f.content);
-			});
-			const blob = await zip.generateAsync({ type: 'blob' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `${this.projectManager.currentProject.projectName}.zip`;
-			a.click();
-			URL.revokeObjectURL(url);
-			eda.sys_Message.showToastMessage('项目已导出为 ZIP', 'success', 2);
-		} catch (err) {
-			console.error('ZIP 导出失败:', err);
-			eda.sys_Message.showToastMessage('ZIP 导出失败: ' + err.message, 'error', 3);
 		}
 	}
 
@@ -689,53 +367,37 @@ class FileTreeUI {
 		`;
 
 		let menuItems = [];
-		const selectedCount = this.selectedItems.size;
 
 		if (type === 'file') {
+			// 文件右键菜单
+			const selectedCount = this.selectedItems.size;
 			if (selectedCount > 1) {
-				menuItems = [
-					{ text: '复制 (Ctrl+C)', action: () => this.copyToClipboard() },
-					{ text: '剪切 (Ctrl+X)', action: () => this.cutToClipboard() },
-					{ text: '复制到...', action: () => this.showCopyDialog() },
-					{ text: '移动到...', action: () => this.showMoveDialog() },
-					{ text: '---', action: null },
-					{ text: `删除 ${selectedCount} 个项目`, action: () => this.showBatchDeleteConfirm() },
-				];
+				menuItems = [{ text: `删除 ${selectedCount} 个项目`, action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
-					{ text: '复制 (Ctrl+C)', action: () => this.copyToClipboard() },
-					{ text: '剪切 (Ctrl+X)', action: () => this.cutToClipboard() },
 					{ text: '重命名', action: () => this.showRenameDialog(target) },
-					{ text: '复制到...', action: () => this.showCopyDialog() },
-					{ text: '移动到...', action: () => this.showMoveDialog() },
-					{ text: '---', action: null },
 					{ text: '删除', action: () => this.showDeleteConfirm(target) },
 				];
 			}
 		} else if (type === 'folder') {
-			menuItems = [
-				{ text: '新建文件', action: () => this.showAddFileDialog(target) },
-				{ text: '新建文件夹', action: () => this.showAddFolderDialog(target) },
-				{ text: '---', action: null },
-			];
-			if (this.clipboard && this.clipboard.files.length > 0) {
-				menuItems.push({ text: `粘贴 (Ctrl+V)`, action: () => this.pasteFromClipboard() });
-				menuItems.push({ text: '---', action: null });
-			}
+			// 文件夹右键菜单
+			const selectedCount = this.selectedItems.size;
 			if (selectedCount > 1) {
-				menuItems.push({ text: `删除 ${selectedCount} 个项目`, action: () => this.showBatchDeleteConfirm() });
+				menuItems = [{ text: `删除 ${selectedCount} 个项目`, action: () => this.showBatchDeleteConfirm() }];
 			} else {
-				menuItems.push({ text: '删除文件夹', action: () => this.showDeleteFolderConfirm(target) });
+				menuItems = [
+					{ text: '新建文件', action: () => this.showAddFileDialog(target) },
+					{ text: '新建文件夹', action: () => this.showAddFolderDialog(target) },
+					{ text: '---', action: null },
+					{ text: '删除文件夹', action: () => this.showDeleteFolderConfirm(target) },
+				];
 			}
 		} else if (type === 'blank') {
+			// 空白区域右键菜单（根目录）
 			menuItems = [
 				{ text: '新建文件', action: () => this.showAddFileDialog('') },
 				{ text: '新建文件夹', action: () => this.showAddFolderDialog('') },
 			];
-			if (this.clipboard && this.clipboard.files.length > 0) {
-				menuItems.push({ text: '---', action: null });
-				menuItems.push({ text: `粘贴 (Ctrl+V)`, action: () => this.pasteFromClipboard() });
-			}
 		}
 
 		menuItems.forEach((item) => {
@@ -797,14 +459,13 @@ class FileTreeUI {
 		});
 
 		if (result.isConfirmed) {
-			// 文件夹路径记录到 emptyFolders 和 expandedFolders
+			// 文件夹路径记录到 expandedFolders，不创建 .gitkeep 文件
 			let folderPath = result.value.replace(/\\/g, '/').replace(/\/$/, '');
 			if (basePath) {
 				folderPath = `${basePath}/${folderPath}`;
 			}
 
-			// 添加到空文件夹集合和展开集合
-			this.emptyFolders.add(folderPath);
+			// 只展开文件夹，不创建任何文件
 			this.expandedFolders.add(folderPath);
 
 			await this.render();
@@ -840,14 +501,13 @@ class FileTreeUI {
 			}
 			await this.projectManager.addFile(fileName);
 
-			// 展开父文件夹，并从 emptyFolders 中移除（因为现在有文件了）
+			// 展开父文件夹
 			const parts = fileName.split('/');
 			if (parts.length > 1) {
 				let path = '';
 				for (let i = 0; i < parts.length - 1; i++) {
 					path = path ? `${path}/${parts[i]}` : parts[i];
 					this.expandedFolders.add(path);
-					this.emptyFolders.delete(path); // 不再是空文件夹
 				}
 			}
 
@@ -951,10 +611,6 @@ class FileTreeUI {
 				}
 			}
 
-			// 从 emptyFolders 和 expandedFolders 中移除
-			this.emptyFolders.delete(folderPath);
-			this.expandedFolders.delete(folderPath);
-
 			// 更新项目补全器
 			if (window.projectCompleter) {
 				window.projectCompleter.updateFiles();
@@ -1007,15 +663,6 @@ class FileTreeUI {
 				}
 			}
 
-			// 清理 emptyFolders 和 expandedFolders
-			selectedArray.forEach((item) => {
-				const isFolder = !filesToDelete.includes(item);
-				if (isFolder) {
-					this.emptyFolders.delete(item);
-					this.expandedFolders.delete(item);
-				}
-			});
-
 			// 更新项目补全器
 			if (window.projectCompleter) {
 				window.projectCompleter.updateFiles();
@@ -1025,69 +672,6 @@ class FileTreeUI {
 			await this.render();
 			eda.sys_Message.showToastMessage(`批量删除成功，共删除 ${totalFiles} 个文件`, 'success', 2);
 		}
-	}
-
-	// 获取项目中所有文件夹路径
-	getAllFolders() {
-		const folders = new Set();
-		this.projectManager.currentProject.files.forEach((f) => {
-			const parts = f.fileName.split('/');
-			for (let i = 1; i < parts.length; i++) {
-				folders.add(parts.slice(0, i).join('/'));
-			}
-		});
-		// 添加空文件夹
-		this.emptyFolders.forEach((f) => folders.add(f));
-		return Array.from(folders).sort();
-	}
-
-	// 显示文件夹选择对话框
-	async pickFolder(title) {
-		const folders = this.getAllFolders();
-		const options = { '': '/ (根目录)' };
-		folders.forEach((f) => (options[f] = f));
-		const result = await Swal.fire({
-			title,
-			input: 'select',
-			inputOptions: options,
-			showCancelButton: true,
-			confirmButtonText: '确认',
-			cancelButtonText: '取消',
-		});
-		if (!result.isConfirmed) return null;
-		return result.value;
-	}
-
-	// 复制选中文件到目标文件夹
-	async showCopyDialog() {
-		const dest = await this.pickFolder('复制到文件夹');
-		if (dest === null) return;
-		const files = Array.from(this.selectedItems).filter((p) =>
-			this.projectManager.currentProject.files.some((f) => f.fileName === p)
-		);
-		await this.projectManager.copyFiles(files, dest);
-		if (window.projectCompleter) window.projectCompleter.updateFiles();
-		await this.render();
-		eda.sys_Message.showToastMessage(`已复制 ${files.length} 个文件`, 'success', 2);
-	}
-
-	// 移动选中文件到目标文件夹
-	async showMoveDialog() {
-		const dest = await this.pickFolder('移动到文件夹');
-		if (dest === null) return;
-		const files = Array.from(this.selectedItems).filter((p) =>
-			this.projectManager.currentProject.files.some((f) => f.fileName === p)
-		);
-		const movedCurrentFile = files.includes(this.projectManager.currentFile);
-		await this.projectManager.moveFiles(files, dest);
-		if (movedCurrentFile) {
-			const baseName = this.projectManager.currentFile.split('/').pop();
-			this.projectManager.currentFile = dest ? `${dest}/${baseName}` : baseName;
-		}
-		if (window.projectCompleter) window.projectCompleter.updateFiles();
-		this.selectedItems.clear();
-		await this.render();
-		eda.sys_Message.showToastMessage(`已移动 ${files.length} 个文件`, 'success', 2);
 	}
 
 	// HTML转义

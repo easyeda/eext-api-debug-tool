@@ -58,26 +58,6 @@ class HTMLRenderer {
 		this.showPreviewWindow(htmlContent, selectedFile.fileName);
 	}
 
-	// 注入 eda 桥接脚本
-	injectEdaBridge(html) {
-		const bridge = '<script>\n' +
-			'(function() {\n' +
-			'	var p = window.parent || window.top;\n' +
-			'	if (!p || p === window) return;\n' +
-			'	var names = Object.getOwnPropertyNames(p);\n' +
-			'	for (var i = 0; i < names.length; i++) {\n' +
-			'		var k = names[i];\n' +
-			'		if (k in window) continue;\n' +
-			'		try { window[k] = p[k]; } catch(e) {}\n' +
-			'	}\n' +
-			'	window.__parent = p;\n' +
-			'})();\n' +
-			'<\/script>';
-		if (/<head[^>]*>/i.test(html)) return html.replace(/(<head[^>]*>)/i, '$1\n' + bridge);
-		if (/<body[^>]*>/i.test(html)) return html.replace(/(<body[^>]*>)/i, '$1\n' + bridge);
-		return bridge + '\n' + html;
-	}
-
 	// 构建完整的 HTML 内容（处理资源引用）
 	buildHTMLContent(htmlFile, projectManager) {
 		let html = htmlFile.content;
@@ -228,23 +208,16 @@ class HTMLRenderer {
 		`;
 		iframe.sandbox = 'allow-scripts allow-same-origin allow-forms';
 
-		// 添加时间戳作为缓存破坏参数，确保每次都是全新加载
-		iframe.src = 'about:blank?t=' + Date.now();
-
 		iframeContainer.appendChild(iframe);
 		modal.appendChild(header);
 		modal.appendChild(iframeContainer);
 		overlay.appendChild(modal);
 		document.body.appendChild(overlay);
 
-		// 等待 iframe 加载完成后写入内容
-		iframe.onload = () => {
-			// 写入 HTML 内容（注入 eda 桥接）
-			const bridgedContent = this.injectEdaBridge(htmlContent);
-			iframe.contentDocument.open();
-			iframe.contentDocument.write(bridgedContent);
-			iframe.contentDocument.close();
-		};
+		// 写入 HTML 内容
+		iframe.contentDocument.open();
+		iframe.contentDocument.write(htmlContent);
+		iframe.contentDocument.close();
 
 		// ESC 键关闭
 		const escHandler = (e) => {

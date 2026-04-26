@@ -823,31 +823,24 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					delBtn.className = 'plugin-manager-btn delete'; // 添加 'delete' 修饰类
 					delBtn.onclick = async (e) => {
 						e.stopPropagation();
-						eda.sys_Dialog.showConfirmationMessage(
-							`确定删除插件 "${plugin.name}"？`,
-							'确认删除',
-							'删除',
-							'取消',
-							async (confirmed) => {
-								if (!confirmed) return;
-								delBtn.textContent = '删除中...';
-								delBtn.disabled = true;
-								try {
-									await ExtStore_DeleteExt(plugin.name);
-									await renderPluginList(pluginList);
-									if (eda && eda.sys_Message) {
-										eda.sys_Message.showToastMessage(`插件 "${plugin.name}" 已删除`, 'info', 1);
-									}
-								} catch (err) {
-									console.error('删除失败:', err);
-									if (eda && eda.sys_Message) {
-										eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 2);
-									}
-									delBtn.textContent = '删除';
-									delBtn.disabled = false;
-								}
+						if (!confirm(`确定删除插件 "${plugin.name}"？`)) return;
+						delBtn.textContent = '删除中...';
+						delBtn.disabled = true;
+						try {
+							await ExtStore_DeleteExt(plugin.name);
+							await renderPluginList(pluginList);
+							if (eda && eda.sys_Message) {
+								eda.sys_Message.showToastMessage(`插件 "${plugin.name}" 已删除`, 'info', 1);
 							}
-						);
+						} catch (err) {
+							console.error('删除失败:', err);
+							if (eda && eda.sys_Message) {
+								eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 2);
+							}
+							// 恢复按钮状态
+							delBtn.textContent = '删除';
+							delBtn.disabled = false;
+						}
 					};
 					item.appendChild(delBtn);
 					listEl.appendChild(item);
@@ -1103,9 +1096,9 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			}),
 		);
 
-		// 3. 添加到常用代码
+		// 3. 添加到补全
 		menu.appendChild(
-			createMenuItem('添加到常用代码', true, () => {
+			createMenuItem('添加到补全', true, () => {
 				UserCompleter_Add(editor, lineText);
 			}),
 		);

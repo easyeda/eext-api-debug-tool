@@ -34,6 +34,7 @@ function showFileContextMenu(e, editor) {
 	const menuItems = [
 		{ text: '新建项目', action: () => showNewProjectDialog(editor) },
 		{ text: '打开项目', action: () => showOpenProjectDialog(editor) },
+		{ text: '删除项目', action: () => showDeleteProjectDialog(editor) },
 		{ text: '---', action: null },
 		{ text: '导入', action: () => ImportFile(editor) },
 		{ text: '导出', action: () => ExportFileForJs(editor.getValue(), Date() + '_script.js') },

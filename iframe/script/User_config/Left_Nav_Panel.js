@@ -9,7 +9,6 @@ class LeftNavPanel {
 		this.currentView = 'all-projects'; // 'all-projects', 'project-design', 'common-code'
 		this.projects = [];
 		this.selectedProjectId = null;
-		this.isCollapsed = false; // 面板折叠状态
 		this.init();
 	}
 
@@ -18,7 +17,6 @@ class LeftNavPanel {
 		this.attachNavButtonEvents();
 		this.attachSearchEvent();
 		this.attachCompleterSearchEvent();
-		this.attachImportButtonEvent();
 		this.loadProjectList();
 	}
 
@@ -34,18 +32,7 @@ class LeftNavPanel {
 			const btn = document.getElementById(btnId);
 			if (btn) {
 				btn.addEventListener('click', () => {
-					const viewName = navButtons[btnId];
-					// 如果点击的是当前激活的按钮，切换折叠状态
-					if (this.currentView === viewName && !this.isCollapsed) {
-						this.toggleCollapse();
-					} else if (this.isCollapsed) {
-						// 如果面板已折叠，展开并切换到对应视图
-						this.isCollapsed = false;
-						this.switchView(viewName);
-					} else {
-						// 切换到不同的视图
-						this.switchView(viewName);
-					}
+					this.switchView(navButtons[btnId]);
 				});
 			}
 		});
@@ -71,16 +58,6 @@ class LeftNavPanel {
 		}
 	}
 
-	// 绑定导入按钮事件
-	attachImportButtonEvent() {
-		const importBtn = document.getElementById('import-project-btn');
-		if (importBtn) {
-			importBtn.addEventListener('click', () => {
-				this.showImportProjectDialog();
-			});
-		}
-	}
-
 	// 切换视图
 	switchView(viewName) {
 		this.currentView = viewName;
@@ -90,10 +67,6 @@ class LeftNavPanel {
 			btn.classList.remove('active');
 		});
 		document.getElementById(`nav-${viewName}`).classList.add('active');
-
-		// 确保面板可见
-		const contentArea = document.getElementById('left-content-area');
-		if (contentArea) contentArea.style.display = '';
 
 		// 显示/隐藏对应视图
 		document.getElementById('project-list-view').style.display = viewName === 'all-projects' ? 'flex' : 'none';
@@ -105,20 +78,6 @@ class LeftNavPanel {
 			this.loadProjectList();
 		} else if (viewName === 'common-code') {
 			this.loadCompleterStore();
-		}
-	}
-
-	// 折叠/展开左侧面板
-	toggleCollapse() {
-		this.isCollapsed = !this.isCollapsed;
-		const contentArea = document.getElementById('left-content-area');
-		if (!contentArea) return;
-
-		if (this.isCollapsed) {
-			contentArea.style.display = 'none';
-		} else {
-			contentArea.style.display = '';
-			this.switchView(this.currentView);
 		}
 	}
 
@@ -182,13 +141,6 @@ class LeftNavPanel {
 				const projectId = parseInt(item.dataset.projectId);
 				await this.openProject(projectId);
 			});
-
-			// 右键菜单
-			item.addEventListener('contextmenu', (e) => {
-				e.preventDefault();
-				const projectId = parseInt(item.dataset.projectId);
-				this.showProjectContextMenu(e, projectId);
-			});
 		});
 	}
 
@@ -219,12 +171,6 @@ class LeftNavPanel {
 			// 加载新项目
 			const project = await window.projectManager.loadProject(projectId);
 			window.fileTreeUI = new FileTreeUI('file-tree', this.editor);
-
-			// 恢复空文件夹
-			if (project.emptyFolders && Array.isArray(project.emptyFolders)) {
-				window.fileTreeUI.emptyFolders = new Set(project.emptyFolders);
-			}
-
 			await window.fileTreeUI.render();
 
 			// 更新项目补全器
@@ -245,256 +191,6 @@ class LeftNavPanel {
 			eda.sys_Message.showToastMessage('项目加载成功', 'success', 2);
 		} catch (error) {
 			eda.sys_Message.showToastMessage('项目加载失败: ' + error.message, 'error', 3);
-		}
-	}
-
-	// 显示导入项目对话框
-	async showImportProjectDialog() {
-		// 创建隐藏的文件夹选择器
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.webkitdirectory = true;
-		input.multiple = true;
-		input.style.display = 'none';
-		document.body.appendChild(input);
-
-		input.addEventListener('change', async (e) => {
-			const files = Array.from(e.target.files);
-			if (files.length === 0) {
-				document.body.removeChild(input);
-				return;
-			}
-
-			// 从第一个文件路径提取文件夹名称
-			const firstPath = files[0].webkitRelativePath;
-			const folderName = firstPath.split('/')[0];
-
-			// 询问用户输入项目名称
-			const result = await Swal.fire({
-				title: '导入项目',
-				input: 'text',
-				inputLabel: '项目名称',
-				inputValue: folderName,
-				inputPlaceholder: '请输入项目名称',
-				showCancelButton: true,
-				confirmButtonText: '导入',
-				cancelButtonText: '取消',
-				inputValidator: (value) => {
-					if (!value) return '请输入项目名称';
-				},
-			});
-
-			if (!result.isConfirmed) {
-				document.body.removeChild(input);
-				return;
-			}
-
-			const projectName = result.value;
-			const existingProject = this.projects.find(p => p.projectName === projectName);
-
-			// 如果项目名称已存在，询问是否覆盖
-			if (existingProject) {
-				const overwriteResult = await Swal.fire({
-					title: '项目名称冲突',
-					text: `项目 "${projectName}" 已存在，是否覆盖更新？`,
-					icon: 'warning',
-					showCancelButton: true,
-					confirmButtonText: '覆盖',
-					cancelButtonText: '取消',
-					confirmButtonColor: '#d33',
-				});
-
-				if (!overwriteResult.isConfirmed) {
-					document.body.removeChild(input);
-					return;
-				}
-
-				try {
-					await window.projectManager.deleteProject(existingProject.id);
-				} catch (error) {
-					eda.sys_Message.showToastMessage('删除旧项目失败: ' + error.message, 'error', 3);
-					document.body.removeChild(input);
-					return;
-				}
-			}
-
-			try {
-				// 创建项目
-				await window.projectManager.createProject(projectName);
-				const projects = await window.projectManager.getAllProjects();
-				const project = projects.find(p => p.projectName === projectName);
-
-				if (!project) throw new Error('项目创建失败');
-
-				// 读取所有文件并添加到项目
-				for (const file of files) {
-					const relativePath = file.webkitRelativePath.split('/').slice(1).join('/');
-					if (!relativePath) continue; // 跳过根文件夹
-
-					const content = await file.text();
-					await window.projectManager.addFile(relativePath);
-					await window.projectManager.saveFileContent(relativePath, content);
-				}
-
-				// 刷新项目列表
-				await this.loadProjectList();
-				eda.sys_Message.showToastMessage(`项目 "${projectName}" 导入成功，共 ${files.length} 个文件`, 'success', 3);
-			} catch (error) {
-				eda.sys_Message.showToastMessage('导入失败: ' + error.message, 'error', 3);
-			} finally {
-				document.body.removeChild(input);
-			}
-		});
-
-		input.click();
-	}
-
-	// 显示项目右键菜单
-	showProjectContextMenu(event, projectId) {
-		// 移除已存在的菜单
-		const existingMenu = document.getElementById('project-context-menu');
-		if (existingMenu) existingMenu.remove();
-
-		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
-		const menuBg = isDark ? '#2d2e27' : '#ffffff';
-		const menuBorder = isDark ? '#444' : '#d0d7de';
-		const textColor = isDark ? '#f8f8f2' : '#24292f';
-		const hoverBg = isDark ? '#3b3c35' : '#f6f8fa';
-
-		const menu = document.createElement('div');
-		menu.id = 'project-context-menu';
-		menu.style.cssText = `
-			position: fixed;
-			z-index: 10000;
-			background: ${menuBg};
-			border: 1px solid ${menuBorder};
-			box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-			border-radius: 4px;
-			padding: 4px 0;
-			min-width: 150px;
-		`;
-
-		const menuItems = [
-			{ text: '打开项目', action: () => this.openProject(projectId) },
-			{ text: '重命名项目', action: () => this.showRenameProjectDialog(projectId) },
-			{ text: '---', action: null },
-			{ text: '删除项目', action: () => this.showDeleteProjectDialog(projectId), danger: true },
-		];
-
-		menuItems.forEach((item) => {
-			if (item.text === '---') {
-				const separator = document.createElement('div');
-				separator.style.cssText = `height:1px;background:${menuBorder};margin:4px 0;`;
-				menu.appendChild(separator);
-				return;
-			}
-
-			const menuItem = document.createElement('div');
-			menuItem.textContent = item.text;
-			menuItem.style.cssText = `
-				padding: 8px 16px;
-				cursor: pointer;
-				color: ${item.danger ? '#d33' : textColor};
-				user-select: none;
-				transition: background 0.2s;
-			`;
-			menuItem.onmouseenter = () => (menuItem.style.backgroundColor = hoverBg);
-			menuItem.onmouseleave = () => (menuItem.style.backgroundColor = '');
-			menuItem.onclick = () => {
-				menu.remove();
-				if (item.action) item.action();
-			};
-			menu.appendChild(menuItem);
-		});
-
-		menu.style.left = `${event.clientX}px`;
-		menu.style.top = `${event.clientY}px`;
-
-		document.body.appendChild(menu);
-
-		// 点击其他地方关闭菜单
-		const closeMenu = (e) => {
-			if (!menu.contains(e.target)) {
-				menu.remove();
-				document.removeEventListener('click', closeMenu);
-			}
-		};
-		setTimeout(() => document.addEventListener('click', closeMenu), 10);
-	}
-
-	// 显示删除项目对话框
-	async showDeleteProjectDialog(projectId) {
-		const project = this.projects.find(p => p.id === projectId);
-		if (!project) return;
-
-		const result = await Swal.fire({
-			title: '删除项目',
-			html: `确定要删除项目 "<strong>${this.escapeHtml(project.projectName)}</strong>" 吗？<br><br>这将删除项目中的 <strong>${project.files.length}</strong> 个文件。<br><br><span style="color: #d33;">此操作不可恢复！</span>`,
-			icon: 'warning',
-			showCancelButton: true,
-			confirmButtonText: '删除',
-			cancelButtonText: '取消',
-			confirmButtonColor: '#d33',
-		});
-
-		if (result.isConfirmed) {
-			try {
-				await window.projectManager.deleteProject(projectId);
-
-				// 如果删除的是当前项目，清空编辑器和文件树
-				if (window.projectManager.currentProject?.id === projectId) {
-					window.projectManager.currentProject = null;
-					window.projectManager.currentFile = null;
-					this.editor.setValue('', -1);
-					if (window.fileTreeUI) {
-						await window.fileTreeUI.render();
-					}
-				}
-
-				await this.loadProjectList();
-				eda.sys_Message.showToastMessage('项目删除成功', 'success', 2);
-			} catch (error) {
-				eda.sys_Message.showToastMessage('删除失败: ' + error.message, 'error', 2);
-			}
-		}
-	}
-
-	// 显示重命名项目对话框
-	async showRenameProjectDialog(projectId) {
-		const project = this.projects.find(p => p.id === projectId);
-		if (!project) return;
-
-		const result = await Swal.fire({
-			title: '重命名项目',
-			input: 'text',
-			inputLabel: '新项目名称',
-			inputValue: project.projectName,
-			showCancelButton: true,
-			confirmButtonText: '重命名',
-			cancelButtonText: '取消',
-			inputValidator: (value) => {
-				if (!value) return '请输入项目名称';
-				if (value === project.projectName) return '项目名称未改变';
-				if (this.projects.some(p => p.projectName === value && p.id !== projectId)) {
-					return '项目名称已存在';
-				}
-			},
-		});
-
-		if (result.isConfirmed) {
-			try {
-				await window.projectManager.renameProject(projectId, result.value);
-				await this.loadProjectList();
-
-				// 如果重命名的是当前项目，更新文件树显示
-				if (window.projectManager.currentProject?.id === projectId && window.fileTreeUI) {
-					await window.fileTreeUI.render();
-				}
-
-				eda.sys_Message.showToastMessage('项目重命名成功', 'success', 2);
-			} catch (error) {
-				eda.sys_Message.showToastMessage('重命名失败: ' + error.message, 'error', 2);
-			}
 		}
 	}
 
