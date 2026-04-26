@@ -107,6 +107,18 @@ class ProjectManager {
 		});
 	}
 
+	// 重命名项目
+	async renameProject(projectId, newName) {
+		if (!this.db) await this.initDB();
+
+		const project = await this.loadProject(projectId);
+		if (project) {
+			project.projectName = newName;
+			await this.saveProject(project);
+		}
+		return project;
+	}
+
 	// 删除项目
 	async deleteProject(projectId) {
 		if (!this.db) await this.initDB();

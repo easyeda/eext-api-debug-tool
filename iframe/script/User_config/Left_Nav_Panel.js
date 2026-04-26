@@ -9,15 +9,113 @@ class LeftNavPanel {
 		this.currentView = 'all-projects'; // 'all-projects', 'project-design', 'common-code'
 		this.projects = [];
 		this.selectedProjectId = null;
+		this.sidebarExpanded = false;
 		this.init();
 	}
 
 	// 初始化
 	init() {
+		this.restoreSidebarState();
 		this.attachNavButtonEvents();
 		this.attachSearchEvent();
 		this.attachCompleterSearchEvent();
+		this.attachImportProjectEvent();
 		this.loadProjectList();
+	}
+
+	// 恢复侧边栏展开/收起状态（默认收起）
+	restoreSidebarState() {
+		const saved = eda.sys_Storage.getExtensionUserConfig('sidebar_expanded');
+		this.sidebarExpanded = saved === true || saved === 'true';
+		this.applySidebarState();
+	}
+
+	// 切换侧边栏展开/收起
+	toggleSidebar() {
+		this.sidebarExpanded = !this.sidebarExpanded;
+		eda.sys_Storage.setExtensionUserConfig('sidebar_expanded', this.sidebarExpanded);
+		this.applySidebarState();
+	}
+
+	// 应用侧边栏状态
+	applySidebarState() {
+		const contentArea = document.getElementById('left-content-area');
+		if (contentArea) {
+			contentArea.style.display = this.sidebarExpanded ? 'flex' : 'none';
+		}
+	}
+
+	// 绑定导入项目按钮事件
+	attachImportProjectEvent() {
+		const btn = document.getElementById('import-project-btn');
+		if (btn) {
+			btn.addEventListener('click', () => this.importProject());
+		}
+	}
+
+	// 导入项目（选择文件夹）
+	async importProject() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.webkitdirectory = true;
+		input.style.display = 'none';
+		document.body.appendChild(input);
+
+		input.onchange = async (event) => {
+			const files = Array.from(event.target.files);
+			input.remove();
+			if (files.length === 0) return;
+
+			try {
+				const firstPath = files[0].webkitRelativePath || '';
+				const projectName = firstPath.split('/')[0] || 'ImportedProject';
+
+				// 检查是否存在同名项目
+				const allProjects = await window.projectManager.getAllProjects();
+				const existing = allProjects.find((p) => p.projectName === projectName);
+
+				let project;
+				if (existing) {
+					const result = await Swal.fire({
+						title: '项目已存在',
+						html: `已存在名为 "<strong>${this.escapeHtml(projectName)}</strong>" 的项目，是否覆盖？`,
+						icon: 'question',
+						showCancelButton: true,
+						confirmButtonText: '覆盖',
+						cancelButtonText: '取消',
+						confirmButtonColor: '#d33',
+					});
+					if (!result.isConfirmed) return;
+
+					project = existing;
+					project.files = [];
+				} else {
+					project = await window.projectManager.createProject(projectName);
+					project.files = [];
+				}
+
+				for (const file of files) {
+					const relativePath = file.webkitRelativePath || file.name;
+					const fileName = relativePath.replace(/^[^/]+\//, '');
+					if (!fileName) continue;
+
+					const content = await file.text();
+					project.files.push({
+						fileName,
+						content,
+						createdAt: Date.now(),
+					});
+				}
+
+				await window.projectManager.saveProject(project);
+				await this.loadProjectList();
+				eda.sys_Message.showToastMessage(`项目 "${projectName}" 导入成功，共 ${project.files.length} 个文件`, 'success', 2);
+			} catch (error) {
+				eda.sys_Message.showToastMessage('导入失败: ' + error.message, 'error', 3);
+			}
+		};
+
+		input.click();
 	}
 
 	// 绑定导航按钮事件
@@ -32,7 +130,17 @@ class LeftNavPanel {
 			const btn = document.getElementById(btnId);
 			if (btn) {
 				btn.addEventListener('click', () => {
-					this.switchView(navButtons[btnId]);
+					const view = navButtons[btnId];
+					if (this.sidebarExpanded && this.currentView === view) {
+						this.toggleSidebar();
+					} else {
+						if (!this.sidebarExpanded) {
+							this.sidebarExpanded = true;
+							eda.sys_Storage.setExtensionUserConfig('sidebar_expanded', true);
+							this.applySidebarState();
+						}
+						this.switchView(view);
+					}
 				});
 			}
 		});
@@ -141,7 +249,155 @@ class LeftNavPanel {
 				const projectId = parseInt(item.dataset.projectId);
 				await this.openProject(projectId);
 			});
+
+			// 右键菜单
+			item.addEventListener('contextmenu', (e) => {
+				e.preventDefault();
+				const projectId = parseInt(item.dataset.projectId);
+				this.selectProject(projectId);
+				this.showProjectContextMenu(e, projectId);
+			});
 		});
+	}
+
+	// 显示项目右键菜单
+	showProjectContextMenu(event, projectId) {
+		const existingMenu = document.getElementById('project-context-menu');
+		if (existingMenu) existingMenu.remove();
+
+		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+		const menuBg = isDark ? '#2d2e27' : '#ffffff';
+		const menuBorder = isDark ? '#444' : '#d0d7de';
+		const textColor = isDark ? '#f8f8f2' : '#24292f';
+		const hoverBg = isDark ? '#3b3c35' : '#f6f8fa';
+
+		const menu = document.createElement('div');
+		menu.id = 'project-context-menu';
+		menu.style.cssText = `
+			position: fixed;
+			z-index: 10000;
+			background: ${menuBg};
+			border: 1px solid ${menuBorder};
+			box-shadow: 2px 2px 8px ${isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'};
+			border-radius: 4px;
+			padding: 4px 0;
+			min-width: 120px;
+		`;
+
+		const menuItems = [
+			{ text: '打开项目', action: () => this.openProject(projectId) },
+			{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
+			{ text: '---', action: null },
+			{ text: '删除项目', action: () => this.showDeleteProjectConfirm(projectId) },
+		];
+
+		menuItems.forEach((item) => {
+			if (item.text === '---') {
+				const separator = document.createElement('div');
+				separator.style.cssText = `height:1px;background:${menuBorder};margin:4px 0;`;
+				menu.appendChild(separator);
+				return;
+			}
+			const menuItem = document.createElement('div');
+			menuItem.textContent = item.text;
+			menuItem.style.cssText = `padding:8px 16px;cursor:pointer;color:${textColor};user-select:none;transition:background 0.2s;`;
+			if (item.text === '删除项目') menuItem.style.color = '#d33';
+			menuItem.onmouseenter = () => (menuItem.style.backgroundColor = hoverBg);
+			menuItem.onmouseleave = () => (menuItem.style.backgroundColor = '');
+			menuItem.onclick = () => {
+				menu.remove();
+				if (item.action) item.action();
+			};
+			menu.appendChild(menuItem);
+		});
+
+		let left = event.clientX;
+		let top = event.clientY;
+		document.body.appendChild(menu);
+		if (left + menu.offsetWidth > window.innerWidth) left = window.innerWidth - menu.offsetWidth - 5;
+		if (top + menu.offsetHeight > window.innerHeight) top = window.innerHeight - menu.offsetHeight - 5;
+		menu.style.left = `${left}px`;
+		menu.style.top = `${top}px`;
+
+		const closeMenu = (e) => {
+			if (!menu.contains(e.target)) {
+				menu.remove();
+				document.removeEventListener('click', closeMenu);
+			}
+		};
+		setTimeout(() => document.addEventListener('click', closeMenu), 10);
+	}
+
+	// 重命名项目对话框
+	async showRenameProjectDialog(projectId) {
+		const project = this.projects.find((p) => p.id === projectId);
+		if (!project) return;
+
+		const result = await Swal.fire({
+			title: '重命名项目',
+			input: 'text',
+			inputValue: project.projectName,
+			inputLabel: '新项目名称',
+			showCancelButton: true,
+			confirmButtonText: '确定',
+			cancelButtonText: '取消',
+			inputValidator: (value) => {
+				if (!value) return '请输入项目名称';
+				if (value.length < 2) return '项目名称至少2个字符';
+				if (value === project.projectName) return '名称未改变';
+			},
+		});
+
+		if (result.isConfirmed) {
+			try {
+				await window.projectManager.renameProject(projectId, result.value);
+				await this.loadProjectList();
+
+				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
+					if (window.fileTreeUI) await window.fileTreeUI.render();
+				}
+
+				eda.sys_Message.showToastMessage('项目重命名成功', 'success', 2);
+			} catch (error) {
+				eda.sys_Message.showToastMessage('重命名失败: ' + error.message, 'error', 3);
+			}
+		}
+	}
+
+	// 删除项目确认
+	async showDeleteProjectConfirm(projectId) {
+		const project = this.projects.find((p) => p.id === projectId);
+		if (!project) return;
+
+		const result = await Swal.fire({
+			title: '确认删除',
+			html: `确定要删除项目 "<strong>${this.escapeHtml(project.projectName)}</strong>" 吗？<br><br>这将删除项目中的 <strong>${project.files.length}</strong> 个文件。<br><br><span style="color: #d33;">此操作不可恢复！</span>`,
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: '确认删除',
+			cancelButtonText: '取消',
+			confirmButtonColor: '#d33',
+		});
+
+		if (result.isConfirmed) {
+			try {
+				await window.projectManager.deleteProject(projectId);
+
+				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
+					window.projectManager.currentProject = null;
+					window.projectManager.currentFile = null;
+					this.editor.setValue('', -1);
+
+					if (window.projectCompleter) window.projectCompleter.clear();
+					if (window.fileTreeUI) await window.fileTreeUI.render();
+				}
+
+				await this.loadProjectList();
+				eda.sys_Message.showToastMessage('项目删除成功', 'success', 2);
+			} catch (error) {
+				eda.sys_Message.showToastMessage('删除失败: ' + error.message, 'error', 3);
+			}
+		}
 	}
 
 	// 选中项目
