@@ -46,8 +46,8 @@ class HTMLRenderer {
 			selectedFile = htmlFiles.find((f) => f.fileName === result.value);
 		}
 
-		// 保存当前文件
-		if (projectManager.currentFile) {
+		// 保存当前文件（仅非内置项目）
+		if (projectManager.currentFile && !(projectManager.currentProject && projectManager.currentProject.isBuiltIn)) {
 			await projectManager.saveFileContent(projectManager.currentFile, editor.getValue());
 		}
 

@@ -123,6 +123,7 @@
 				<script src="/iframe/script/eext_tool/highlight.min.js"></script>
 				<script src="/iframe/script/eext_tool/marked.min.js"></script>
 				<!-- 应用逻辑 -->
+				<script src="/iframe/script/ext_manifest.js"></script>
 				<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 				<script src="/iframe/script/User_config/Project_Manager.js"></script>
 				<script src="/iframe/script/User_config/FileTree_UI.js"></script>
@@ -212,7 +213,7 @@
 						// 自动保存文件内容
 						let saveTimeout;
 						editor.session.on('change', function() {
-							if (window.projectManager.currentFile) {
+							if (window.projectManager.currentFile && !(window.projectManager.currentProject && window.projectManager.currentProject.isBuiltIn)) {
 								clearTimeout(saveTimeout);
 								saveTimeout = setTimeout(async () => {
 									await window.projectManager.saveFileContent(

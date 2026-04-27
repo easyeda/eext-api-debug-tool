@@ -302,8 +302,10 @@ class FileTreeUI {
 
 	// 加载文件到编辑器
 	async loadFile(fileName) {
-		// 保存当前文件
-		if (this.projectManager.currentFile) {
+		const isBuiltIn = this.projectManager.currentProject && this.projectManager.currentProject.isBuiltIn;
+
+		// 保存当前文件（仅非内置项目）
+		if (this.projectManager.currentFile && !isBuiltIn) {
 			await this.projectManager.saveFileContent(this.projectManager.currentFile, this.editor.getValue());
 		}
 
@@ -311,6 +313,7 @@ class FileTreeUI {
 		const content = this.projectManager.getFileContent(fileName);
 		this.editor.setValue(content, -1);
 		this.projectManager.currentFile = fileName;
+		this.editor.setReadOnly(!!isBuiltIn);
 
 		// 根据文件类型设置编辑器模式
 		this.setEditorMode(fileName);
@@ -367,6 +370,11 @@ class FileTreeUI {
 		`;
 
 		let menuItems = [];
+
+		// 内置项目不显示编辑菜单
+		if (this.projectManager.currentProject && this.projectManager.currentProject.isBuiltIn) {
+			return;
+		}
 
 		if (type === 'file') {
 			// 文件右键菜单

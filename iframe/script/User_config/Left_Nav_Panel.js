@@ -189,10 +189,25 @@ class LeftNavPanel {
 		}
 	}
 
+	// 获取内置项目列表
+	getBuiltInProjects() {
+		const manifest = window.extManifest || [];
+		return manifest.map((p, idx) => ({
+			id: `builtin_${idx}`,
+			projectName: p.projectName,
+			files: p.files || [],
+			isBuiltIn: true,
+			createdAt: p.createdAt,
+			updatedAt: p.updatedAt,
+		}));
+	}
+
 	// 加载项目列表
 	async loadProjectList() {
 		try {
-			this.projects = await window.projectManager.getAllProjects();
+			const userProjects = await window.projectManager.getAllProjects();
+			const builtInProjects = this.getBuiltInProjects();
+			this.projects = [...builtInProjects, ...userProjects];
 			this.renderProjectList(this.projects);
 		} catch (error) {
 			console.error('Failed to load projects:', error);
@@ -216,19 +231,47 @@ class LeftNavPanel {
 		}
 
 		let html = '';
-		projects.forEach((project) => {
-			const date = new Date(project.updatedAt).toLocaleDateString('zh-CN');
-			const isSelected = this.selectedProjectId === project.id;
-			html += `
-				<div class="project-item ${isSelected ? 'selected' : ''}" data-project-id="${project.id}">
-					<div class="project-item-name">${this.escapeHtml(project.projectName)}</div>
-					<div class="project-item-info">
-						<span>${project.files.length} 文件</span>
-						<span>${date}</span>
+
+		// 分组：内置项目和用户项目
+		const builtInProjects = projects.filter((p) => p.isBuiltIn);
+		const userProjects = projects.filter((p) => !p.isBuiltIn);
+
+		// 渲染内置项目
+		if (builtInProjects.length > 0) {
+			html += '<div class="project-section-title">内置项目</div>';
+			builtInProjects.forEach((project) => {
+				const isSelected = this.selectedProjectId === project.id;
+				html += `
+					<div class="project-item ${isSelected ? 'selected' : ''}" data-project-id="${project.id}" data-is-builtin="true">
+						<div class="project-item-name">
+							<span class="project-builtin-badge">内置</span>
+							${this.escapeHtml(project.projectName)}
+						</div>
+						<div class="project-item-info">
+							<span>${project.files.length} 文件</span>
+						</div>
 					</div>
-				</div>
-			`;
-		});
+				`;
+			});
+		}
+
+		// 渲染用户项目
+		if (userProjects.length > 0) {
+			html += '<div class="project-section-title">我的项目</div>';
+			userProjects.forEach((project) => {
+				const date = new Date(project.updatedAt).toLocaleDateString('zh-CN');
+				const isSelected = this.selectedProjectId === project.id;
+				html += `
+					<div class="project-item ${isSelected ? 'selected' : ''}" data-project-id="${project.id}">
+						<div class="project-item-name">${this.escapeHtml(project.projectName)}</div>
+						<div class="project-item-info">
+							<span>${project.files.length} 文件</span>
+							<span>${date}</span>
+						</div>
+					</div>
+				`;
+			});
+		}
 
 		container.innerHTML = html;
 		this.attachProjectItemEvents();
@@ -238,24 +281,33 @@ class LeftNavPanel {
 	attachProjectItemEvents() {
 		const items = document.querySelectorAll('.project-item');
 		items.forEach((item) => {
+			const rawId = item.dataset.projectId;
+			const isBuiltIn = item.dataset.isBuiltin === 'true';
+			const projectId = isBuiltIn ? rawId : parseInt(rawId);
+
 			// 单击选中
 			item.addEventListener('click', () => {
-				const projectId = parseInt(item.dataset.projectId);
 				this.selectProject(projectId);
 			});
 
 			// 双击打开
 			item.addEventListener('dblclick', async () => {
-				const projectId = parseInt(item.dataset.projectId);
-				await this.openProject(projectId);
+				if (isBuiltIn) {
+					await this.openBuiltInProject(projectId);
+				} else {
+					await this.openProject(projectId);
+				}
 			});
 
 			// 右键菜单
 			item.addEventListener('contextmenu', (e) => {
 				e.preventDefault();
-				const projectId = parseInt(item.dataset.projectId);
 				this.selectProject(projectId);
-				this.showProjectContextMenu(e, projectId);
+				if (isBuiltIn) {
+					this.showBuiltInProjectContextMenu(e, projectId);
+				} else {
+					this.showProjectContextMenu(e, projectId);
+				}
 			});
 		});
 	}
@@ -416,8 +468,8 @@ class LeftNavPanel {
 	// 打开项目
 	async openProject(projectId) {
 		try {
-			// 保存当前文件
-			if (window.projectManager.currentFile) {
+			// 保存当前文件（仅非内置项目）
+			if (window.projectManager.currentFile && window.projectManager.currentProject && !window.projectManager.currentProject.isBuiltIn) {
 				await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
 			}
 
@@ -436,6 +488,9 @@ class LeftNavPanel {
 				window.projectCompleter.updateFiles();
 			}
 
+			// 恢复可编辑状态
+			this.editor.setReadOnly(false);
+
 			// 加载第一个文件
 			if (project.files.length > 0) {
 				const firstFile = project.files[0];
@@ -449,6 +504,144 @@ class LeftNavPanel {
 			eda.sys_Message.showToastMessage('项目加载成功', 'success', 2);
 		} catch (error) {
 			eda.sys_Message.showToastMessage('项目加载失败: ' + error.message, 'error', 3);
+		}
+	}
+
+	// 打开内置项目（只读模式）
+	async openBuiltInProject(builtInId) {
+		try {
+			const project = this.projects.find((p) => p.id === builtInId);
+			if (!project) {
+				eda.sys_Message.showToastMessage('内置项目不存在', 'error', 2);
+				return;
+			}
+
+			// 保存当前文件
+			if (window.projectManager.currentFile && window.projectManager.currentProject && !window.projectManager.currentProject.isBuiltIn) {
+				await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
+			}
+
+			if (window.projectCompleter) {
+				window.projectCompleter.clear();
+			}
+
+			// 设置为当前项目（标记只读）
+			window.projectManager.currentProject = project;
+			window.projectManager.currentFile = null;
+
+			window.fileTreeUI = new FileTreeUI('file-tree', this.editor);
+			await window.fileTreeUI.render();
+
+			if (window.projectCompleter) {
+				window.projectCompleter.updateFiles();
+			}
+
+			if (project.files.length > 0) {
+				const firstFile = project.files[0];
+				this.editor.setValue(firstFile.content, -1);
+				window.projectManager.currentFile = firstFile.fileName;
+				this.editor.setReadOnly(true);
+			}
+
+			this.switchView('project-design');
+			eda.sys_Message.showToastMessage(`内置项目 "${project.projectName}" 已打开（只读）`, 'success', 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage('打开内置项目失败: ' + error.message, 'error', 3);
+		}
+	}
+
+	// 内置项目右键菜单
+	showBuiltInProjectContextMenu(event, builtInId) {
+		const existingMenu = document.getElementById('project-context-menu');
+		if (existingMenu) existingMenu.remove();
+
+		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+		const menuBg = isDark ? '#2d2e27' : '#ffffff';
+		const menuBorder = isDark ? '#444' : '#d0d7de';
+		const textColor = isDark ? '#f8f8f2' : '#24292f';
+		const hoverBg = isDark ? '#3b3c35' : '#f6f8fa';
+
+		const menu = document.createElement('div');
+		menu.id = 'project-context-menu';
+		menu.style.cssText = `
+			position: fixed;
+			z-index: 10000;
+			background: ${menuBg};
+			border: 1px solid ${menuBorder};
+			box-shadow: 2px 2px 8px ${isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)'};
+			border-radius: 4px;
+			padding: 4px 0;
+			min-width: 120px;
+		`;
+
+		const menuItems = [
+			{ text: '打开项目（只读）', action: () => this.openBuiltInProject(builtInId) },
+			{ text: '复制到我的项目', action: () => this.copyBuiltInToUserProject(builtInId) },
+		];
+
+		menuItems.forEach((item) => {
+			const menuItem = document.createElement('div');
+			menuItem.textContent = item.text;
+			menuItem.style.cssText = `padding:8px 16px;cursor:pointer;color:${textColor};user-select:none;transition:background 0.2s;`;
+			menuItem.onmouseenter = () => (menuItem.style.backgroundColor = hoverBg);
+			menuItem.onmouseleave = () => (menuItem.style.backgroundColor = '');
+			menuItem.onclick = () => {
+				menu.remove();
+				if (item.action) item.action();
+			};
+			menu.appendChild(menuItem);
+		});
+
+		let left = event.clientX;
+		let top = event.clientY;
+		document.body.appendChild(menu);
+		if (left + menu.offsetWidth > window.innerWidth) left = window.innerWidth - menu.offsetWidth - 5;
+		if (top + menu.offsetHeight > window.innerHeight) top = window.innerHeight - menu.offsetHeight - 5;
+		menu.style.left = `${left}px`;
+		menu.style.top = `${top}px`;
+
+		const closeMenu = (e) => {
+			if (!menu.contains(e.target)) {
+				menu.remove();
+				document.removeEventListener('click', closeMenu);
+			}
+		};
+		setTimeout(() => document.addEventListener('click', closeMenu), 10);
+	}
+
+	// 复制内置项目到用户项目
+	async copyBuiltInToUserProject(builtInId) {
+		const builtIn = this.projects.find((p) => p.id === builtInId);
+		if (!builtIn) return;
+
+		try {
+			const allProjects = await window.projectManager.getAllProjects();
+			const existing = allProjects.find((p) => p.projectName === builtIn.projectName);
+
+			if (existing) {
+				const result = await Swal.fire({
+					title: '项目已存在',
+					html: `已存在名为 "<strong>${this.escapeHtml(builtIn.projectName)}</strong>" 的项目，是否覆盖？`,
+					icon: 'question',
+					showCancelButton: true,
+					confirmButtonText: '覆盖',
+					cancelButtonText: '取消',
+					confirmButtonColor: '#d33',
+				});
+				if (!result.isConfirmed) return;
+
+				existing.files = builtIn.files.map((f) => ({ ...f, createdAt: Date.now() }));
+				await window.projectManager.saveProject(existing);
+			} else {
+				const newProject = await window.projectManager.createProject(builtIn.projectName);
+				newProject.files = builtIn.files.map((f) => ({ ...f, createdAt: Date.now() }));
+				await window.projectManager.saveProject(newProject);
+			}
+
+			await this.loadProjectList();
+			eda.sys_Message.showToastMessage(`已复制 "${builtIn.projectName}" 到我的项目`, 'success', 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage('复制失败: ' + error.message, 'error', 3);
 		}
 	}
 
