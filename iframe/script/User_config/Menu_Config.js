@@ -34,12 +34,10 @@ function showFileContextMenu(e, editor) {
 	const menuItems = [
 		{ text: '新建项目', action: () => showNewProjectDialog(editor) },
 		{ text: '---', action: null },
-		{ text: '导入', action: () => ImportFile(editor) },
-		{ text: '导出', action: () => ExportFileForJs(editor.getValue(), Date() + '_script.js') },
-		{ text: '加载', action: () => Code_OpenLoadWindow(editor) },
-		{ text: '保存', action: () => Code_SaveCode(editor) },
+		{ text: '加载代码', action: () => Code_OpenLoadWindow(editor) },
+		{ text: '保存代码', action: () => Code_SaveCode(editor) },
 		{
-			text: '删除',
+			text: '删除已保存代码',
 			action: () => {
 				eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
 				Code_OpenDeleteWindow(editor);
