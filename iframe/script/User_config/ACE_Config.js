@@ -26,6 +26,25 @@ function _buildCompletionInsertText(item) {
 	return `// ${item.description}\n${item.value}`;
 }
 
+function _selectFirstParam(editor, text, startRow, startCol) {
+	var parenIdx = text.indexOf('(');
+	if (parenIdx === -1) return;
+	var inner = text.substring(parenIdx + 1, text.lastIndexOf(')'));
+	if (!inner || !inner.trim()) return;
+	var firstParam = inner.split(',')[0].trim();
+	if (!firstParam) return;
+	var lines = text.substring(0, parenIdx + 1).split('\n');
+	var paramRow = startRow + lines.length - 1;
+	var paramStartCol = lines.length > 1 ? lines[lines.length - 1].length : startCol + lines[0].length;
+	var searchLine = editor.session.getLine(paramRow);
+	var paramIdx = searchLine.indexOf(firstParam, paramStartCol);
+	if (paramIdx === -1) return;
+	editor.selection.setRange({
+		start: { row: paramRow, column: paramIdx },
+		end: { row: paramRow, column: paramIdx + firstParam.length },
+	});
+}
+
 // 获取编辑器主题
 async function GetTheme(editor, light_theme, dark_theme) {
 	const theme = eda.sys_Storage.getExtensionUserConfig('theme');
@@ -228,13 +247,15 @@ function ACE_CodingForEDA(editor, edcode) {
 						const prefix = line.substring(0, pos.column);
 						const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
 						const startCol = match ? pos.column - match[0].length : pos.column;
+						const insertText = _buildCompletionInsertText(data);
 						editor.session.replace(
 							{
 								start: { row: pos.row, column: startCol },
 								end: pos,
 							},
-							_buildCompletionInsertText(data),
+							insertText,
 						);
+						_selectFirstParam(editor, insertText, pos.row, startCol);
 					},
 				},
 			},
@@ -255,13 +276,15 @@ function ACE_CodingForEDA(editor, edcode) {
 						const prefix = line.substring(0, pos.column);
 						const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
 						const startCol = match ? pos.column - match[0].length : pos.column;
+						const insertText = _buildCompletionInsertText(data);
 						editor.session.replace(
 							{
 								start: { row: pos.row, column: startCol },
 								end: pos,
 							},
-							_buildCompletionInsertText(data),
+							insertText,
 						);
+						_selectFirstParam(editor, insertText, pos.row, startCol);
 					},
 				},
 			});
