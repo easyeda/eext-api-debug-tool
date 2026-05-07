@@ -144,6 +144,111 @@
 					window.editor = editor; // Expose to global scope for AI chat tools
 					ACE_Init(editor);
 
+					// Markdown 预览：将 MD 内容转为带样式的 HTML 页面
+					function buildMarkdownPreviewHTML(mdContent) {
+						const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+						const bg = isDark ? '#1e1e1e' : '#ffffff';
+						const fg = isDark ? '#d4d4d4' : '#24292f';
+						const codeBg = isDark ? '#2d2d2d' : '#f6f8fa';
+						const borderColor = isDark ? '#444' : '#d0d7de';
+						const linkColor = isDark ? '#58a6ff' : '#0969da';
+						const blockquoteBorder = isDark ? '#555' : '#d0d7de';
+						const blockquoteColor = isDark ? '#8b949e' : '#57606a';
+
+						const renderer = {
+							code({ text, lang }) {
+								let highlighted;
+								if (lang && hljs.getLanguage(lang)) {
+									highlighted = hljs.highlight(text, { language: lang }).value;
+								} else {
+									highlighted = hljs.highlightAuto(text).value;
+								}
+								return `<pre><code class="hljs">${highlighted}</code></pre>`;
+							}
+						};
+						marked.use({ renderer });
+						const rendered = marked.parse(mdContent);
+
+						return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+	font-size: 15px;
+	line-height: 1.7;
+	color: ${fg};
+	background: ${bg};
+	padding: 32px 48px;
+	max-width: 900px;
+	margin: 0 auto;
+	word-wrap: break-word;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin-top: 24px;
+	margin-bottom: 16px;
+	font-weight: 600;
+	line-height: 1.25;
+}
+h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid ${borderColor}; }
+h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid ${borderColor}; }
+h3 { font-size: 1.25em; }
+p { margin-top: 0; margin-bottom: 16px; }
+a { color: ${linkColor}; text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+	font-size: 85%;
+	background: ${codeBg};
+	padding: 0.2em 0.4em;
+	border-radius: 4px;
+}
+pre {
+	background: ${codeBg};
+	padding: 16px;
+	border-radius: 6px;
+	overflow-x: auto;
+	line-height: 1.45;
+	margin-bottom: 16px;
+}
+pre code {
+	background: transparent;
+	padding: 0;
+	font-size: 85%;
+}
+blockquote {
+	margin: 0 0 16px 0;
+	padding: 0 16px;
+	border-left: 4px solid ${blockquoteBorder};
+	color: ${blockquoteColor};
+}
+table {
+	border-collapse: collapse;
+	width: 100%;
+	margin-bottom: 16px;
+}
+th, td {
+	border: 1px solid ${borderColor};
+	padding: 8px 12px;
+	text-align: left;
+}
+th { background: ${codeBg}; font-weight: 600; }
+img { max-width: 100%; height: auto; }
+ul, ol { padding-left: 2em; margin-bottom: 16px; }
+li { margin-bottom: 4px; }
+hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
+.hljs { background: ${codeBg}; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: ${isDark ? '#2d2d2d' : '#f0f0f0'}; }
+::-webkit-scrollbar-thumb { background: ${isDark ? '#555' : '#c1c1c1'}; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: ${isDark ? '#777' : '#a0a0a0'}; }
+</style>
+</head>
+<body>${rendered}</body>
+</html>`;
+					}
+
 					// Inject eda bridge into HTML preview content
 					function injectEdaBridge(html) {
 						const bridge = '<script>\n' +
@@ -244,7 +349,15 @@
 							// 停止预览，返回编辑器
 							previewContainer.classList.remove('active');
 							editorDiv.style.display = 'block';
-							runBtn.textContent = '运行';
+
+							// 根据当前文件类型恢复按钮文本
+							if (window.projectManager && window.projectManager.currentFile) {
+								const ext = window.projectManager.currentFile.split('.').pop().toLowerCase();
+								runBtn.textContent = (ext === 'md' || ext === 'markdown') ? '预览' : '运行';
+							} else {
+								const currentMode = editor.session.getMode().$id || '';
+								runBtn.textContent = currentMode.indexOf('markdown') !== -1 ? '预览' : '运行';
+							}
 
 							// 清理 iframe
 							previewFrame.src = 'about:blank';
@@ -282,6 +395,23 @@
 								previewFrame.addEventListener('load', () => {
 									URL.revokeObjectURL(url);
 								}, { once: true });
+							} else if (ext === 'md' || ext === 'markdown') {
+								// Markdown 文件：预览渲染
+								const mdContent = editor.getValue();
+								const htmlContent = buildMarkdownPreviewHTML(mdContent);
+								const blob = new Blob([htmlContent], { type: 'text/html' });
+								const url = URL.createObjectURL(blob);
+
+								previewFrame.src = url;
+								editorDiv.style.display = 'none';
+								previewContainer.classList.add('active');
+								runBtn.textContent = '停止';
+
+								eda.sys_Message.showToastMessage('Markdown 预览已打开', 'success', 2);
+
+								previewFrame.addEventListener('load', () => {
+									URL.revokeObjectURL(url);
+								}, { once: true });
 							} else {
 								// 其他文件：运行 JS
 								ACE_RunCode(editor);
@@ -294,6 +424,10 @@
 								/^\s*<html[\s>]/i.test(content) ||
 								(/<!DOCTYPE\s+html/i.test(content.substring(0, 200)) &&
 									/<html[\s>]/i.test(content.substring(0, 500)));
+
+							// 检测是否为 Markdown：通过编辑器当前语法模式判断
+							const currentMode = editor.session.getMode().$id || '';
+							const isMarkdown = currentMode.indexOf('markdown') !== -1;
 
 							if (isHTML) {
 								// 内容是 HTML：在编辑器位置预览
@@ -317,6 +451,22 @@
 								eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
 
 								// 清理旧的 URL
+								previewFrame.addEventListener('load', () => {
+									URL.revokeObjectURL(url);
+								}, { once: true });
+							} else if (isMarkdown) {
+								// Markdown 内容：预览渲染
+								const htmlContent = buildMarkdownPreviewHTML(content);
+								const blob = new Blob([htmlContent], { type: 'text/html' });
+								const url = URL.createObjectURL(blob);
+
+								previewFrame.src = url;
+								editorDiv.style.display = 'none';
+								previewContainer.classList.add('active');
+								runBtn.textContent = '停止';
+
+								eda.sys_Message.showToastMessage('Markdown 预览已打开', 'success', 2);
+
 								previewFrame.addEventListener('load', () => {
 									URL.revokeObjectURL(url);
 								}, { once: true });

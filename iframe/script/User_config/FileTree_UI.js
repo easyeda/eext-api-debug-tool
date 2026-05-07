@@ -318,6 +318,13 @@ class FileTreeUI {
 		// 根据文件类型设置编辑器模式
 		this.setEditorMode(fileName);
 
+		// 根据文件类型更新运行按钮文本
+		const ext = fileName.split('.').pop().toLowerCase();
+		const runBtn = document.getElementById('run-btn');
+		if (runBtn) {
+			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? '预览' : '运行';
+		}
+
 		// 更新UI
 		this.render();
 	}
