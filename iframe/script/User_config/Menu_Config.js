@@ -393,8 +393,10 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		// 加载当前设置
 		let completionWithComment = false;
 		(async () => {
-			const saved = await eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
-			completionWithComment = saved === 'true' || saved === true;
+			try {
+				const saved = await eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
+				completionWithComment = saved === 'true' || saved === true;
+			} catch (e) {}
 			updateCompletionSwitch();
 		})();
 
@@ -442,7 +444,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			}
 
 			completionWithComment = !completionWithComment;
-			await eda.sys_Storage.setExtensionUserConfig('completion_with_comment', completionWithComment.toString());
+			try { await eda.sys_Storage.setExtensionUserConfig('completion_with_comment', completionWithComment.toString()); } catch (e) {}
 
 			// Smooth transition
 			if (sliderBg) sliderBg.style.background = completionWithComment ? '#66d9ef' : '#d1d5db';

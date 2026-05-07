@@ -1,13 +1,14 @@
 async function SetVibeCodingConfig() {
-	const flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config');
+	let flag;
+	try { flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config'); } catch (e) {}
 	if (flag == 'true') {
-		eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'false');
+		try { eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'false'); } catch (e) {}
 		const chatEl = document.getElementById('ai-chat');
 		if (chatEl) chatEl.style.display = 'none';
 		const btn = document.getElementById('ai-btn');
 		if (btn) btn.innerText = 'AI编程：关';
 	} else {
-		eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true');
+		try { eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true'); } catch (e) {}
 		const chatEl = document.getElementById('ai-chat');
 		if (chatEl) chatEl.style.display = '';
 		const btn = document.getElementById('ai-btn');
@@ -16,7 +17,8 @@ async function SetVibeCodingConfig() {
 }
 
 async function GetVibeCodingConfig() {
-	const flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config');
+	let flag;
+	try { flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config'); } catch (e) {}
 	const btn = document.getElementById('ai-btn');
 	if (!btn) return;
 

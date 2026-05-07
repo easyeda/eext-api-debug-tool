@@ -15,8 +15,12 @@ function ACE_Init(editor) {
 }
 
 function _shouldCompleteWithComment() {
-	const value = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
-	return value === 'true' || value === true;
+	try {
+		const value = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
+		return value === 'true' || value === true;
+	} catch (e) {
+		return false;
+	}
 }
 
 function _buildCompletionInsertText(item) {
@@ -47,7 +51,12 @@ function _selectFirstParam(editor, text, startRow, startCol) {
 
 // 获取编辑器主题
 async function GetTheme(editor, light_theme, dark_theme) {
-	const theme = eda.sys_Storage.getExtensionUserConfig('theme');
+	let theme;
+	try {
+		theme = eda.sys_Storage.getExtensionUserConfig('theme');
+	} catch (e) {
+		theme = undefined;
+	}
 	if (theme == 'light') {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
@@ -56,7 +65,7 @@ async function GetTheme(editor, light_theme, dark_theme) {
 		document.body.classList.add('light-theme');
 	} else {
 		if (theme == undefined) {
-			await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+			try { await eda.sys_Storage.setExtensionUserConfig('theme', 'dark'); } catch (e) {}
 		}
 		light_theme.disabled = true;
 		dark_theme.disabled = false;
@@ -64,26 +73,29 @@ async function GetTheme(editor, light_theme, dark_theme) {
 		document.body.classList.remove('light-theme');
 		document.body.classList.add('dark-theme');
 	}
-	// console.log('当前主题', theme);
 }
 
 // 修改编辑器主题
 async function SetTheme(editor, light_theme, dark_theme) {
-	let theme = eda.sys_Storage.getExtensionUserConfig('theme');
+	let theme;
+	try {
+		theme = eda.sys_Storage.getExtensionUserConfig('theme');
+	} catch (e) {
+		theme = undefined;
+	}
 	if (theme == 'light') {
 		light_theme.disabled = true;
 		dark_theme.disabled = false;
 		editor.setTheme('ace/theme/monokai');
-		await eda.sys_Storage.setExtensionUserConfig('theme', 'dark');
+		try { await eda.sys_Storage.setExtensionUserConfig('theme', 'dark'); } catch (e) {}
 		theme = 'dark';
-		// 先切换关键可见区域的类名，让 CSS 立即生效
 		document.body.classList.remove('light-theme');
 		document.body.classList.add('dark-theme');
 	} else {
 		light_theme.disabled = false;
 		dark_theme.disabled = true;
 		editor.setTheme('ace/theme/github');
-		await eda.sys_Storage.setExtensionUserConfig('theme', 'light');
+		try { await eda.sys_Storage.setExtensionUserConfig('theme', 'light'); } catch (e) {}
 		theme = 'light';
 		document.body.classList.remove('dark-theme');
 		document.body.classList.add('light-theme');
@@ -407,7 +419,7 @@ function ACE_RunCode(editor) {
 		const newcode = `(async () => {\n ${code}\n})();`;
 		eval(newcode);
 	} catch (error) {
-		eda.sys_Message.showToastMessage('啊偶，执行出错了', 'error', 2);
+		eda.sys_Message.showToastMessage('执行失败，内容不是有效的 JS、HTML 或 MD 格式。', 'error', 2);
 		console.error('执行出错:', error);
 	}
 }

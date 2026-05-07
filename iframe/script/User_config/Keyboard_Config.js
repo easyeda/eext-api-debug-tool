@@ -58,7 +58,7 @@ async function saveShortcuts(shortcuts) {
  * 重置为默认快捷键
  */
 async function resetShortcuts() {
-	await eda.sys_Storage.setExtensionUserConfig('keyboard_shortcuts', JSON.stringify(DEFAULT_SHORTCUTS));
+	try { await eda.sys_Storage.setExtensionUserConfig('keyboard_shortcuts', JSON.stringify(DEFAULT_SHORTCUTS)); } catch (e) {}
 	return DEFAULT_SHORTCUTS;
 }
 

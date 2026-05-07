@@ -25,7 +25,8 @@ class LeftNavPanel {
 
 	// 恢复侧边栏展开/收起状态（默认收起）
 	restoreSidebarState() {
-		const saved = eda.sys_Storage.getExtensionUserConfig('sidebar_expanded');
+		let saved;
+		try { saved = eda.sys_Storage.getExtensionUserConfig('sidebar_expanded'); } catch (e) {}
 		this.sidebarExpanded = saved === true || saved === 'true';
 		this.applySidebarState();
 	}
@@ -33,7 +34,7 @@ class LeftNavPanel {
 	// 切换侧边栏展开/收起
 	toggleSidebar() {
 		this.sidebarExpanded = !this.sidebarExpanded;
-		eda.sys_Storage.setExtensionUserConfig('sidebar_expanded', this.sidebarExpanded);
+		try { eda.sys_Storage.setExtensionUserConfig('sidebar_expanded', this.sidebarExpanded); } catch (e) {}
 		this.applySidebarState();
 	}
 
@@ -136,7 +137,7 @@ class LeftNavPanel {
 					} else {
 						if (!this.sidebarExpanded) {
 							this.sidebarExpanded = true;
-							eda.sys_Storage.setExtensionUserConfig('sidebar_expanded', true);
+							try { eda.sys_Storage.setExtensionUserConfig('sidebar_expanded', true); } catch (e) {}
 							this.applySidebarState();
 						}
 						this.switchView(view);

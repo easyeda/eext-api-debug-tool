@@ -270,8 +270,11 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					}
 
 					// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
-					const HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value');
-					editor.setValue(HistoryCode || '', -1);
+					let HistoryCode = '';
+					try {
+						HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value') || '';
+					} catch (e) {}
+					editor.setValue(HistoryCode, -1);
 
 					// 注册 Ctrl+滚轮缩放字体
 					let currentFontSize = 14;
@@ -285,7 +288,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 
 					// 自动缓存编辑器内容
 					editor.session.on('change', function() {
-						eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue());
+						try { eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue()); } catch (e) {}
 					});
 
 					// 初始化主题
@@ -417,62 +420,76 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 								ACE_RunCode(editor);
 							}
 						} else {
-							// 没有项目时，检测内容类型
+							// 没有项目时，按优先级尝试：JS -> HTML -> MD
 							const content = editor.getValue().trim();
-							// 检测是否为 HTML：必须在开头附近找到 DOCTYPE 或 <html 标签
-							const isHTML = /^\s*<!DOCTYPE\s+html/i.test(content) ||
-								/^\s*<html[\s>]/i.test(content) ||
-								(/<!DOCTYPE\s+html/i.test(content.substring(0, 200)) &&
-									/<html[\s>]/i.test(content.substring(0, 500)));
 
-							// 检测是否为 Markdown：通过编辑器当前语法模式判断
-							const currentMode = editor.session.getMode().$id || '';
-							const isMarkdown = currentMode.indexOf('markdown') !== -1;
+							// 先尝试运行 JS
+							try {
+								const newcode = `(async () => {\n ${content}\n})();`;
+								eval(newcode);
+							} catch (jsError) {
+								// JS 执行失败，尝试 HTML 渲染
+								const isHTML = /^\s*<!DOCTYPE\s+html/i.test(content) ||
+									/^\s*<html[\s>]/i.test(content) ||
+									(/<!DOCTYPE\s+html/i.test(content.substring(0, 200)) &&
+										/<html[\s>]/i.test(content.substring(0, 500)));
 
-							if (isHTML) {
-								// 内容是 HTML：在编辑器位置预览
-								// 检查是否有外部脚本引用
-								if (/<script[^>]+src=/i.test(content)) {
-									eda.sys_Message.showToastMessage(
-										'检测到外部脚本引用，但未在项目中。外部脚本将无法加载，请创建项目或内联脚本。',
-										'warn',
-										4
-									);
+								if (isHTML) {
+									if (/<script[^>]+src=/i.test(content)) {
+										eda.sys_Message.showToastMessage(
+											'检测到外部脚本引用，但未在项目中。外部脚本将无法加载，请创建项目或内联脚本。',
+											'warn',
+											4
+										);
+									}
+
+									const blob = new Blob([injectEdaBridge(content)], { type: 'text/html' });
+									const url = URL.createObjectURL(blob);
+
+									previewFrame.src = url;
+									editorDiv.style.display = 'none';
+									previewContainer.classList.add('active');
+									runBtn.textContent = '停止';
+
+									eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
+
+									previewFrame.addEventListener('load', () => {
+										URL.revokeObjectURL(url);
+									}, { once: true });
+								} else {
+									// HTML 不匹配，尝试 MD 渲染
+									const isMarkdown = /^#{1,6}\s/m.test(content) ||
+										/^\s*[-*+]\s/m.test(content) ||
+										/^\s*\d+\.\s/m.test(content) ||
+										/\[.+\]\(.+\)/.test(content) ||
+										/^\s*>/m.test(content) ||
+										/```/.test(content) ||
+										/^\s*\|.+\|/m.test(content);
+
+									if (isMarkdown) {
+										const htmlContent = buildMarkdownPreviewHTML(content);
+										const blob = new Blob([htmlContent], { type: 'text/html' });
+										const url = URL.createObjectURL(blob);
+
+										previewFrame.src = url;
+										editorDiv.style.display = 'none';
+										previewContainer.classList.add('active');
+										runBtn.textContent = '停止';
+
+										eda.sys_Message.showToastMessage('Markdown 预览已打开', 'success', 2);
+
+										previewFrame.addEventListener('load', () => {
+											URL.revokeObjectURL(url);
+										}, { once: true });
+									} else {
+										// 全部失败
+										eda.sys_Message.showToastMessage(
+											'执行失败，内容不是有效的 JS、HTML 或 MD 格式。',
+											'error',
+											4
+										);
+									}
 								}
-
-								const blob = new Blob([injectEdaBridge(content)], { type: 'text/html' });
-								const url = URL.createObjectURL(blob);
-
-								previewFrame.src = url;
-								editorDiv.style.display = 'none';
-								previewContainer.classList.add('active');
-								runBtn.textContent = '停止';
-
-								eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
-
-								// 清理旧的 URL
-								previewFrame.addEventListener('load', () => {
-									URL.revokeObjectURL(url);
-								}, { once: true });
-							} else if (isMarkdown) {
-								// Markdown 内容：预览渲染
-								const htmlContent = buildMarkdownPreviewHTML(content);
-								const blob = new Blob([htmlContent], { type: 'text/html' });
-								const url = URL.createObjectURL(blob);
-
-								previewFrame.src = url;
-								editorDiv.style.display = 'none';
-								previewContainer.classList.add('active');
-								runBtn.textContent = '停止';
-
-								eda.sys_Message.showToastMessage('Markdown 预览已打开', 'success', 2);
-
-								previewFrame.addEventListener('load', () => {
-									URL.revokeObjectURL(url);
-								}, { once: true });
-							} else {
-								// 其他内容：运行 JS
-								ACE_RunCode(editor);
 							}
 						}
 					});
