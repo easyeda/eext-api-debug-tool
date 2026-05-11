@@ -1,5 +1,7 @@
 # Ace Code Editor for EDA 编辑进化
 
+[English](./README.en.md)
+
 一个轻量级、可嵌入的 JavaScript 代码编辑器，基于 [Ace Editor](https://ace.c9.io/) 构建，专为 **嘉立创EDA（EasyEDA Pro）** 环境设计。支持语法高亮、智能补全、自定义词库和一键运行代码。
 
 ---
