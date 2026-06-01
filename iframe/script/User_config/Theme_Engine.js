@@ -206,7 +206,7 @@ const ThemeEngine = {
 
 	/** 保存自定义主题 */
 	async saveCustom(name, vars, label) {
-		const safeName = name.replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase();
+		const safeName = name.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '-') || 'custom-theme';
 		if (THEME_PRESETS[safeName]) return false;
 		// 根据编辑器背景亮度自动选择 Ace 主题
 		const editorBg = vars['editor-bg'] || '#fff';

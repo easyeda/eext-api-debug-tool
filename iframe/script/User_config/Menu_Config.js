@@ -141,7 +141,24 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	}
 
 	function _to6hex(h){return (h||"#000").replace(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/,"#$1$1$2$2$3$3");}
-	function renderMainSettings() {
+	// 收集当前颜色选择器的值并持久化
+let _persistTimer = null;
+function _persistCurrentColors() {
+	clearTimeout(_persistTimer);
+	_persistTimer = setTimeout(() => {
+		const newVars = {};
+		document.querySelectorAll('#settings-modal-body input[type=color]').forEach(el => {
+			newVars[el.getAttribute('data-key')] = el.value;
+		});
+		const current = ThemeEngine.getCurrent();
+		const themeName = current === 'dark' ? '自定义暗色' : current === 'light' ? '自定义亮色' : '自定义';
+		ThemeEngine.saveCustom(themeName, { ...ThemeEngine.getCurrentVars(), ...newVars }, themeName).then(name => {
+			if (name) ThemeEngine.apply(name);
+		});
+	}, 500);
+}
+
+function renderMainSettings() {
 		body.innerHTML = '';
 
 		const themeToggle = document.createElement('div');
@@ -204,9 +221,10 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			hexInput.value = _to6hex(currentVars[k]);
 			hexInput.style.cssText = 'width:82px;height:24px;padding:0 4px;border:1px solid ' + colors.modalBorder + ';border-radius:2px;font-size:12px;font-family:monospace;color:' + colors.textColor + ';background:' + colors.itemBg + ';';
 			hexInput.setAttribute('data-key', k);
-			// 实时同步：色盘 ↔ HEX，并立即应用 CSS 变量
+			// 实时同步 + 持久化：修改即保存为自定义主题
 			const applyColor = (val) => {
 				document.documentElement.style.setProperty('--eext-' + k, val);
+				_persistCurrentColors();
 			};
 			hexInput.oninput = () => { swatch.value = hexInput.value; applyColor(hexInput.value); };
 			swatch.oninput = () => { hexInput.value = swatch.value; applyColor(swatch.value); };
