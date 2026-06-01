@@ -51,63 +51,17 @@ function _selectFirstParam(editor, text, startRow, startCol) {
 
 // 获取编辑器主题
 async function GetTheme(editor, light_theme, dark_theme) {
-	let theme;
-	try {
-		theme = eda.sys_Storage.getExtensionUserConfig('theme');
-	} catch (e) {
-		theme = undefined;
-	}
-	if (theme == 'light') {
-		light_theme.disabled = false;
-		dark_theme.disabled = true;
-		editor.setTheme('ace/theme/github');
-		document.body.classList.remove('dark-theme');
-		document.body.classList.add('light-theme');
-	} else {
-		if (theme == undefined) {
-			try { await eda.sys_Storage.setExtensionUserConfig('theme', 'dark'); } catch (e) {}
-		}
-		light_theme.disabled = true;
-		dark_theme.disabled = false;
-		editor.setTheme('ace/theme/monokai');
-		document.body.classList.remove('light-theme');
-		document.body.classList.add('dark-theme');
-	}
+	await ThemeEngine.init();
 }
 
-// 修改编辑器主题
+// 修改编辑器主题（保留向后兼容，实际逻辑由 ThemeEngine 处理）
 async function SetTheme(editor, light_theme, dark_theme) {
-	let theme;
-	try {
-		theme = eda.sys_Storage.getExtensionUserConfig('theme');
-	} catch (e) {
-		theme = undefined;
-	}
-	if (theme == 'light') {
-		light_theme.disabled = true;
-		dark_theme.disabled = false;
-		editor.setTheme('ace/theme/monokai');
-		try { await eda.sys_Storage.setExtensionUserConfig('theme', 'dark'); } catch (e) {}
-		theme = 'dark';
-		document.body.classList.remove('light-theme');
-		document.body.classList.add('dark-theme');
-	} else {
-		light_theme.disabled = false;
-		dark_theme.disabled = true;
-		editor.setTheme('ace/theme/github');
-		try { await eda.sys_Storage.setExtensionUserConfig('theme', 'light'); } catch (e) {}
-		theme = 'light';
-		document.body.classList.remove('dark-theme');
-		document.body.classList.add('light-theme');
-	}
-
-	// 刷新文件树主题
-	if (window.fileTreeUI) {
-		window.fileTreeUI.applyTheme();
-	}
-
-	await eda.sys_Message.showToastMessage('当前主题已切换为' + theme, 'info', 1);
-	return theme;
+	const current = ThemeEngine.getCurrent();
+	const next = current === 'dark' ? 'light' : current === 'light' ? 'dark' : 'light';
+	ThemeEngine.apply(next);
+	if (window.fileTreeUI) window.fileTreeUI.applyTheme();
+	await eda.sys_Message.showToastMessage('当前主题已切换为' + (next === 'dark' ? '暗色' : next === 'light' ? '亮色' : next), 'info', 1);
+	return next;
 }
 
 // 注册ACE补全
@@ -629,9 +583,9 @@ function createQuickButton(editor, name, code) {
 	// 右键：显示快捷菜单（加载 / 删除）
 	btn.oncontextmenu = (e) => {
 		e.preventDefault();
-		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
-		const menuBg = isDark ? '#2d2e27' : '#ffffff';
-		const menuBorder = isDark ? '#444' : '#ccc';
+		const isDark = document.body.classList.contains('dark-theme');
+		const menuBg = isDark ? '#404040' : '#fff';
+		const menuBorder = isDark ? '#222' : '#d9d9d9';
 		const menuShadow = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)';
 		const menu =
 			document.getElementById('ctx-menu') ||
@@ -646,9 +600,9 @@ function createQuickButton(editor, name, code) {
 		const showItem = (text, color, action) => {
 			const item = document.createElement('div');
 			item.textContent = text;
-			const defaultColor = isDark ? '#f8f8f2' : '#000';
+			const defaultColor = isDark ? '#e5e5e5' : '#333';
 			item.style.cssText = `padding:6px 12px;cursor:pointer;color:${color || defaultColor};user-select:none`;
-			const hoverBg = isDark ? (color ? '#3d1a1a' : '#3b3c35') : color ? '#ffebee' : '#f0f0f0';
+			const hoverBg = isDark ? (color ? 'rgba(245,34,45,0.2)' : '#6283a2') : color ? 'rgba(245,34,45,0.08)' : '#e6f7ff';
 			item.onmouseenter = () => (item.style.backgroundColor = hoverBg);
 			item.onmouseleave = () => (item.style.backgroundColor = '');
 			item.onclick = () => {
@@ -1278,7 +1232,7 @@ function ImportFile(editor) {
 		if (!file) return;
 
 		if (!file.name.endsWith('.js')) {
-			alert('请选择一个有效的 JavaScript (.js) 文件。');
+			eda.sys_Message.showToastMessage('请选择一个有效的 JavaScript (.js) 文件。', 'warn', 2);
 			return;
 		}
 
@@ -1289,7 +1243,7 @@ function ImportFile(editor) {
 		};
 		reader.onerror = () => {
 			console.error('读取文件时出错');
-			alert('读取文件失败，请重试。');
+			eda.sys_Message.showToastMessage('读取文件失败，请重试。', 'error', 2);
 		};
 
 		reader.readAsText(file);
@@ -1327,11 +1281,11 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 		}
 
 		// 创建菜单（颜色跟随当前主题）
-		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
-		const menuBg = isDark ? '#2d2e27' : '#ffffff';
-		const menuColor = isDark ? '#f8f8f2' : '#333333';
-		const menuBorder = isDark ? '#555' : '#ccc';
-		const menuHover = isDark ? '#3b3c35' : '#f0f0f0';
+		const isDark = document.body.classList.contains('dark-theme');
+		const menuBg = isDark ? '#404040' : '#fff';
+		const menuColor = isDark ? '#e5e5e5' : '#333';
+		const menuBorder = isDark ? '#222' : '#d9d9d9';
+		const menuHover = isDark ? '#6283a2' : '#e6f7ff';
 
 		const menu = document.createElement('div');
 		menu.style.cssText = `
@@ -1591,8 +1545,12 @@ ${depsDocs}
 async function generateTestCase(editor, methodPath) {
 	let chatConfig;
 	try {
-		const stored = localStorage.getItem('ai_chat_config');
-		chatConfig = stored ? JSON.parse(stored) : null;
+		const stored = localStorage.getItem('ai_profiles');
+		const idx = parseInt(localStorage.getItem('ai_active_profile')) || 0;
+		if (stored) {
+			const profiles = JSON.parse(stored);
+			chatConfig = (Array.isArray(profiles) && profiles.length > idx) ? profiles[idx] : null;
+		}
 	} catch (e) {
 		chatConfig = null;
 	}
@@ -1601,7 +1559,7 @@ async function generateTestCase(editor, methodPath) {
 		if (typeof eda !== 'undefined' && eda.sys_Message) {
 			eda.sys_Message.showToastMessage('请先在 AI 配置设置中填写 API Key', 'warn', 3);
 		} else {
-			alert('请先在 AI 配置设置中填写 API Key');
+			eda.sys_Message.showToastMessage('请先在 AI 配置设置中填写 API Key', 'warn', 3);
 		}
 		return;
 	}
@@ -1633,7 +1591,7 @@ async function generateTestCase(editor, methodPath) {
 			body: JSON.stringify({
 				model: chatConfig.model,
 				messages: messages,
-				temperature: 0.3,
+				temperature: chatConfig.temperature ?? 0.3,
 			}),
 		});
 

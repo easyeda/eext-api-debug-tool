@@ -109,31 +109,31 @@ function showConfirmModal(title, message, onConfirm, isDark) {
 	confirmOverlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(3px);z-index:10002;display:flex;justify-content:center;align-items:center;`;
 
 	const confirmModal = document.createElement('div');
-	confirmModal.style.cssText = `background:${isDark ? '#272822' : '#ffffff'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:8px;width:400px;max-width:90%;box-shadow:0 10px 25px rgba(0,0,0,0.5);color:${isDark ? '#f8f8f2' : '#24292f'};`;
+	confirmModal.style.cssText = `background:${isDark ? '#404040' : '#fff'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;width:400px;max-width:90%;box-shadow:0 10px 25px rgba(0,0,0,0.5);color:${isDark ? '#e5e5e5' : '#333'};`;
 
 	const confirmHeader = document.createElement('div');
-	confirmHeader.style.cssText = `padding:16px 20px;border-bottom:1px solid ${isDark ? '#444' : '#d0d7de'};font-weight:600;font-size:16px;`;
+	confirmHeader.style.cssText = `padding:16px 20px;border-bottom:1px solid ${isDark ? '#222' : '#d9d9d9'};font-weight:600;font-size:12px;`;
 	confirmHeader.textContent = title;
 
 	const confirmBody = document.createElement('div');
-	confirmBody.style.cssText = `padding:20px;font-size:14px;line-height:1.6;color:${isDark ? '#a9a9a9' : '#57606a'};`;
+	confirmBody.style.cssText = `padding:20px;font-size:12px;line-height:1.6;color:${isDark ? '#a9a9a9' : '#666'};`;
 	confirmBody.textContent = message;
 
 	const confirmFooter = document.createElement('div');
-	confirmFooter.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#444' : '#d0d7de'};display:flex;justify-content:flex-end;gap:8px;`;
+	confirmFooter.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:flex-end;gap:8px;`;
 
 	const cancelBtn = document.createElement('button');
 	cancelBtn.textContent = '取消';
-	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#f8f8f2' : '#24292f'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:4px;cursor:pointer;font-size:14px;transition:all 0.2s;`;
-	cancelBtn.onmouseenter = () => (cancelBtn.style.backgroundColor = isDark ? '#333430' : '#f6f8fa');
+	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;transition:background 0.2s,border-color 0.2s;`;
+	cancelBtn.onmouseenter = () => (cancelBtn.style.backgroundColor = isDark ? '#353535' : '#f5f5f5');
 	cancelBtn.onmouseleave = () => (cancelBtn.style.backgroundColor = 'transparent');
 	cancelBtn.onclick = () => confirmOverlay.remove();
 
 	const confirmBtn = document.createElement('button');
 	confirmBtn.textContent = '确认';
-	confirmBtn.style.cssText = `padding:8px 16px;background:#dc3545;color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s;`;
-	confirmBtn.onmouseenter = () => (confirmBtn.style.backgroundColor = '#c82333');
-	confirmBtn.onmouseleave = () => (confirmBtn.style.backgroundColor = '#dc3545');
+	confirmBtn.style.cssText = `padding:8px 16px;background:#1890ff;color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;transition:background 0.2s,border-color 0.2s;`;
+	confirmBtn.onmouseenter = () => (confirmBtn.style.backgroundColor = '#40a9ff');
+	confirmBtn.onmouseleave = () => (confirmBtn.style.backgroundColor = '#1890ff');
 	confirmBtn.onclick = () => {
 		confirmOverlay.remove();
 		if (onConfirm) onConfirm();
@@ -163,7 +163,7 @@ function showConfirmModal(title, message, onConfirm, isDark) {
  * 显示快捷键设置模态框
  */
 async function showKeyboardShortcutsModal(editor, onClose) {
-	const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+	const isDark = document.body.classList.contains('dark-theme');
 	const platform = getPlatform();
 
 	let shortcuts = await loadShortcuts();
@@ -175,11 +175,11 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	overlay.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(2px);z-index:10001;display:flex;justify-content:center;align-items:center;`;
 
 	const modal = document.createElement('div');
-	modal.style.cssText = `background:${isDark ? '#272822' : '#ffffff'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:8px;width:600px;max-width:90%;max-height:80vh;box-shadow:0 10px 25px rgba(0,0,0,0.5);display:flex;flex-direction:column;color:${isDark ? '#f8f8f2' : '#24292f'};`;
+	modal.style.cssText = `background:${isDark ? '#404040' : '#fff'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;width:600px;max-width:90%;max-height:80vh;box-shadow:0 10px 25px rgba(0,0,0,0.5);display:flex;flex-direction:column;color:${isDark ? '#e5e5e5' : '#333'};`;
 
 	const header = document.createElement('div');
-	header.style.cssText = `padding:16px 20px;border-bottom:1px solid ${isDark ? '#444' : '#d0d7de'};display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:16px;`;
-	header.innerHTML = `<span>快捷键设置</span><button id="keyboard-modal-close" style="background:transparent;border:none;color:${isDark ? '#f8f8f2' : '#24292f'};cursor:pointer;font-size:24px;line-height:1;padding:0;width:24px;height:24px;">×</button>`;
+	header.style.cssText = `padding:16px 20px;border-bottom:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:12px;`;
+	header.innerHTML = `<span>快捷键设置</span><button id="keyboard-modal-close" style="background:transparent;border:none;color:${isDark ? '#e5e5e5' : '#333'};cursor:pointer;font-size:16px;line-height:1;padding:0;width:24px;height:24px;">×</button>`;
 
 	const body = document.createElement('div');
 	body.style.cssText = `padding:20px;overflow-y:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none;`;
@@ -195,7 +195,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	body.id = 'keyboard-shortcuts-body';
 
 	const platformInfo = document.createElement('div');
-	platformInfo.style.cssText = `margin-bottom:16px;padding:12px;background:${isDark ? '#333430' : '#f6f8fa'};border-radius:6px;font-size:13px;color:${isDark ? '#75715e' : '#6b7280'};`;
+	platformInfo.style.cssText = `margin-bottom:16px;padding:12px;background:${isDark ? '#353535' : '#f5f5f5'};border-radius:2px;font-size:12px;color:${isDark ? '#868686' : '#666'};`;
 	platformInfo.textContent = `当前平台: ${platform === 'mac' ? 'macOS' : 'Windows'}`;
 	body.appendChild(platformInfo);
 
@@ -204,26 +204,26 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 
 	Object.entries(shortcuts).forEach(([key, config]) => {
 		const item = document.createElement('div');
-		item.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:12px;background:${isDark ? '#333430' : '#f6f8fa'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:6px;transition:all 0.2s;`;
+		item.style.cssText = `display:flex;justify-content:space-between;align-items:center;padding:12px;background:${isDark ? '#353535' : '#f5f5f5'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:2px;transition:background 0.2s,border-color 0.2s;`;
 
 		const label = document.createElement('div');
 		label.style.cssText = `flex:1;`;
-		label.innerHTML = `<div style="font-weight:500;margin-bottom:4px;">${config.description}</div><div style="font-size:12px;color:${isDark ? '#75715e' : '#6b7280'};">${key}</div>`;
+		label.innerHTML = `<div style="font-weight:500;margin-bottom:4px;">${config.description}</div><div style="font-size:12px;color:${isDark ? '#868686' : '#666'};">${key}</div>`;
 
 		const input = document.createElement('input');
 		input.type = 'text';
 		input.value = config[platform];
 		input.placeholder = '按下快捷键...';
 		input.readOnly = true;
-		input.style.cssText = `width:180px;padding:8px 12px;background:${isDark ? '#272822' : '#ffffff'};color:${isDark ? '#f8f8f2' : '#24292f'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:4px;font-size:13px;text-align:center;font-family:monospace;cursor:pointer;user-select:none;`;
+		input.style.cssText = `width:180px;padding:8px 12px;background:${isDark ? '#404040' : '#fff'};color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;font-size:12px;text-align:center;font-family:monospace;cursor:pointer;user-select:none;`;
 
 		input.addEventListener('focus', () => {
-			input.style.borderColor = isDark ? '#66d9ef' : '#0969da';
+			input.style.borderColor = isDark ? '#1890ff' : '#1890ff';
 			input.placeholder = '按下任意键...';
 		});
 
 		input.addEventListener('blur', () => {
-			input.style.borderColor = isDark ? '#444' : '#d0d7de';
+			input.style.borderColor = isDark ? '#222' : '#d9d9d9';
 			input.placeholder = '按下快捷键...';
 		});
 
@@ -255,11 +255,11 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	body.appendChild(shortcutsList);
 
 	const footer = document.createElement('div');
-	footer.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#444' : '#d0d7de'};display:flex;justify-content:space-between;gap:12px;`;
+	footer.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:space-between;gap:12px;`;
 
 	const resetBtn = document.createElement('button');
 	resetBtn.textContent = '恢复默认';
-	resetBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#f8f8f2' : '#24292f'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:4px;cursor:pointer;font-size:14px;transition:all 0.2s;`;
+	resetBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;transition:background 0.2s,border-color 0.2s;`;
 	resetBtn.onclick = () => {
 		showConfirmModal(
 			'确认恢复默认',
@@ -278,7 +278,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 
 	const cancelBtn = document.createElement('button');
 	cancelBtn.textContent = '取消';
-	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#f8f8f2' : '#24292f'};border:1px solid ${isDark ? '#444' : '#d0d7de'};border-radius:4px;cursor:pointer;font-size:14px;`;
+	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;`;
 	cancelBtn.onclick = () => {
 		window.keyboardShortcutsModalOpen = false;
 		overlay.remove();
@@ -287,7 +287,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 
 	const saveBtn = document.createElement('button');
 	saveBtn.textContent = '保存';
-	saveBtn.style.cssText = `padding:8px 16px;background:${isDark ? '#66d9ef' : '#0969da'};color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:14px;font-weight:500;`;
+	saveBtn.style.cssText = `padding:8px 16px;background:${isDark ? '#1890ff' : '#1890ff'};color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;`;
 	saveBtn.onclick = async () => {
 		const success = await saveShortcuts(shortcuts);
 		if (success) {

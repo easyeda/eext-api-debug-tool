@@ -1,9 +1,9 @@
 {
 	"name": "eext-api-debug-tool",
-	"uuid": "7ca98ae04b7142599ab107e34acc8e5e",
+	"uuid": "e7774086d63641f8a687b9b419c10f2e",
 	"displayName": "智能API调试工具",
 	"description": "支持中文联想的EDA扩展API脚本代码编辑器，支持代码高亮、自动补全、函数提示，AI注释，AI报错分析等功能。",
-	"version": "2.5.2",
+	"version": "2.6.1",
 	"publisher": "嘉立创EDA",
 	"engines": {
 		"eda": "^2.2.60 || >=3.1.59"

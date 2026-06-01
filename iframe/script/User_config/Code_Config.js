@@ -473,7 +473,7 @@ async function Code_OpenDeleteWindow(editor) {
 			const itemEl = document.createElement('div');
 			itemEl.className = 'code-load-item';
 			itemEl.textContent = `${item.name} • ${new Date(item.createdAt).toLocaleString()}`;
-			itemEl.style.color = '#f92672';
+			itemEl.style.color = '#1890ff';
 			itemEl.title = `点击删除：${item.name}`;
 
 			itemEl.onclick = async () => {
@@ -481,18 +481,20 @@ async function Code_OpenDeleteWindow(editor) {
 					eda.sys_Message.showToastMessage('数据库连接已断开，无法删除', 'info', 1);
 					return;
 				}
+				eda.sys_Dialog.showConfirmationMessage(`确认删除代码 "${item.name}"？`, '提示', '确认', '取消', async () => {
 				try {
 					const deleted = await CodeStore_DeleteCode(dbInstance, item.name);
 					if (deleted) {
 						allItems = allItems.filter((i) => i.name !== item.name);
 						renderList(allItems);
-						eda.sys_Message.showToastMessage(`代码 "${item.name}" 已删除`, 'info', 1);
+						eda.sys_Message.showToastMessage(`代码 "${item.name}" 已删除`, 'success', 1);
 					} else {
 						eda.sys_Message.showToastMessage(`未找到代码 "${item.name}"`, 'info', 1);
 					}
 				} catch (e) {
 					eda.sys_Message.showToastMessage(`删除失败: ${e.message || e}`, 'info', 1);
 				}
+			});
 			};
 
 			listContainer.appendChild(itemEl);

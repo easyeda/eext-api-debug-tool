@@ -135,7 +135,7 @@ class FileTreeUI {
 
 	// 应用主题
 	applyTheme() {
-		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
+		const isDark = document.body.classList.contains('dark-theme');
 		if (isDark) {
 			this.container.classList.add('dark');
 			this.container.classList.remove('light');
@@ -357,11 +357,11 @@ class FileTreeUI {
 		const existingMenu = document.getElementById('file-tree-context-menu');
 		if (existingMenu) existingMenu.remove();
 
-		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
-		const menuBg = isDark ? '#2d2e27' : '#ffffff';
-		const menuBorder = isDark ? '#444' : '#d0d7de';
-		const textColor = isDark ? '#f8f8f2' : '#24292f';
-		const hoverBg = isDark ? '#3b3c35' : '#f6f8fa';
+		const isDark = document.body.classList.contains('dark-theme');
+		const menuBg = isDark ? '#404040' : '#fff';
+		const menuBorder = isDark ? '#222' : '#d9d9d9';
+		const textColor = isDark ? '#e5e5e5' : '#333';
+		const hoverBg = isDark ? '#6283a2' : '#e6f7ff';
 
 		const menu = document.createElement('div');
 		menu.id = 'file-tree-context-menu';

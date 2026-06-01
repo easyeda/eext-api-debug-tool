@@ -1,0 +1,96 @@
+/* ============================================
+   EDA Extension Theme Variable Definitions
+   所有可主题化 UI 颜色均通过 CSS 自定义属性控制
+   ============================================ */
+
+:root {
+  /* ---- 背景 ---- */
+  --eext-bg-body: #f5f5f5;
+  --eext-bg-toolbar: #fff;
+  --eext-bg-panel: #fff;
+  --eext-bg-input: #fff;
+  --eext-bg-input-disabled: #f1f1f1;
+  --eext-bg-modal: #fff;
+  --eext-bg-modal-header: #f5f5f5;
+  --eext-bg-item: #f5f5f5;
+  --eext-bg-code: #f5f5f5;
+  --eext-bg-dropdown: #fff;
+  --eext-bg-overlay: rgba(0, 0, 0, 0.4);
+  --eext-bg-mask: rgba(0, 0, 0, 0.5);
+
+  /* ---- 文字 ---- */
+  --eext-text-primary: #333;
+  --eext-text-secondary: #666;
+  --eext-text-tertiary: #999;
+  --eext-text-inverse: #fff;
+  --eext-text-placeholder: #a9a9a9;
+
+  /* ---- 边框 ---- */
+  --eext-border: #d9d9d9;
+  --eext-border-light: #e9e9e9;
+
+  /* ---- 品牌色 ---- */
+  --eext-brand: #1890ff;
+  --eext-brand-hover: #40a9ff;
+  --eext-brand-pressed: #096dd9;
+  --eext-brand-bg: rgba(24, 144, 255, 0.1);
+
+  /* ---- 语义色 ---- */
+  --eext-error: #f5222d;
+  --eext-error-text: #e55649;
+  --eext-error-bg: rgba(245, 34, 45, 0.08);
+  --eext-success: #52c41a;
+  --eext-success-bg: rgba(82, 196, 26, 0.08);
+  --eext-warning: #fa8c16;
+  --eext-warning-bg: rgba(250, 140, 22, 0.08);
+
+  /* ---- 交互态 ---- */
+  --eext-hover-bg: #e6f7ff;
+  --eext-hover-bg-delete: rgba(245, 34, 45, 0.08);
+  --eext-selected-bg: #e6f7ff;
+
+  /* ---- 滚动条 ---- */
+  --eext-scrollbar-thumb: #bfbfbf;
+  --eext-scrollbar-thumb-hover: #8b8b8c;
+  --eext-scrollbar-track: transparent;
+
+  /* ---- 阴影 ---- */
+  --eext-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  --eext-shadow-lg: 0 0 15px rgba(50, 50, 50, 0.3);
+
+  /* ---- 按钮 ---- */
+  --eext-btn-bg: #fff;
+  --eext-btn-border: #d9d9d9;
+  --eext-btn-color: #1890ff;
+  --eext-btn-primary-bg: #1890ff;
+  --eext-btn-primary-color: #fff;
+  --eext-btn-primary-hover-bg: #40a9ff;
+  --eext-btn-height: 28px;
+  --eext-btn-radius: 2px;
+
+  /* ---- 输入框 ---- */
+  --eext-input-height: 24px;
+  --eext-input-radius: 2px;
+  --eext-input-focus-ring: 0 0 0 2px rgba(24, 144, 255, 0.2);
+
+  /* ---- 弹窗 ---- */
+  --eext-modal-radius: 4px;
+  --eext-modal-header-height: 28px;
+  --eext-modal-padding: 16px;
+
+  /* ---- 编辑器 ---- */
+  --eext-editor-bg: #fff;
+  --eext-ace-theme: 'ace/theme/github';
+
+  /* ---- 聊天 ---- */
+  --eext-chat-bubble-system-bg: #f5f5f5;
+  --eext-chat-bubble-system-border: #e9e9e9;
+  --eext-chat-bubble-user-bg: #1890ff;
+  --eext-chat-bubble-user-color: #fff;
+  --eext-chat-bubble-radius: 8px;
+
+  /* ---- 字体 ---- */
+  --eext-font-family: "Microsoft YaHei", Arial, sans-serif;
+  --eext-font-size: 12px;
+  --eext-font-size-lg: 14px;
+}

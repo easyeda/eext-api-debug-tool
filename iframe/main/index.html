@@ -2,22 +2,23 @@
 <html lang="zh-CN">
 	<head>
 		<meta charset="UTF-8" />
-		<title>Ace Editor - EDA V2.4.8</title>
-		<link id="theme-light" rel="stylesheet" href="/iframe/style/body-light.css" disabled />
-		<link id="theme-dark" rel="stylesheet" href="/iframe/style/body-dark.css" />
+		<title>Ace Editor - EDA V2.6.1</title>
+		<link rel="stylesheet" href="/iframe/style/theme-vars.css" />
+		<link rel="stylesheet" href="/iframe/style/theme-base.css" />
 		<link rel="stylesheet" href="/iframe/style/file-tree.css" />
 		<link rel="stylesheet" href="/iframe/style/left-nav.css" />
 		<link rel="stylesheet" href="/iframe/script/SweetAlert2/sweetalert2.min.css" />
 	</head>
 	<body>
+		<div id="loading-overlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--eext-bg-body);z-index:99999;display:flex;flex-direction:column;justify-content:center;align-items:center;font-family:var(--eext-font-family);color:var(--eext-text-primary);"><div style="font-size:14px;margin-bottom:12px;">正在加载编辑器...</div><div style="width:120px;height:3px;background:var(--eext-border);border-radius:2px;overflow:hidden;"><div id="loading-bar" style="height:100%;width:0;background:var(--eext-brand);border-radius:2px;transition:width 0.3s ease;"></div></div></div>
 		<div id="app">
 			<!-- 顶部工具栏 -->
 			<div id="toolbar">
 				<button id="run-btn">运行</button>
 				<button id="file-btn">文件</button>
 				<button id="settings-btn">设置</button>
-				<button id="ai-btn">AI编程</button>
 				<ul id="quick-btn-list"></ul>
+				<button id="ai-btn" style="margin-left:auto;">Copilot</button>
 			</div>
 			<!-- 主内容区 -->
 			<div id="main-content">
@@ -131,9 +132,10 @@
 				<script src="/iframe/script/User_config/Project_Completer.js"></script>
 				<script src="/iframe/script/User_config/Left_Nav_Panel.js"></script>
 				<script src="/iframe/script/User_config/Keyboard_Config.js"></script>
+<script src="/iframe/script/User_config/Theme_Engine.js"></script>
 				<script src="/iframe/script/User_config/Menu_Config.js"></script>
 				<script src="/iframe/script/User_config/Ai_Chat.js"></script>
-				<script src="/iframe/script/User_config/ACE_Config.js"></script>
+<script src="/iframe/script/User_config/ACE_Config.js"></script>
 				<script src="/iframe/script/User_config/Completer_Store.js"></script>
 				<script src="/iframe/script/User_config/Code_Config.js"></script>
 				<script>
@@ -146,14 +148,14 @@
 
 					// Markdown 预览：将 MD 内容转为带样式的 HTML 页面
 					function buildMarkdownPreviewHTML(mdContent) {
-						const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
-						const bg = isDark ? '#1e1e1e' : '#ffffff';
-						const fg = isDark ? '#d4d4d4' : '#24292f';
-						const codeBg = isDark ? '#2d2d2d' : '#f6f8fa';
-						const borderColor = isDark ? '#444' : '#d0d7de';
-						const linkColor = isDark ? '#58a6ff' : '#0969da';
-						const blockquoteBorder = isDark ? '#555' : '#d0d7de';
-						const blockquoteColor = isDark ? '#8b949e' : '#57606a';
+						const isDark = document.body.classList.contains('dark-theme');
+						const bg = isDark ? '#404040' : '#fff';
+						const fg = isDark ? '#e5e5e5' : '#333';
+						const codeBg = isDark ? '#353535' : '#f5f5f5';
+						const borderColor = isDark ? '#222' : '#d9d9d9';
+						const linkColor = isDark ? '#40a9ff' : '#1890ff';
+						const blockquoteBorder = isDark ? '#666' : '#d9d9d9';
+						const blockquoteColor = isDark ? '#868686' : '#666';
 
 						const renderer = {
 							code({ text, lang }) {
@@ -291,10 +293,19 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 						try { eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue()); } catch (e) {}
 					});
 
-					// 初始化主题
-					const light_theme = document.getElementById('theme-light');
-					const dark_theme = document.getElementById('theme-dark');
-					GetTheme(editor, light_theme, dark_theme);
+					const loadingBar = document.getElementById('loading-bar');
+					const loadingOverlay = document.getElementById('loading-overlay');
+					if (loadingBar) loadingBar.style.width = '30%';
+					(async () => {
+						await ThemeEngine.init();
+						if (loadingBar) loadingBar.style.width = '70%';
+						await new Promise(r => setTimeout(r, 150));
+						if (loadingOverlay) {
+							loadingOverlay.style.opacity = '0';
+							loadingOverlay.style.transition = 'opacity 0.3s ease';
+							setTimeout(() => { if (loadingOverlay) loadingOverlay.remove(); }, 300);
+						}
+					})();
 
 					// 初始化 AI 按钮状态
 					GetVibeCodingConfig();
@@ -503,10 +514,9 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 						Code_OpenLoadWindow(editor);
 					});
 					document.getElementById('theme-btn')?.addEventListener('click', () => {
-						SetTheme(editor, light_theme, dark_theme);
+						SetTheme(editor, null, null);
 					});
 					document.getElementById('delete-btn')?.addEventListener('click', () => {
-						eda.sys_Message.showToastMessage('注意，这玩意不会问你是否删除，点一下立马删，三思而后行', 'warn', 3);
 						Code_OpenDeleteWindow(editor);
 					});
 					document.getElementById('import-btn')?.addEventListener('click', () => {
@@ -535,7 +545,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					const settingsBtn = document.getElementById('settings-btn');
 					if (settingsBtn) {
 						settingsBtn.addEventListener('click', () => {
-							showSettingsModal(editor, light_theme, dark_theme);
+							showSettingsModal(editor, null, null);
 						});
 					}
 

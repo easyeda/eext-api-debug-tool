@@ -1,3 +1,41 @@
+# 2.6.1
+
+## 新增
+
+1. AI 配置支持多方案切换，可保存多组 API Key / Base URL / Model / Temperature 配置并按需切换
+2. 新增 Temperature 数字输入框，替代硬编码值
+3. 新增第三套主题"黑底白图"，编辑器暗色 + UI 面板亮色
+4. CSS 变量化主题引擎，三套内置预设 + 自定义主题实时编辑，色盘/HEX 输入框同步修改即时生效
+5. 内置项目单击直接打开 index.html 预览，双击关闭侧边栏并渲染；取消右键复制功能
+6. 添加加载画面，主题初始化完成后淡出隐藏
+7. AI 配置保存成功/代码删除成功吐司提示
+
+## 更改
+
+1. 主题系统从双 CSS 文件切换改为 CSS 变量 + JS 引擎驱动，遵循 EDA UI 设计规范
+2. 按钮统一为品牌蓝白色，删除/危险按钮不再使用红色
+3. 全部 alert 弹窗替换为吐司非侵入式提示
+4. 删除已保存代码增加确认弹窗，去掉按钮点击时的警告吐司
+5. AI 编程按钮移至工具栏右侧，改名为 Copilot
+6. AI 配置弹窗布局改为标签与输入框同行排列，字号统一 12px
+7. 设置页面增加 overflow 滚动支持，修复布局溢出问题
+8. Temperature 从滑块改为数字输入框，移至预设名称下方
+9. 预设名称改为直接输入保存，去掉多余的改名按钮
+10. 去掉自定义主题的保存按钮，色盘修改实时生效
+
+## 修复
+
+1. 修复设置面板 isDark 检测依赖已删除 DOM 元素导致的空指针
+2. 修复 ACE_Config.js GetTheme/SetTheme 访问 null.disabled 崩溃
+3. 修复脚本加载顺序导致 ThemeEngine 未定义
+4. 修复 Ai_Chat.js defaultConfig 中 temperature 引用 chatConfig 导致的 TDZ 错误
+5. 修复设置面板滚动条未适配主题颜色
+6. 修复颜色选择器三位 hex 值显示为黑色
+7. 修复删除代码确认框回调格式错误
+8. 移除 Theme_Engine.js 与 ACE_Config.js 中重复的 GetTheme/SetTheme 定义
+9. 移除 Ai_Chat.js 中未使用的 populateFields 死代码
+10. 修复内置项目 index.html 资源引用不内联导致加载失败
+
 # 2.5.2
 
 ## 优化

@@ -119,11 +119,11 @@ class HTMLRenderer {
 	// 显示预览窗口
 	showPreviewWindow(htmlContent, fileName) {
 		// 创建模态框
-		const isDark = document.getElementById('theme-dark') && !document.getElementById('theme-dark').disabled;
-		const modalBg = isDark ? '#272822' : '#ffffff';
-		const modalBorder = isDark ? '#444' : '#d0d7de';
-		const textColor = isDark ? '#f8f8f2' : '#24292f';
-		const headerBg = isDark ? '#2d2e27' : '#f6f8fa';
+		const isDark = document.body.classList.contains('dark-theme');
+		const modalBg = isDark ? '#404040' : '#fff';
+		const modalBorder = isDark ? '#222' : '#d9d9d9';
+		const textColor = isDark ? '#e5e5e5' : '#333';
+		const headerBg = isDark ? '#353535' : '#f5f5f5';
 
 		const overlay = document.createElement('div');
 		overlay.id = 'html-preview-overlay';
