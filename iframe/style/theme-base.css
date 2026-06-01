@@ -181,7 +181,7 @@ html, body {
 	font-weight: bold; font-size: var(--eext-font-size);
 	border-bottom: 1px solid var(--eext-border-light);
 	display: flex; justify-content: space-between; align-items: center;
-	user-select: none; height: var(--eext-modal-header-height);
+	user-select: none; min-height: 28px;
 }
 
 .code-load-close-btn {
@@ -257,7 +257,7 @@ html, body {
 	border-bottom: 1px solid var(--eext-border-light);
 	position: relative; font-weight: bold; font-size: var(--eext-font-size);
 	user-select: none; background: var(--eext-bg-modal-header);
-	color: var(--eext-text-primary); height: var(--eext-modal-header-height);
+	color: var(--eext-text-primary); min-height: 28px;
 }
 
 .plugin-manager-close-btn {
@@ -434,7 +434,7 @@ html, body {
 	display: flex; justify-content: space-between; align-items: center;
 	background: var(--eext-bg-modal-header);
 	border-radius: var(--eext-modal-radius) var(--eext-modal-radius) 0 0;
-	height: var(--eext-modal-header-height);
+	min-height: 28px;
 }
 .ai-modal-title { font-weight: 600; font-size: var(--eext-font-size); color: var(--eext-text-primary); }
 
@@ -602,7 +602,7 @@ input:checked + .ai-slider:before { transform: translateX(20px); }
 	font-weight: bold; font-size: var(--eext-font-size); user-select: none;
 	background: var(--eext-bg-modal-header); color: var(--eext-text-primary);
 	display: flex; justify-content: space-between; align-items: center;
-	height: var(--eext-modal-header-height);
+	min-height: 28px;
 }
 .cs-header-right { display: flex; gap: 8px; align-items: center; }
 .cs-close-btn { cursor: pointer; font-size: 16px; line-height: 1; padding: 0 8px; border: none; background: none; color: var(--eext-text-tertiary); border-radius: 2px; transition: color 0.2s, background 0.2s; }

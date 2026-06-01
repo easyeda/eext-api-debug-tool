@@ -481,7 +481,8 @@ async function Code_OpenDeleteWindow(editor) {
 					eda.sys_Message.showToastMessage('数据库连接已断开，无法删除', 'info', 1);
 					return;
 				}
-				eda.sys_Dialog.showConfirmationMessage(`确认删除代码 "${item.name}"？`, '提示', '确认', '取消', async () => {
+				eda.sys_Dialog.showConfirmationMessage(`确认删除代码 "${item.name}"？`, '提示', '确认', '取消', async (confirmed) => {
+				if (!confirmed) return;
 				try {
 					const deleted = await CodeStore_DeleteCode(dbInstance, item.name);
 					if (deleted) {
