@@ -17,7 +17,7 @@
 3. 全部原生弹窗替换为吐司非侵入式提示
 4. 删除已保存代码增加确认弹窗，去掉按钮点击时的警告吐司
 5. AI 编程按钮移至工具栏右侧，改名为 Copilot
-6. AI 配置弹窗布局改为标签与输入框同行排列，字号统一 12px
+6. AI 配置弹窗布局改为标签与输入框同行排列，字号统一
 7. 设置页面增加 overflow 滚动支持，修复布局溢出问题
 8. Temperature 从滑块改为数字输入框，移至预设名称下方
 9. 预设名称改为直接输入保存，去掉多余的改名按钮
@@ -30,7 +30,7 @@
 3. 修复脚本加载顺序导致 ThemeEngine 未定义
 4. 修复 Ai_Chat.js defaultConfig 中 temperature 引用 chatConfig 导致的 TDZ 错误
 5. 修复设置面板滚动条未适配主题颜色
-6. 修复颜色选择器三位 hex 值显示为黑色
+6. 修复颜色选择器仅修改value未修改text导致的三位 hex 值显示为黑色的问题
 7. 修复删除代码确认框回调格式错误
 8. 移除 Theme_Engine.js 与 ACE_Config.js 中重复的 GetTheme/SetTheme 定义
 9. 移除 Ai_Chat.js 中未使用的 populateFields 死代码
