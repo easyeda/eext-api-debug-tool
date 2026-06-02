@@ -6,23 +6,27 @@ A lightweight, embeddable JavaScript code editor built on [Ace Editor](https://a
 
 ---
 
-![alt text](images/home.png)
+![img1](image/README/img1.png)
 
 ## API Auto-Generated Test Cases
 
-![alt text](images/example.gif)
+![img2](image/README/img2.gif)
 
 ## API Auto-Distinguish PCB and Schematic
 
-![alt text](images/分区.png)
+![img3](image/README/img3.png)
 
 ## Support Custom Completion & Edit Completion Parameters
 
-![alt text](images/补全.png)
+![img4](image/README/img4.png)
+
+## Three Built-in Styles and Custom Primitives
+
+![img5](image/README/img5.gif)
 
 ## HTML Online Preview with Path References
 
-![alt text](images/预览.png)
+![img6](image/README/img6.png)
 
 ## A Brand New Workflow-Based Plugin Development Approach
 
@@ -30,7 +34,7 @@ A lightweight, embeddable JavaScript code editor built on [Ace Editor](https://a
 
 ## Features
 
-- **Light and dark dual themes**: Eye-friendly dark style, consistent with developer habits
+- **Built-in themes and customization**: Primitive styles support customization, all colors can be switched
 - **JavaScript syntax highlighting & intelligent autocompletion**
 - **Top scrollable function sidebar** (reserved for future extensions)
 - **Custom dictionary support**: Internal API can be injected for intelligent hints
@@ -73,34 +77,6 @@ editor.completers.push({
 
 Supports dynamic dictionary updates, suitable for internal SDKs or platform APIs.
 
-## Development and Extension
-
-### Adding New Function Buttons
-
-Dynamically insert buttons into the left sidebar (you can run the following code in the editor to test):
-
-```js
-const li = document.createElement('li');
-const btn = Object.assign(document.createElement('button'), {
-	textContent: 'Save',
-	style: 'width:80px;height:36px;background:#272822;color:white;border:1px solid #666;border-radius:4px;font-size:14px;cursor:pointer;',
-});
-btn.onclick = () => eda.sys_Message.showToastMessage('Pretend to save the code', 'info', 1);
-document.querySelector('#sidebar ul').appendChild(li).appendChild(btn);
-```
-
-### Extension Suggestions
-
-- Add **Clear**, **Format**, **Export** buttons
-- Integrate `localStorage` for automatic code saving
-- Replace `eval()` with a sandboxed execution environment (e.g., `Function` constructor)
-
-## Notes
-
-- **`eval()` Security Risk**: Only use in trusted environments (e.g., internal EDA tools)
-- **Worker Disabled**: Avoids CSP restriction issues in EDA iframes
-- **Path-Sensitive**: Resource paths must be `/iframe/script/Ace_Editor/xxx.js` (case-sensitive)
-
 ## Open Source Dependencies
 
 ### Runtime Dependencies (distributed with the extension)
@@ -141,8 +117,8 @@ JSZip uses a dual license `(MIT OR GPL-3.0-or-later)`, and this project chooses 
 
 ## License
 
-This project is released under the [Apache-2.0](LICENSE) license.  
+This project is released under the [Apache-2.0](LICENSE) license.
 The UI and integration code may be freely used for internal development.
 
-Made with ❤️ for EDA developers  
+Made with ❤️ for EDA developers
 Happy Coding!
