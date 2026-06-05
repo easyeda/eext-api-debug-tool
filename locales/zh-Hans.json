@@ -1,4 +1,27 @@
 {
 	"About": "关于",
-	"EasyEDA extension SDK v": "嘉立创EDA 扩展 SDK v${1}"
+	"EasyEDA extension SDK v": "嘉立创EDA 扩展 SDK v${1}",
+	"Loading editor...": "正在加载编辑器...",
+	"Run": "运行",
+	"File": "文件",
+	"Settings": "设置",
+	"Copilot": "Copilot",
+	"All Projects": "所有项目",
+	"Project Design": "项目设计",
+	"Common Code": "常用代码",
+	"Search projects...": "搜索项目...",
+	"Import": "导入",
+	"Import Project": "导入项目",
+	"Search code...": "搜索代码...",
+	"New Conversation": "新建对话",
+	"Chat Settings": "聊天设置",
+	"Hello! I am your AI coding assistant. How can I help you?": "你好！我是你的 AI 编程助手。有什么可以帮你的吗？",
+	"Enter code questions or instructions... (Shift+Enter for new line)": "输入代码问题或指令... (Shift+Enter 换行)",
+	"Send": "发送",
+	"Preview": "预览",
+	"Stop": "停止",
+	"HTML preview opened": "HTML 预览已打开",
+	"Markdown preview opened": "Markdown 预览已打开",
+	"External script reference detected, but not in project. External scripts cannot be loaded. Please create a project or inline the script.": "检测到外部脚本引用，但未在项目中。外部脚本将无法加载，请创建项目或内联脚本。",
+	"Execution failed: content is not valid JS, HTML, or MD format.": "执行失败，内容不是有效的 JS、HTML 或 MD 格式。"
 }

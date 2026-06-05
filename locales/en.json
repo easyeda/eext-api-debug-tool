@@ -1,4 +1,27 @@
 {
 	"About": "About",
-	"EasyEDA extension SDK v": "EasyEDA extension SDK v${1}"
+	"EasyEDA extension SDK v": "EasyEDA extension SDK v${1}",
+	"Loading editor...": "Loading editor...",
+	"Run": "Run",
+	"File": "File",
+	"Settings": "Settings",
+	"Copilot": "Copilot",
+	"All Projects": "All Projects",
+	"Project Design": "Project Design",
+	"Common Code": "Common Code",
+	"Search projects...": "Search projects...",
+	"Import": "Import",
+	"Import Project": "Import Project",
+	"Search code...": "Search code...",
+	"New Conversation": "New Conversation",
+	"Chat Settings": "Chat Settings",
+	"Hello! I am your AI coding assistant. How can I help you?": "Hello! I am your AI coding assistant. How can I help you?",
+	"Enter code questions or instructions... (Shift+Enter for new line)": "Enter code questions or instructions... (Shift+Enter for new line)",
+	"Send": "Send",
+	"Preview": "Preview",
+	"Stop": "Stop",
+	"HTML preview opened": "HTML preview opened",
+	"Markdown preview opened": "Markdown preview opened",
+	"External script reference detected, but not in project. External scripts cannot be loaded. Please create a project or inline the script.": "External script reference detected, but not in project. External scripts cannot be loaded. Please create a project or inline the script.",
+	"Execution failed: content is not valid JS, HTML, or MD format.": "Execution failed: content is not valid JS, HTML, or MD format."
 }
