@@ -20,5 +20,27 @@ export async function openScriptTool(): void {
 	eda.sys_IFrame.openIFrame('iframe/main/index.html', parseInt(width || '1200', 10), parseInt(height || '500', 10), 'ScriptTool', {
 		maximizeButton: true,
 		minimizeButton: true,
+		onBeforeCloseCallFn: () => {
+				// 取消关闭，异步检查后再决定
+				setTimeout(async () => {
+					try {
+						var hasDirty = await eda.sys_Storage.getExtensionUserConfig('__has_dirty');
+						if (hasDirty === 'true') {
+							var result = await eda.sys_Dialog.showConfirmationMessage(
+								'有未保存的文件，确定关闭窗口？',
+								'关闭确认',
+							);
+							if (result) {
+								await eda.sys_IFrame.closeIFrame('ScriptTool');
+							}
+						} else {
+							await eda.sys_IFrame.closeIFrame('ScriptTool');
+						}
+					} catch(e) {
+						await eda.sys_IFrame.closeIFrame('ScriptTool');
+					}
+				}, 50);
+				return false;
+			},
 	});
 }

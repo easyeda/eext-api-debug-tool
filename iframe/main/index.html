@@ -170,6 +170,7 @@
 								return `<pre><code class="hljs">${highlighted}</code></pre>`;
 							}
 						};
+
 						marked.use({ renderer });
 						const rendered = marked.parse(mdContent);
 
@@ -305,7 +306,10 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					// 初始化 AI 按钮状态
 					GetVibeCodingConfig();
 
-					// 加载并执行已保存插件
+					// 初始化脏标记
+				try { eda.sys_Storage.setExtensionUserConfig('__has_dirty', 'false'); } catch(e) {}
+
+				// 加载并执行已保存插件
 					ExtStore_LoadAndRunAllPlugins();
 					// 加载快捷按钮列表
 					Code_LoadBtnListFromDB(editor);
@@ -399,6 +403,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 							var tab = this._tabs.find(function(t) { return t.key === key; });
 							if (tab) { tab.dirty = !!dirty; }
 							this.render();
+							_updateDirtyFlag();
 						},
 
 						// 通过 key 关闭 tab
@@ -428,6 +433,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 							}
 
 							this._tabs.splice(idx, 1);
+							_updateDirtyFlag();
 							if (this._activeKey === key) {
 								var next = this._tabs.length > 0 ? this._tabs[this._tabs.length-1] : null;
 								this._activeKey = next ? next.key : null;
@@ -477,6 +483,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 									}
 									if (window.fileTreeUI) await window.fileTreeUI.loadFile(tab.fileName);
 								};
+
 								var closeBtn = document.createElement("button");
 								closeBtn.className = "tab-close";
 								closeBtn.textContent = "x";
@@ -489,6 +496,10 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 							});
 						},
 					};
+
+					function _updateDirtyFlag() {
+						try { eda.sys_Storage.setExtensionUserConfig('__has_dirty', TabManager._tabs.some(function(t) { return t.dirty; }) ? 'true' : 'false'); } catch(e) {}
+					}
 
 
 					// 注册右键跳转文档
