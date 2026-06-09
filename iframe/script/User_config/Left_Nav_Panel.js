@@ -291,32 +291,29 @@ class LeftNavPanel {
 			const isBuiltIn = item.dataset.isBuiltin === 'true';
 			const projectId = isBuiltIn ? rawId : parseInt(rawId);
 
-			// 单击：内置项目停止预览+恢复侧边栏，用户项目选中
-			item.addEventListener('click', () => {
+			// 单击：内置项目直接加载，用户项目选中
+			item.addEventListener('click', async () => {
 				if (isBuiltIn) {
 					const previewContainer = document.getElementById('html-preview-container');
 					if (previewContainer && previewContainer.classList.contains('active')) {
-						// 停止预览，恢复编辑器和侧边栏
 						previewContainer.classList.remove('active');
 						const editorDiv = document.getElementById('editor');
 						if (editorDiv) editorDiv.style.display = 'block';
 						const previewFrame = document.getElementById('html-preview-frame');
 						if (previewFrame) previewFrame.src = 'about:blank';
 						if (!this.sidebarExpanded) this.toggleSidebar();
+						return;
 					}
+					if (this.sidebarExpanded) this.toggleSidebar();
+					await this.openBuiltInProject(projectId);
 				} else {
 					this.selectProject(projectId);
 				}
 			});
 
-			// 双击：内置项目关闭侧边栏 + 渲染到编辑器，用户项目打开
+			// 双击：用户项目打开
 			item.addEventListener('dblclick', async () => {
-				if (isBuiltIn) {
-					if (this.sidebarExpanded) this.toggleSidebar();
-					await this.openBuiltInProject(projectId);
-				} else {
-					await this.openProject(projectId);
-				}
+				if (!isBuiltIn) await this.openProject(projectId);
 			});
 
 			// 右键菜单
