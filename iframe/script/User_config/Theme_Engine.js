@@ -33,7 +33,7 @@ const THEME_PRESETS = {
 			'input-focus-ring': '0 0 0 2px rgba(24,144,255,0.2)',
 			'chat-bubble-system-bg': '#f5f5f5', 'chat-bubble-system-border': '#e9e9e9',
 			'chat-bubble-user-bg': '#1890ff', 'chat-bubble-user-color': '#fff',
-			'editor-bg': '#fff',
+			'editor-bg': '#fff', 'editor-line-bg': '#f0f0f0',
 		},
 	},
 
@@ -66,7 +66,7 @@ const THEME_PRESETS = {
 			'input-focus-ring': '0 0 0 2px rgba(24,144,255,0.2)',
 			'chat-bubble-system-bg': '#353535', 'chat-bubble-system-border': '#222',
 			'chat-bubble-user-bg': '#1890ff', 'chat-bubble-user-color': '#fff',
-			'editor-bg': '#272822',
+			'editor-bg': '#272822', 'editor-line-bg': '#3a3a3a',
 		},
 	},
 
@@ -99,7 +99,7 @@ const THEME_PRESETS = {
 			'input-focus-ring': '0 0 0 2px rgba(24,144,255,0.2)',
 			'chat-bubble-system-bg': '#f5f5f5', 'chat-bubble-system-border': '#e9e9e9',
 			'chat-bubble-user-bg': '#1890ff', 'chat-bubble-user-color': '#fff',
-			'editor-bg': '#272822',
+			'editor-bg': '#272822', 'editor-line-bg': '#3a3a3a',
 		},
 	},
 };

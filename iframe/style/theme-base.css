@@ -123,6 +123,8 @@ html, body {
 
 #editor-container { flex: 1; height: 100%; }
 #editor { position: relative; height: 100%; width: 100%; background: var(--eext-editor-bg); }
+#editor .ace_active-line { background: var(--eext-editor-line-bg) !important; }
+#editor .ace_selection { background: var(--eext-editor-line-bg) !important; }
 
 #editor::-webkit-scrollbar,
 #editor .ace_scrollbar-v::-webkit-scrollbar,

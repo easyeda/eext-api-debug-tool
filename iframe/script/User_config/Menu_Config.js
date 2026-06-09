@@ -22,7 +22,7 @@ function showFileContextMenu(e, editor) {
 		position: fixed; z-index: 10000;
 		background: ${menuBg}; border: 1px solid ${menuBorder};
 		box-shadow: 2px 2px 8px ${menuShadow}; display: block;
-		font-size: 14px; min-width: 120px; border-radius: 4px; padding: 4px 0;
+		font-size: 12px; min-width: 120px; border-radius: 4px; padding: 4px 0;
 	`;
 
 	const menuItems = [
@@ -32,7 +32,7 @@ function showFileContextMenu(e, editor) {
 		{ text: '保存代码', action: () => Code_SaveCode(editor) },
 		{ text: '删除已保存代码', action: () => Code_OpenDeleteWindow(editor) },
 		{ text: '保存到快捷按钮', action: () => Code_SaveToBtnList(editor) },
-		{ text: '保存到启动项', action: () => ExtStore_SavePlugin(editor) },
+		{ text: '保存为插件', action: () => ExtStore_SavePlugin(editor, true) },
 	];
 
 	menu.innerHTML = '';
@@ -73,6 +73,36 @@ function showFileContextMenu(e, editor) {
    设置模态框 — EDA 系统设置风格
    左侧菜单 + 右侧内容 + 底部按钮
    ============================================ */
+/**
+ * 从 CSS 变量读取实际渲染颜色，转换为 #rrggbb 格式
+ */
+function _readCSSColor(varName) {
+	var val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+	if (!val) {
+		val = document.documentElement.style.getPropertyValue(varName).trim();
+	}
+	if (!val || val === 'transparent' || val === 'none') return '#000';
+	if (val.startsWith('#')) {
+		if (val.length === 7) return val;
+		if (val.length === 4) {
+			return '#' + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
+		}
+		return val;
+	}
+	var m = val.match(/[\d.]+/g);
+	if (m && m.length >= 3) {
+		var r = parseInt(m[0]), g = parseInt(m[1]), b = parseInt(m[2]);
+		if (m.length === 4) {
+			var a = parseFloat(m[3]);
+			if (a < 1) { r = Math.round(r * a + 255 * (1 - a)); g = Math.round(g * a + 255 * (1 - a)); b = Math.round(b * a + 255 * (1 - a)); }
+		}
+		return '#' + [r, g, b].map(function(x) {
+			return Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0');
+		}).join('');
+	}
+	return '#000';
+}
+
 function showSettingsModal(editor, light_theme, dark_theme) {
 	if (document.getElementById('settings-modal-overlay')) return;
 
@@ -113,7 +143,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	const menuItems = [
 		{ id: 'general', label: '通用' },
 		{ id: 'editor', label: '编辑器' },
-		{ id: 'ai', label: 'AI 配置' },
 		{ id: 'shortcuts', label: '快捷键' },
 		{ id: 'plugins', label: '插件管理' },
 		{ id: 'completer', label: '补全仓库' },
@@ -204,12 +233,12 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			/* Color customization */
 			const sec3 = section('图元颜色');
-			const keys = ['bg-toolbar','bg-panel','bg-input','editor-bg','text-primary','border'];
-			const labels = {'bg-toolbar':'顶部菜单','bg-panel':'左侧面板背景','bg-input':'输入框','editor-bg':'编辑器','text-primary':'左侧面板文字','border':'边框'};
+			const keys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
+			const labels = {'bg-toolbar':'顶部菜单','bg-panel':'左侧面板背景','bg-input':'输入框','editor-bg':'编辑器背景','editor-line-bg':'编辑器选中行','text-primary':'左侧面板文字','border':'边框'};
 			keys.forEach(k => {
 				const cr = document.createElement('div');
 				cr.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
-				var domVal = document.documentElement.style.getPropertyValue('--eext-'+k).trim() || getComputedStyle(document.documentElement).getPropertyValue('--eext-'+k).trim(); if (domVal.startsWith('rgb')) { var m2 = domVal.match(/[\d.]+/g); if (m2 && m2.length >= 3) domVal = '#' + m2.slice(0,3).map(function(x) { return parseInt(x).toString(16).padStart(2,'0'); }).join(''); }
+				var domVal = _readCSSColor('--eext-'+k);
 				const sw = document.createElement('input'); sw.type = 'color'; sw.value = domVal || '#000';
 				sw.style.cssText = 'width:24px;height:24px;border:1px solid var(--eext-border);border-radius:2px;padding:0;cursor:pointer;';
 				sw.setAttribute('data-key', k);
@@ -250,41 +279,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			} catch(e) {}
 			row.appendChild(label); row.appendChild(sw);
 			contentPane.appendChild(row);
-		} else if (activeMenu === 'ai') {
-			section('AI 配置');
-			/* Inline AI config form */
-			const profiles = JSON.parse(localStorage.getItem('ai_profiles') || 'null') || [{name:'默认',apiKey:'',baseUrl:'https://api.openai.com/v1',model:'gpt-4',multiTurn:true,stream:true,temperature:0.7}];
-			const activeIdx = parseInt(localStorage.getItem('ai_active_profile')) || 0;
-			const cfg = profiles[activeIdx] || profiles[0];
-			const aiFields = [
-				{ label: 'API Key', id: 'cfg-api-key', val: cfg.apiKey||'', type: 'password', ph: '' },
-				{ label: 'Base URL', id: 'cfg-base-url', val: cfg.baseUrl||'', type: 'text', ph: '' },
-				{ label: 'Model', id: 'cfg-model', val: cfg.model||'', type: 'text', ph: '' },
-				{ label: 'Temperature', id: 'cfg-temperature', val: cfg.temperature??0.7, type: 'number', ph: '0.7' },
-			];
-			aiFields.forEach(f => {
-				const grp = document.createElement('div');
-				grp.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;';
-				const lbl = document.createElement('span');
-				lbl.textContent = f.label; lbl.style.cssText = 'font-size:12px;color:var(--eext-text-primary);width:80px;flex-shrink:0;';
-				const inp = document.createElement('input');
-				inp.type = f.type; inp.id = f.id; inp.value = String(f.val); inp.placeholder = f.ph;
-				inp.style.cssText = 'flex:1;height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;color:var(--eext-text-primary);background:var(--eext-bg-input);';
-				grp.appendChild(lbl); grp.appendChild(inp);
-				contentPane.appendChild(grp);
-			});
-			const saveAi = document.createElement('button');
-			saveAi.textContent = '保存 AI 配置';
-			saveAi.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:12px;margin-top:8px;';
-			saveAi.onclick = () => {
-				cfg.apiKey = document.getElementById('cfg-api-key')?.value?.trim() || '';
-				cfg.baseUrl = document.getElementById('cfg-base-url')?.value?.trim()?.replace(/\/$/,'') || '';
-				cfg.model = document.getElementById('cfg-model')?.value?.trim() || 'gpt-4';
-				cfg.temperature = parseFloat(document.getElementById('cfg-temperature')?.value) || 0.7;
-				localStorage.setItem('ai_profiles', JSON.stringify(profiles));
-				eda.sys_Message.showToastMessage('AI 配置已保存', 'success', 1);
-			};
-			contentPane.appendChild(saveAi);
 		} else if (activeMenu === 'shortcuts') {
 			section('快捷键');
 			const platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
@@ -310,45 +304,164 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			})();
 		} else if (activeMenu === 'plugins') {
 			section('插件管理');
-			const list = document.createElement('div');
+			var list = document.createElement('div');
 			list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
-			(async () => {
+			contentPane.appendChild(list);
+
+			async function loadPluginList() {
+				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">加载中...</div>';
 				try {
-					const plugins = typeof ExtStore_GetExtList === 'function' ? await ExtStore_GetExtList() : [];
+					var plugins = typeof ExtStore_GetExtList === 'function' ? await ExtStore_GetExtList() : [];
 					if (!plugins || plugins.length === 0) {
-						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);">暂无已保存的插件。</div>';
+						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">暂无已保存的插件</div>';
 					} else {
-						plugins.forEach(p => {
-							const item = document.createElement('div');
-							item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--eext-bg-item);border-radius:2px;';
-							item.innerHTML = `<span style="font-size:12px;color:var(--eext-text-primary);">${p.name||'未命名插件'}</span>`;
-							contentPane.appendChild(item);
+						list.innerHTML = '';
+						plugins.forEach(function(p) {
+							var item = document.createElement('div');
+							item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--eext-border);';
+
+							// Enable toggle
+							var toggle = document.createElement('label');
+							toggle.style.cssText = 'position:relative;display:inline-block;width:32px;height:18px;flex-shrink:0;';
+							var cb = document.createElement('input');
+							cb.type = 'checkbox';
+							cb.checked = p.enabled !== false;
+							cb.style.cssText = 'opacity:0;width:0;height:0;';
+							var sl = document.createElement('span');
+							sl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:' + (cb.checked ? 'var(--eext-brand)' : 'var(--eext-border)') + ';border-radius:18px;cursor:pointer;transition:background 0.2s;';
+							sl.innerHTML = '<span style="position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform 0.2s;' + (cb.checked ? 'transform:translateX(14px)' : '') + ';"></span>';
+							toggle.appendChild(cb);
+							toggle.appendChild(sl);
+							cb.onchange = async function() {
+								var newState = cb.checked;
+								sl.style.background = newState ? 'var(--eext-brand)' : 'var(--eext-border)';
+								sl.querySelector('span').style.transform = newState ? 'translateX(14px)' : '';
+								try {
+									await ExtStore_TogglePlugin(p.name, newState);
+									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已' + (newState ? '启用' : '禁用'), 'success', 1);
+								} catch(err) {
+									cb.checked = !newState;
+									sl.style.background = cb.checked ? 'var(--eext-brand)' : 'var(--eext-border)';
+									sl.querySelector('span').style.transform = cb.checked ? 'translateX(14px)' : '';
+									eda.sys_Message.showToastMessage('操作失败: ' + err.message, 'error', 2);
+								}
+							};
+							item.appendChild(toggle);
+
+							// Plugin name
+							var nameSpan = document.createElement('span');
+							nameSpan.textContent = p.name || '未命名';
+							nameSpan.title = p.name;
+							nameSpan.style.cssText = 'flex:1;font-size:12px;color:var(--eext-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+							item.appendChild(nameSpan);
+
+							// Rename button
+							var renameBtn = document.createElement('button');
+							renameBtn.textContent = '重命名';
+							renameBtn.style.cssText = 'height:24px;padding:0 8px;background:var(--eext-btn-bg);color:var(--eext-text-primary);border:1px solid var(--eext-btn-border);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							renameBtn.onclick = async function() {
+								var result = await Swal.fire({
+									title: '重命名插件',
+									input: 'text',
+									inputValue: p.name,
+									inputLabel: '新名称',
+									showCancelButton: true,
+									confirmButtonText: '确定',
+									cancelButtonText: '取消',
+									inputValidator: function(value) {
+										if (!value || !value.trim()) return '请输入名称';
+										if (value.trim() === p.name) return '名称未改变';
+									},
+								});
+								if (result.isConfirmed) {
+									try {
+										await ExtStore_RenameExt(p.name, result.value.trim());
+										await loadPluginList();
+										eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
+									} catch(err) {
+										eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+									}
+								}
+							};
+							item.appendChild(renameBtn);
+
+							// Load button
+							var loadBtn = document.createElement('button');
+							loadBtn.textContent = '加载';
+							loadBtn.style.cssText = 'height:24px;padding:0 8px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							loadBtn.onclick = async function() {
+								try {
+									var db = await ExtStore_Init();
+									var tx = db.transaction(['ExtStore'], 'readonly');
+									var store = tx.objectStore('ExtStore');
+									var req = store.index('name').get(p.name);
+									req.onsuccess = function() {
+										if (req.result && req.result.code) {
+											editor.setValue(req.result.code, -1);
+											editor.clearSelection();
+											eda.sys_Message.showToastMessage('已加载：' + p.name, 'success', 1);
+										}
+									};
+								} catch(err) {
+									eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
+								}
+							};
+							item.appendChild(loadBtn);
+
+							// Delete button
+							var delBtn = document.createElement('button');
+							delBtn.textContent = '删除';
+							delBtn.style.cssText = 'height:24px;padding:0 8px;background:transparent;color:var(--eext-error);border:1px solid var(--eext-error);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							delBtn.onclick = async function() {
+								var confirmResult = await Swal.fire({
+									title: '确认删除',
+									html: '确定删除插件 "<strong>' + p.name + '</strong>"？',
+									icon: 'warning',
+									showCancelButton: true,
+									confirmButtonText: '删除',
+									cancelButtonText: '取消',
+									confirmButtonColor: '#d33',
+								});
+								if (!confirmResult.isConfirmed) return;
+								try {
+									await ExtStore_DeleteExt(p.name);
+									await loadPluginList();
+									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已删除', 'info', 1);
+								} catch(err) {
+									eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
+								}
+							};
+							item.appendChild(delBtn);
+
+							list.appendChild(item);
 						});
 					}
-				} catch(e) { list.textContent = '加载失败。'; }
-			})();
-			list.style.marginTop = '0';
-			contentPane.appendChild(list);
+				} catch(err) {
+					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">加载失败：' + err.message + '</div>';
+				}
+			}
+
+			loadPluginList();
 		} else if (activeMenu === 'completer') {
 			section('补全仓库');
 			const list = document.createElement('div');
-			list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
-			(async () => {
+			list.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+			contentPane.appendChild(list);
+			async function loadCompleters() {
+				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">加载中...</div>';
 				try {
 					const items = await new Promise(function(r) { try { var x = indexedDB.open('UserCompleterStore', 1); x.onsuccess = function() { var t = x.result.transaction('completions','readonly'); var g = t.objectStore('completions').getAll(); g.onsuccess = function() { r(g.result || []); }; g.onerror = function() { r([]); }; }; x.onerror = function() { r([]); }; } catch(e) { r([]); } });
 					if (!items || items.length === 0) {
-						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);">暂无自定义补全项。</div>';
-					} else {
-						items.forEach(c => {
-							const item = document.createElement('div');
-							item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--eext-bg-item);border-radius:2px;';
-							item.innerHTML = `<span style="font-size:12px;color:var(--eext-text-primary);">${c.methodPath||c.caption||'未命名'}</span>`;
-							contentPane.appendChild(item);
-						});
+						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">暂无自定义补全项。</div>';
+						return;
 					}
-				} catch(e) { list.textContent = '加载失败。'; }
-			})();
-			contentPane.appendChild(list);
+					list.innerHTML = '';
+					items.forEach(function(c) { list.appendChild(_buildCompleterCard(c, editor, loadCompleters)); });
+				} catch(e) {
+					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">加载失败: ' + e.message + '</div>';
+				}
+			}
+			loadCompleters();
 		}
 	}
 
@@ -371,7 +484,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			if (Object.keys(nv).length === 0) return;
 			const cur = ThemeEngine.getCurrent();
 			const nm = cur === 'dark' ? '自定义暗色' : cur === 'light' ? '自定义亮色' : '自定义';
-			ThemeEngine.getCurrentVars().then(cv => ThemeEngine.saveCustom(nm, {...cv, ...nv}, nm)).then(n => { if (n) ThemeEngine.apply(n); });
+var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}, nm).then(function(n) { if (n) ThemeEngine.apply(n); });
 		}, 500);
 	}
 
@@ -395,4 +508,229 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	/* Initial render */
 	renderMenu();
 	renderContent();
+}
+
+/* ============================================
+   补全仓库 - 卡片渲染与编辑
+   ============================================ */
+
+/**
+ * 构建单个补全项的卡片 DOM
+ * @param {Object} rec - 补全记录 {id, caption, value, params, description}
+ * @param {Object} editor - ACE 编辑器实例
+ * @param {Function} reloadFn - 重新加载列表的回调
+ */
+function _buildCompleterCard(rec, editor, reloadFn) {
+	const card = document.createElement("div");
+	card.className = "cs-item";
+
+	/* 信息区 */
+	const info = document.createElement("div");
+	info.className = "cs-item-info";
+
+	const caption = document.createElement("span");
+	caption.className = "cs-item-caption";
+	caption.textContent = rec.caption || "未命名";
+	caption.title = "名称: " + (rec.caption || "未命名");
+	info.appendChild(caption);
+
+	const value = document.createElement("span");
+	value.className = "cs-item-value";
+	value.textContent = rec.value || "";
+	value.title = "补全值: " + (rec.value || "");
+	info.appendChild(value);
+
+	if (rec.description) {
+		const desc = document.createElement("span");
+		desc.className = "cs-item-desc";
+		desc.textContent = rec.description;
+		desc.title = "描述: " + rec.description;
+		info.appendChild(desc);
+	}
+
+	if (rec.params && rec.params.length > 0) {
+		const params = document.createElement("span");
+		params.className = "cs-item-params";
+		params.textContent = "参数: " + rec.params.join(", ");
+		info.appendChild(params);
+	}
+
+	card.appendChild(info);
+
+	/* 操作按钮 */
+	const actions = document.createElement("div");
+	actions.className = "cs-item-actions";
+
+	const editBtn = document.createElement("button");
+	editBtn.className = "cs-btn cs-btn-edit";
+	editBtn.textContent = "编辑";
+	editBtn.onclick = function() {
+		if (card.querySelector(".cs-edit-form")) return;
+		card.appendChild(_buildCompleterEditForm(rec, editor, card, reloadFn));
+	};
+	actions.appendChild(editBtn);
+
+	const delBtn = document.createElement("button");
+	delBtn.className = "cs-btn cs-btn-delete";
+	delBtn.textContent = "删除";
+	delBtn.onclick = function() {
+		eda.sys_Dialog.showConfirmationMessage(
+			"确定删除补全项 \"" + (rec.caption || "未命名") + "\" 吗？此操作不可撤销。",
+			"提示", "确认", "取消",
+			async function(confirmed) {
+				if (!confirmed) return;
+				try {
+					await _deleteCompleterById(rec.id);
+					if (typeof _removeUserCompleterFromEditor === "function") {
+						_removeUserCompleterFromEditor(editor);
+					}
+					/* 重新注册剩余补全项 */
+					try {
+						const db = await UserCompleterStore_Init();
+						const all = await new Promise(function(res, rej) {
+							const tx = db.transaction(["completions"], "readonly");
+							const req = tx.objectStore("completions").getAll();
+							req.onsuccess = function() { res(req.result || []); };
+							req.onerror = rej;
+						});
+						if (all.length > 0 && typeof _registerUserCompleters === "function") {
+							_registerUserCompleters(editor, all);
+						}
+					} catch(e) {}
+					if (window.leftNavPanel && window.leftNavPanel.loadCompleterStore) {
+						window.leftNavPanel.loadCompleterStore();
+					}
+					reloadFn();
+					eda.sys_Message.showToastMessage("已删除: " + (rec.caption || "未命名"), "success", 1);
+				} catch(err) {
+					eda.sys_Message.showToastMessage("删除失败: " + err.message, "error", 1);
+				}
+			}
+		);
+	};
+	actions.appendChild(delBtn);
+
+	card.appendChild(actions);
+	return card;
+}
+
+/**
+ * 构建补全项的内联编辑表单
+ * @param {Object} rec - 补全记录
+ * @param {Object} editor - ACE 编辑器实例
+ * @param {HTMLElement} card - 卡片容器
+ * @param {Function} reloadFn - 重新加载列表的回调
+ */
+function _buildCompleterEditForm(rec, editor, card, reloadFn) {
+	const form = document.createElement("div");
+	form.className = "cs-edit-form";
+
+	function addRow(label, val, placeholder, inputId) {
+		const row = document.createElement("div");
+		row.className = "cs-edit-row";
+		const lbl = document.createElement("label");
+		lbl.textContent = label;
+		const inp = document.createElement("input");
+		inp.className = "cs-edit-input";
+		inp.value = val || "";
+		inp.placeholder = placeholder || "";
+		inp.id = inputId;
+		row.appendChild(lbl);
+		row.appendChild(inp);
+		form.appendChild(row);
+		return inp;
+	}
+
+	const inpCaption = addRow("名称:", rec.caption || "", "补全显示名称（中文映射）", "cs-edit-caption");
+	const inpValue = addRow("补全值:", rec.value || "", "选中后插入的代码内容", "cs-edit-value");
+	const inpDesc = addRow("描述:", rec.description || "", "补全提示说明", "cs-edit-desc");
+
+	const btnRow = document.createElement("div");
+	btnRow.className = "cs-edit-actions";
+
+	const saveBtn = document.createElement("button");
+	saveBtn.className = "cs-btn cs-btn-save";
+	saveBtn.textContent = "保存";
+	saveBtn.onclick = async function() {
+		const newCaption = inpCaption.value.trim();
+		const newValue = inpValue.value.trim();
+		const newDesc = inpDesc.value.trim();
+
+		if (!newCaption) { eda.sys_Message.showToastMessage("名称不能为空", "warn", 1); return; }
+		if (!newValue) { eda.sys_Message.showToastMessage("补全值不能为空", "warn", 1); return; }
+
+		/* 自动提取参数 */
+		var newParams = [];
+		if (typeof _parseLineForCompletion === "function") {
+			var parsed = _parseLineForCompletion(newValue);
+			if (parsed && parsed.params) newParams = parsed.params;
+		}
+
+		saveBtn.textContent = "保存中...";
+		saveBtn.disabled = true;
+		try {
+			if (typeof _updateCompleter === "function") {
+				await _updateCompleter(rec.id, {
+					caption: newCaption,
+					value: newValue,
+					params: newParams,
+					description: newDesc,
+				});
+			} else {
+				/* 回退：手动更新 IndexedDB */
+				const db = await UserCompleterStore_Init();
+				await new Promise(function(resolve, reject) {
+					const tx = db.transaction(["completions"], "readwrite");
+					const store = tx.objectStore("completions");
+					const getReq = store.get(rec.id);
+					getReq.onsuccess = function() {
+						const record = getReq.result;
+						if (!record) return reject(new Error("记录不存在"));
+						Object.assign(record, { caption: newCaption, value: newValue, params: newParams, description: newDesc });
+						const putReq = store.put(record);
+						putReq.onsuccess = resolve;
+						putReq.onerror = function() { reject(putReq.error); };
+					};
+					getReq.onerror = function() { reject(getReq.error); };
+				});
+			}
+			/* 刷新编辑器补全器 */
+			if (typeof _removeUserCompleterFromEditor === "function") {
+				_removeUserCompleterFromEditor(editor);
+			}
+			try {
+				const db = await UserCompleterStore_Init();
+				const all = await new Promise(function(res, rej) {
+					const tx = db.transaction(["completions"], "readonly");
+					const req = tx.objectStore("completions").getAll();
+					req.onsuccess = function() { res(req.result || []); };
+					req.onerror = rej;
+				});
+				if (all.length > 0 && typeof _registerUserCompleters === "function") {
+					_registerUserCompleters(editor, all);
+				}
+			} catch(e) {}
+			if (window.leftNavPanel && window.leftNavPanel.loadCompleterStore) {
+				window.leftNavPanel.loadCompleterStore();
+			}
+			reloadFn();
+			eda.sys_Message.showToastMessage("已更新: " + newCaption, "success", 1);
+		} catch(err) {
+			eda.sys_Message.showToastMessage("更新失败: " + err.message, "error", 1);
+			saveBtn.textContent = "保存";
+			saveBtn.disabled = false;
+		}
+	};
+	btnRow.appendChild(saveBtn);
+
+	const cancelBtn = document.createElement("button");
+	cancelBtn.className = "cs-btn cs-btn-cancel";
+	cancelBtn.textContent = "取消";
+	cancelBtn.onclick = function() { form.remove(); };
+	btnRow.appendChild(cancelBtn);
+
+	form.appendChild(btnRow);
+	/* 自动聚焦到名称输入框 */
+	setTimeout(function() { inpCaption.focus(); }, 50);
+	return form;
 }

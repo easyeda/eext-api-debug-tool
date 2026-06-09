@@ -33,19 +33,30 @@ function _buildCompletionInsertText(item) {
 function _selectFirstParam(editor, text, startRow, startCol) {
 	var parenIdx = text.indexOf('(');
 	if (parenIdx === -1) return;
-	var inner = text.substring(parenIdx + 1, text.lastIndexOf(')'));
-	if (!inner || !inner.trim()) return;
-	var firstParam = inner.split(',')[0].trim();
-	if (!firstParam) return;
+	var suffix = text.substring(parenIdx + 1);
+	var closeIdx = suffix.lastIndexOf(')');
+	if (closeIdx === -1) return;
+	var inner = suffix.substring(0, closeIdx);
+
 	var lines = text.substring(0, parenIdx + 1).split('\n');
-	var paramRow = startRow + lines.length - 1;
-	var paramStartCol = lines.length > 1 ? lines[lines.length - 1].length : startCol + lines[0].length;
-	var searchLine = editor.session.getLine(paramRow);
-	var paramIdx = searchLine.indexOf(firstParam, paramStartCol);
-	if (paramIdx === -1) return;
+	var cursorRow = startRow + lines.length - 1;
+	var cursorCol = lines.length > 1 ? lines[lines.length - 1].length : startCol + lines[0].length;
+
+	// M-gM-EM-:M-fM-^KM-,M-eM-^OM-7M-oM-<M-^ZM-eM-^EM-^IM-fM- M-^GM-eM-.M-^ZM-dM-=M-^MM-eM-^\M-(M-fM-^KM-,M-eM-^OM-7M-eM-^FM-^E
+	if (!inner || !inner.trim()) {
+		editor.selection.moveTo(cursorRow, cursorCol);
+		return;
+	}
+
+	// M-fM-^\M-^IM-eM-^OM-^BM-fM-^UM-0M-oM-<M-^ZM-iM-^@M-^IM-dM-8M--M-gM-,M-,M-dM-8M-^@M-dM-8M-*M-eM-^OM-^BM-fM-^UM-0
+	var firstParam = inner.split(',')[0].trim();
+	if (!firstParam) { editor.selection.moveTo(cursorRow, cursorCol); return; }
+	var searchLine = editor.session.getLine(cursorRow);
+	var paramIdx = searchLine.indexOf(firstParam, cursorCol);
+	if (paramIdx === -1) { editor.selection.moveTo(cursorRow, cursorCol); return; }
 	editor.selection.setRange({
-		start: { row: paramRow, column: paramIdx },
-		end: { row: paramRow, column: paramIdx + firstParam.length },
+		start: { row: cursorRow, column: paramIdx },
+		end: { row: cursorRow, column: paramIdx + firstParam.length },
 	});
 }
 
@@ -731,7 +742,7 @@ async function Code_LoadBtnListFromDB(editor) {
 // 初始化插件数据库
 function ExtStore_Init() {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('ExtStore', 1);
+		const request = indexedDB.open('ExtStore', 2);
 		request.onupgradeneeded = (e) => {
 			const db = e.target.result;
 			if (!db.objectStoreNames.contains('ExtStore')) {
@@ -769,7 +780,7 @@ async function ExtStore_SaveExt(name, code) {
 				record = { ...existing, code };
 			} else {
 				// 不存在：新建（id 由 autoIncrement 生成）
-				record = { name, code };
+				record = { name, code, enabled: true };
 			}
 
 			const putRequest = store.put(record); // put 会根据 id 自动 insert 或 update
@@ -865,6 +876,7 @@ async function ExtStore_GetExtList() {
 				result.push({
 					id: record.id,
 					name: record.name,
+				enabled: record.enabled !== false,
 				});
 				cursor.continue();
 			} else {
@@ -877,6 +889,29 @@ async function ExtStore_GetExtList() {
 		};
 	});
 }
+
+	// 切换插件启用/禁用状态
+	async function ExtStore_TogglePlugin(name, enabled) {
+		var db = await ExtStore_Init();
+		return new Promise(function(resolve, reject) {
+			var transaction = db.transaction(["ExtStore"], "readwrite");
+			var store = transaction.objectStore("ExtStore");
+			var getRequest = store.index("name").get(name);
+
+			getRequest.onsuccess = function(e) {
+				var record = e.target.result;
+				if (!record) {
+				reject(new Error("插件 \"" + name + "\" 不存在"));
+					return;
+				}
+				record.enabled = !!enabled;
+				var putRequest = store.put(record);
+				putRequest.onsuccess = function() { resolve(true); };
+				putRequest.onerror = function(ev) { reject(ev.target.error); };
+			};
+			getRequest.onerror = function(e) { reject(e.target.error); };
+		});
+	}
 
 // ==========================
 // 显示启动项管理模态框 (重构版 - 使用 CSS 类)
@@ -1172,7 +1207,7 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 				const cursor = e.target.result;
 				if (cursor) {
 					const record = cursor.value;
-					if (record?.code && typeof record.code === 'string') {
+					if (record?.code && typeof record.code === 'string' && record.enabled !== false) {
 						try {
 							// 直接使用 eval 执行插件代码
 							eval(record.code);
@@ -1735,13 +1770,26 @@ function _registerUserCompleters(editor, records) {
 			_items: [],
 			identifierRegexps: [/[\w\$\u00A2-\uFFFF]/],
 			getCompletions: function (_editor, session, pos, prefix, callback) {
-				if (prefix.length < 1) return callback(null, []);
-				const lc = prefix.toLowerCase();
-				const matches = this._items.filter((item) => item._lc.includes(lc));
-				callback(null, matches);
-			},
-		};
-		editor.completers.push(userCompleter);
+					if (prefix.length < 1) return callback(null, []);
+					const lc = prefix.toLowerCase();
+					const matches = this._items.filter((item) => item._lc.includes(lc));
+					callback(null, matches);
+				},
+				insertMatch: function (editor, data) {
+					if (!data.value) { editor.insert(data.caption || data.name || ''); return; }
+					var pos = editor.getCursorPosition();
+					var line = editor.session.getLine(pos.row);
+					var prefix = line.substring(0, pos.column);
+					var match = prefix.match(/[\w\$¢-￿]+$/);
+					var startCol = match ? pos.column - match[0].length : pos.column;
+					editor.session.replace(
+						{ start: { row: pos.row, column: startCol }, end: pos },
+						data.value
+					);
+					_selectFirstParam(editor, data.value, pos.row, startCol);
+t				}
+			};
+editor.completers.push(userCompleter);
 	}
 
 	for (const rec of records) {

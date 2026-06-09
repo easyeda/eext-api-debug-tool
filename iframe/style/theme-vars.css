@@ -80,6 +80,7 @@
 
   /* ---- 编辑器 ---- */
   --eext-editor-bg: #fff;
+  --eext-editor-line-bg: #f0f0f0;
   --eext-ace-theme: 'ace/theme/github';
 
   /* ---- 聊天 ---- */
