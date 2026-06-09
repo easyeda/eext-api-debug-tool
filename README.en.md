@@ -10,7 +10,7 @@ A lightweight, embeddable JavaScript code editor built on [Ace Editor](https://a
 
 ## API Auto-Generated Test Cases
 
-![img2](image/README/img2.gif)
+![img2](image/README/749167ce6b11.gif)
 
 ## API Auto-Distinguish PCB and Schematic
 
@@ -22,7 +22,7 @@ A lightweight, embeddable JavaScript code editor built on [Ace Editor](https://a
 
 ## Three Built-in Styles and Custom Primitives
 
-![img5](image/README/img5.gif)
+![img5](image/README/1ae249a96fce.gif)
 
 ## HTML Online Preview with Path References
 

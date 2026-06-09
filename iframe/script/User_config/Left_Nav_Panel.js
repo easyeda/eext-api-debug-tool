@@ -104,7 +104,7 @@ class LeftNavPanel {
 					project.files.push({
 						fileName,
 						content,
-						createdAt: Date.now(),
+						createdAt: new Date().toISOString().split('T')[0],
 					});
 				}
 

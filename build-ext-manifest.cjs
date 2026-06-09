@@ -100,7 +100,7 @@ function generateManifest() {
 			files.push({
 				fileName,
 				content,
-				createdAt: Date.now(),
+				createdAt: new Date().toISOString().split('T')[0],
 			});
 		}
 
@@ -108,8 +108,8 @@ function generateManifest() {
 			projectName,
 			files,
 			isBuiltIn: true,
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
+			createdAt: new Date().toISOString().split('T')[0],
+			updatedAt: new Date().toISOString().split('T')[0],
 		});
 
 		console.log(`  - ${projectName}: ${files.length} files`);

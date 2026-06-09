@@ -1,8 +1,33 @@
-# 2.6.2
+# 2.6.3
+
+## 新增
+
+1. 插件管理面板支持启用/禁用开关，可控制启动时是否自动加载
+2. 插件管理面板新增重命名功能
+3. 编辑器选中行背景色自定义（`--eext-editor-line-bg`），同步影响选中文本和当前行高亮
+4. 设置-快捷键页改为可交互表单，点击输入框直接按下组合键即可修改，支持保存/恢复默认
+
+## 更改
+
+1. 文件右键菜单「保存到启动项」更名为「保存为插件」，同名插件保存时询问是否覆盖
+2. 移除设置面板中重复的 AI 配置页（Copilot 面板已有独立入口）
+3. 插件管理从简单列表升级为完整面板：每项含开关、重命名、加载、删除按钮
+4. 颜色选择器读取逻辑重写为 `_readCSSColor()`，支持 `#rgb`/`#rrggbb`/`rgb()`/`rgba()` 格式，容错回退
+5. 二级菜单字号从 14px 统一为 12px（EDA 设计规范）
 
 ## 修复
 
-1. 修复颜色自定义修改后关闭重开丢失
+1. 修复 UUID 数字开头导致 CSS 选择器 `#7ca98ae...` 非法报错，改为字母开头
+2. 修复 `ThemeEngine.getCurrentVars().then is not a function` 颜色修改报错
+3. 修复 `ExtStore_GetExtList` 未返回 `enabled` 字段导致插件开关状态不持久化
+4. 修复 `ExtStore_SavePlugin` 中字符串转义丢失导致语法错误
+5. 修复 `insertMatch` 对象字面量未闭合导致 `Unexpected identifier 'editor'` 语法错误
+
+## 优化
+
+1. IndexedDB ExtStore 迁移至 v2，新增 `enabled` 字段，旧数据自动兼容
+2. `ExtStore_LoadAndRunAllPlugins` 仅执行启用状态的插件
+3. 快捷键编辑时自动禁用全局快捷键，防止冲突
 
 # 2.6.1
 

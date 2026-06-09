@@ -42,9 +42,9 @@ class ProjectManager {
 
 		const project = {
 			projectName,
-			files: [{ fileName: 'main.js', content: '', createdAt: Date.now() }],
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
+			files: [{ fileName: 'main.js', content: '', createdAt: new Date().toISOString().split('T')[0] }],
+			createdAt: new Date().toISOString().split('T')[0],
+			updatedAt: new Date().toISOString().split('T')[0],
 		};
 
 		return new Promise((resolve, reject) => {
@@ -109,7 +109,7 @@ class ProjectManager {
 	// 保存项目
 	async saveProject(project) {
 		if (!this.db) await this.initDB();
-		project.updatedAt = Date.now();
+		project.updatedAt = new Date().toISOString().split('T')[0];
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readwrite');
@@ -154,7 +154,7 @@ class ProjectManager {
 		const file = {
 			fileName,
 			content: '',
-			createdAt: Date.now(),
+			createdAt: new Date().toISOString().split('T')[0],
 		};
 
 		this.currentProject.files.push(file);

@@ -10,7 +10,7 @@
 
 ## API自动生成测试用例
 
-![img2](image/README/img2.gif)
+![img2](image/README/749167ce6b11.gif)
 
 ## API自动区分PCB和原理图
 
@@ -22,7 +22,7 @@
 
 ## 三套内置风格与自定义图元
 
-![img5](image/README/img5.gif)
+![img5](image/README/1ae249a96fce.gif)
 
 ## 带路径引用的html在线预览
 
