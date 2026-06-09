@@ -275,7 +275,7 @@ class LeftNavPanel {
 						html += '</div>';
 					} else {
 						html += '<div class="project-item ' + (isSelected ? 'selected' : '') + '" data-project-id="' + project.id + '">';
-						html += '<div class="project-item-name">' + this.escapeHtml(project.projectName) + '</div>';
+						html += '<div class="project-item-name"><span class="project-builtin-badge" style="background:var(--eext-brand);">项目</span>' + this.escapeHtml(project.projectName) + '</div>';
 						html += '<div class="project-item-info"><span>' + project.files.length + ' 文件</span><span>' + date + '</span></div>';
 						html += '</div>';
 					}
