@@ -225,7 +225,11 @@ body {
 	background: var(--eext-editor-line-bg) !important;
 }
 #editor .ace_selection {
-	background: var(--eext-editor-line-bg) !important;
+	background: rgba(24, 144, 255, 0.25) !important;
+}
+body.dark-theme #editor .ace_selection,
+body.dark-editor-theme #editor .ace_selection {
+	background: rgba(24, 144, 255, 0.35) !important;
 }
 
 #editor::-webkit-scrollbar,

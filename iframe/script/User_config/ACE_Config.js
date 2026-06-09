@@ -23,14 +23,62 @@ function _shouldCompleteWithComment() {
 	}
 }
 
-function _buildCompletionInsertText(item) {
-	if (!_shouldCompleteWithComment() || !item.description) {
-		return item.value;
+function _shouldWrapWithVariable() {
+	try {
+		var value = eda.sys_Storage.getExtensionUserConfig("completion_random_var");
+		return value === "true" || value === true;
+	} catch (e) { return false; }
+}
+
+function _generateRandomVarName(editor) {
+	var content = editor.getValue();
+	var usedNames = {};
+	var re = /(const|let|var)s+(w+)s*=/g;
+	var m;
+	while ((m = re.exec(content)) !== null) { usedNames[m[2]] = true; }
+	var chars = "abcdefghijklmnopqrstuvwxyz";
+	var names = chars.split("");
+	for (var i = 0; i < chars.length; i++) {
+		for (var j = 0; j < chars.length; j++) {
+			names.push(chars[i] + chars[j]);
+		}
 	}
-	return `// ${item.description}\n${item.value}`;
+	names = names.filter(function(n) { return !usedNames[n]; });
+	return names[0] || "result";
+}
+
+function _buildCompletionInsertText(item, editor) {
+	var text = item.value;
+	if (_shouldWrapWithVariable()) {
+		var varName = _generateRandomVarName(editor);
+		text = "const " + varName + " = " + text;
+	}
+	if (_shouldCompleteWithComment() && item.description) {
+		return "// " + item.description + "\n" + text;
+	}
+	return text;
 }
 
 function _selectFirstParam(editor, text, startRow, startCol) {
+	// 如果启用了随机变量，光标定位到 = 右边
+	if (_shouldWrapWithVariable()) {
+		// 在编辑器中查找包含 const 的行并定位到 = 后
+		for (var i = startRow; i <= startRow + 3; i++) {
+			var lineText = editor.session.getLine(i);
+			if (lineText && lineText.indexOf('const ') >= 0 && lineText.indexOf(' = ') >= 0) {
+				var eqPos = lineText.indexOf(' = ');
+				editor.selection.moveTo(i, eqPos + 3);
+				return;
+			}
+		}
+		// 降级：直接在当前行查找
+		var currentLine = editor.session.getLine(startRow);
+		if (currentLine && currentLine.indexOf(' = ') >= 0) {
+			var eqPos = currentLine.indexOf(' = ');
+			editor.selection.moveTo(startRow, eqPos + 3);
+			return;
+		}
+	}
 	var parenIdx = text.indexOf('(');
 	if (parenIdx === -1) return;
 	var suffix = text.substring(parenIdx + 1);
@@ -42,13 +90,13 @@ function _selectFirstParam(editor, text, startRow, startCol) {
 	var cursorRow = startRow + lines.length - 1;
 	var cursorCol = lines.length > 1 ? lines[lines.length - 1].length : startCol + lines[0].length;
 
-	// M-gM-EM-:M-fM-^KM-,M-eM-^OM-7M-oM-<M-^ZM-eM-^EM-^IM-fM- M-^GM-eM-.M-^ZM-dM-=M-^MM-eM-^\M-(M-fM-^KM-,M-eM-^OM-7M-eM-^FM-^E
+	// 如果没有参数，光标定位到 ( 后
 	if (!inner || !inner.trim()) {
 		editor.selection.moveTo(cursorRow, cursorCol);
 		return;
 	}
 
-	// M-fM-^\M-^IM-eM-^OM-^BM-fM-^UM-0M-oM-<M-^ZM-iM-^@M-^IM-dM-8M--M-gM-,M-,M-dM-8M-^@M-dM-8M-*M-eM-^OM-^BM-fM-^UM-0
+	// 查找第一个参数并选中
 	var firstParam = inner.split(',')[0].trim();
 	if (!firstParam) { editor.selection.moveTo(cursorRow, cursorCol); return; }
 	var searchLine = editor.session.getLine(cursorRow);
@@ -105,7 +153,7 @@ function ACE_CodingForEDA(editor, edcode) {
 									start: { row: pos.row, column: startCol },
 									end: pos,
 								},
-								_buildCompletionInsertText(data),
+								_buildCompletionInsertText(data, editor),
 							);
 						},
 					},
@@ -132,7 +180,7 @@ function ACE_CodingForEDA(editor, edcode) {
 									start: { row: pos.row, column: startCol },
 									end: pos,
 								},
-								_buildCompletionInsertText(data),
+								_buildCompletionInsertText(data, editor),
 							);
 						},
 					},
@@ -165,7 +213,7 @@ function ACE_CodingForEDA(editor, edcode) {
 									start: { row: pos.row, column: startCol },
 									end: pos,
 								},
-								_buildCompletionInsertText(data),
+								_buildCompletionInsertText(data, editor),
 							);
 						},
 					},
@@ -192,7 +240,7 @@ function ACE_CodingForEDA(editor, edcode) {
 									start: { row: pos.row, column: startCol },
 									end: pos,
 								},
-								_buildCompletionInsertText(data),
+								_buildCompletionInsertText(data, editor),
 							);
 						},
 					},
@@ -224,7 +272,7 @@ function ACE_CodingForEDA(editor, edcode) {
 						const prefix = line.substring(0, pos.column);
 						const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
 						const startCol = match ? pos.column - match[0].length : pos.column;
-						const insertText = _buildCompletionInsertText(data);
+						const insertText = _buildCompletionInsertText(data, editor);
 						editor.session.replace(
 							{
 								start: { row: pos.row, column: startCol },
@@ -253,7 +301,7 @@ function ACE_CodingForEDA(editor, edcode) {
 						const prefix = line.substring(0, pos.column);
 						const match = prefix.match(/[\w\$\u00A2-\uFFFF]+$/);
 						const startCol = match ? pos.column - match[0].length : pos.column;
-						const insertText = _buildCompletionInsertText(data);
+						const insertText = _buildCompletionInsertText(data, editor);
 						editor.session.replace(
 							{
 								start: { row: pos.row, column: startCol },

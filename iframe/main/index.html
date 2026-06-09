@@ -597,7 +597,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					async function _updateDirtyFlag() {
 						var isDirty = TabManager._tabs.some(function(t) { return t.dirty; }); console.log("[_updateDirtyFlag] dirty=" + isDirty);
 						try { await eda.sys_Storage.setExtensionUserConfig('__has_dirty', isDirty ? 'true' : 'false'); } catch(e) { console.error("[_updateDirtyFlag] FAIL:", e); }
-t				}
+					}
 
 
 					// 注册右键跳转文档

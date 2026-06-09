@@ -439,30 +439,42 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 		} else if (activeMenu === 'editor') {
 			const sec = section('补全模式');
+
+			// 带注释补全
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;align-items:center;gap:12px;';
 			const label = document.createElement('span'); label.textContent = '带注释补全';
 			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
-			const sw = document.createElement('label');
-			sw.style.cssText = 'position:relative;display:inline-block;width:44px;height:24px;';
 			const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'completion-checkbox';
-			const sl = document.createElement('span');
-			sl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:var(--eext-border);border-radius:24px;cursor:pointer;';
-			sl.innerHTML = '<span style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--eext-bg-panel);transition:transform 0.2s;"></span>';
-			cb.style.cssText = 'opacity:0;width:0;height:0;';
-			sw.appendChild(cb); sw.appendChild(sl);
+			// 标准复选框样式
+			cb.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cb.onchange = () => {
-				const dot = sl.querySelector('span');
-				if (cb.checked) { dot.style.transform = 'translateX(20px)'; sl.style.background = 'var(--eext-brand)'; }
-				else { dot.style.transform = 'translateX(0)'; sl.style.background = 'var(--eext-border)'; }
 				eda.sys_Storage.setExtensionUserConfig('completion_with_comment', cb.checked);
 			};
 			try {
-				cb.checked = eda.sys_Storage.getExtensionUserConfig('completion_with_comment') == 'true';
-				if (cb.checked) { sl.style.background = 'var(--eext-brand)'; sl.querySelector('span').style.transform = 'translateX(20px)'; }
-			} catch(e) {}
-			row.appendChild(label); row.appendChild(sw);
+				const saved = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
+				cb.checked = (saved === true || saved === 'true');
+			} catch(e) { cb.checked = false; }
+			row.appendChild(label); row.appendChild(cb);
 			contentPane.appendChild(row);
+
+			// 随机分配变量
+			var row2 = document.createElement("div");
+			row2.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
+			var label2 = document.createElement("span"); label2.textContent = "随机分配变量";
+			label2.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			var cb2 = document.createElement("input"); cb2.type = 'checkbox';
+			// 标准复选框样式
+			cb2.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
+			cb2.onchange = function() {
+				eda.sys_Storage.setExtensionUserConfig("completion_random_var", cb2.checked);
+			};
+			try {
+				const saved = eda.sys_Storage.getExtensionUserConfig("completion_random_var");
+				cb2.checked = (saved === true || saved === "true");
+			} catch(e) { cb2.checked = false; }
+			row2.appendChild(label2); row2.appendChild(cb2);
+			contentPane.appendChild(row2);
 		} else if (activeMenu === 'shortcuts') {
 			section('快捷键');
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
