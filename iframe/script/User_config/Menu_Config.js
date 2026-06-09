@@ -69,6 +69,53 @@ function showFileContextMenu(e, editor) {
 	setTimeout(() => document.addEventListener('click', closeMenu), 10);
 }
 
+/**
+ * 显示新建项目对话框
+ */
+async function showNewProjectDialog(editor) {
+	var result = await Swal.fire({
+		title: "新建项目",
+		input: "text",
+		inputLabel: "项目名称",
+		inputPlaceholder: "例如: MyProject",
+		showCancelButton: true,
+		confirmButtonText: "创建",
+		cancelButtonText: "取消",
+		inputValidator: function(value) {
+			if (!value) return "请输入项目名称";
+			if (value.length < 2) return "项目名称至少2个字符";
+		},
+	});
+
+	if (result.isConfirmed) {
+		try {
+			var project = await window.projectManager.createProject(result.value);
+			window.fileTreeUI = new FileTreeUI("file-tree", editor);
+			await window.fileTreeUI.render();
+
+			if (window.projectCompleter) {
+				window.projectCompleter.clear();
+				window.projectCompleter.updateFiles();
+			}
+
+			if (project.files.length > 0) {
+				var firstFile = project.files[0];
+				editor.setValue(firstFile.content, -1);
+				window.projectManager.currentFile = firstFile.fileName;
+			}
+
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadProjectList();
+				window.leftNavPanel.switchView("project-design");
+			}
+
+			eda.sys_Message.showToastMessage("项目创建成功", "success", 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage("项目创建失败: " + error.message, "error", 3);
+		}
+	}
+}
+
 /* ============================================
    设置模态框 — EDA 系统设置风格
    左侧菜单 + 右侧内容 + 底部按钮
