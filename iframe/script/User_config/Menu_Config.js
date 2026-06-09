@@ -162,19 +162,28 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	const confirmBtn = document.createElement('button');
 	confirmBtn.textContent = '确认';
 	confirmBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:12px;';
-	confirmBtn.onclick = () => {
-		// 应用窗口尺寸
-		const w = document.getElementById('ui-width-input'), h = document.getElementById('ui-height-input');
-		if (w && h) {
-			const nw = w.value.trim() || String(window.innerWidth);
-			const nh = h.value.trim() || String(window.innerHeight);
-			if (parseInt(nw) >= 400 && parseInt(nh) >= 300) {
-				eda.sys_Storage.setExtensionUserConfig('UI_width', nw);
-				eda.sys_Storage.setExtensionUserConfig('UI_height', nh);
+		confirmBtn.onclick = async () => {
+			var w = document.getElementById("ui-width-input"), h = document.getElementById("ui-height-input");
+			var newW = null, newH = null;
+			if (w && h) {
+				var nw = w.value.trim() || String(window.innerWidth);
+				var nh = h.value.trim() || String(window.innerHeight);
+				if (parseInt(nw) >= 400 && parseInt(nh) >= 300) {
+					newW = parseInt(nw, 10);
+					newH = parseInt(nh, 10);
+					await eda.sys_Storage.setExtensionUserConfig("UI_width", nw);
+					await eda.sys_Storage.setExtensionUserConfig("UI_height", nh);
+				}
 			}
-		}
-		overlay.remove();
-	};
+			overlay.remove();
+			if (newW && newH) {
+				await eda.sys_IFrame.closeIFrame("ScriptTool");
+				await eda.sys_IFrame.openIFrame("iframe/main/index.html", newW, newH, "ScriptTool", {
+					maximizeButton: true,
+					minimizeButton: true,
+				});
+			}
+		};
 	footer.appendChild(cancelBtn);
 	footer.appendChild(confirmBtn);
 
@@ -227,6 +236,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			};
 			const w = makeInput('宽', 'ui-width-input', String(window.innerWidth));
 			const h = makeInput('高', 'ui-height-input', String(window.innerHeight));
+		(async function() { try { var sw = await eda.sys_Storage.getExtensionUserConfig("UI_width"); if (sw) w.inp.value = sw; var sh = await eda.sys_Storage.getExtensionUserConfig("UI_height"); if (sh) h.inp.value = sh; } catch(e) {} })();
 			row.appendChild(w.span); row.appendChild(w.inp);
 			row.appendChild(h.span); row.appendChild(h.inp);
 			contentPane.appendChild(row);
