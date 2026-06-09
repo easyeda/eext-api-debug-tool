@@ -281,27 +281,119 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			contentPane.appendChild(row);
 		} else if (activeMenu === 'shortcuts') {
 			section('快捷键');
-			const platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
-			const shortcuts = typeof loadShortcuts === 'function' ? (async () => { try { return await loadShortcuts(); } catch(e) { return null; } })() : null;
-			(async () => {
-				const sc = await shortcuts;
-				if (!sc) {
-					const err = document.createElement('div');
-					err.textContent = '无法加载快捷键配置。'; err.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
-					contentPane.appendChild(err); return;
+			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
+			var platformLabel = platform === 'mac' ? 'macOS' : 'Windows';
+
+			var infoDiv = document.createElement('div');
+			infoDiv.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);margin-bottom:10px;';
+			infoDiv.textContent = '当前平台: ' + platformLabel + '，点击快捷键输入框后按下新组合键即可修改';
+			contentPane.appendChild(infoDiv);
+
+			var list = document.createElement('div');
+			list.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+			contentPane.appendChild(list);
+
+			var shortcutsData = null;
+
+			async function renderShortcuts() {
+				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">加载中...</div>';
+				try {
+					shortcutsData = typeof loadShortcuts === 'function' ? await loadShortcuts() : null;
+					if (!shortcutsData) {
+						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">无法加载快捷键配置</div>';
+						return;
+					}
+					list.innerHTML = '';
+					Object.entries(shortcutsData).forEach(function(entry) {
+						var key = entry[0];
+						var cfg = entry[1];
+						var row = document.createElement('div');
+						row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--eext-bg-item);border:1px solid var(--eext-border);border-radius:2px;';
+
+						var desc = document.createElement('span');
+						desc.textContent = cfg.description;
+						desc.style.cssText = 'font-size:12px;color:var(--eext-text-primary);flex:1;';
+
+						var input = document.createElement('input');
+						input.type = 'text';
+						input.value = cfg[platform] || key;
+						input.readOnly = true;
+						input.style.cssText = 'width:155px;height:24px;padding:0 8px;background:var(--eext-bg-input);color:var(--eext-text-primary);border:1px solid var(--eext-border);border-radius:2px;font-size:11px;font-family:monospace;text-align:center;cursor:pointer;user-select:none;';
+
+					input.addEventListener('focus', function() { window.keyboardShortcutsModalOpen = true; });
+						input.addEventListener('blur', function() { window.keyboardShortcutsModalOpen = false; });
+						input.addEventListener('keydown', function(e) {
+							e.preventDefault();
+							e.stopPropagation();
+							var keys = [];
+							if (e.ctrlKey) keys.push('Ctrl');
+							if (e.shiftKey) keys.push('Shift');
+							if (e.altKey) keys.push('Alt');
+							if (e.metaKey) keys.push(platform === 'mac' ? 'Command' : 'Meta');
+							var keyName = e.key;
+							if (keyName && !['Control','Shift','Alt','Meta'].includes(keyName)) {
+								if (keyName === ' ') keyName = 'Space';
+								else if (keyName.length === 1) keyName = keyName.toUpperCase();
+								keys.push(keyName);
+							}
+							if (keys.length > 0 && keys[keys.length - 1] !== 'Control' && keys[keys.length - 1] !== 'Shift' && keys[keys.length - 1] !== 'Alt' && keys[keys.length - 1] !== 'Meta' && keys[keys.length - 1] !== 'Command') {
+								input.value = keys.join('+');
+								shortcutsData[key][platform] = input.value;
+							}
+						});
+
+						row.appendChild(desc);
+						row.appendChild(input);
+						list.appendChild(row);
+					});
+				} catch(e) {
+					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">加载失败: ' + e.message + '</div>';
 				}
-				Object.entries(sc).forEach(([key, cfg]) => {
-					const row = document.createElement('div');
-					row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;';
-					const desc = document.createElement('span');
-					desc.textContent = cfg.description; desc.style.cssText = 'font-size:12px;color:var(--eext-text-primary);flex:1;';
-					const kb = document.createElement('span');
-					kb.textContent = cfg[platform] || cfg.key || key;
-					kb.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);font-family:monospace;background:var(--eext-bg-item);padding:2px 6px;border-radius:2px;';
-					row.appendChild(desc); row.appendChild(kb);
-					contentPane.appendChild(row);
+			}
+			renderShortcuts();
+
+			var btnRow = document.createElement('div');
+			btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
+
+			var resetBtn = document.createElement('button');
+			resetBtn.textContent = '恢复默认';
+			resetBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-btn-bg);color:var(--eext-text-primary);border:1px solid var(--eext-btn-border);border-radius:2px;cursor:pointer;font-size:12px;';
+			resetBtn.onclick = async function() {
+				var result = await Swal.fire({
+					title: '确认恢复默认',
+					html: '确定要恢复默认快捷键设置吗？当前的自定义设置将会丢失。',
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonText: '确认',
+					cancelButtonText: '取消',
 				});
-			})();
+				if (!result.isConfirmed) return;
+				if (typeof resetShortcuts === 'function') {
+					shortcutsData = await resetShortcuts();
+				} else {
+					shortcutsData = null;
+				}
+				await renderShortcuts();
+				eda.sys_Message.showToastMessage('已恢复默认快捷键', 'success', 1);
+			};
+			btnRow.appendChild(resetBtn);
+
+			var saveBtn = document.createElement('button');
+			saveBtn.textContent = '保存';
+			saveBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:12px;';
+			saveBtn.onclick = async function() {
+				if (typeof saveShortcuts === 'function') {
+					var success = await saveShortcuts(shortcutsData);
+					if (success) {
+						eda.sys_Message.showToastMessage('快捷键设置已保存，请重新打开窗口以应用更改', 'success', 3);
+					} else {
+						eda.sys_Message.showToastMessage('保存失败', 'error', 2);
+					}
+				}
+			};
+			btnRow.appendChild(saveBtn);
+
+			contentPane.appendChild(btnRow);
 		} else if (activeMenu === 'plugins') {
 			section('插件管理');
 			var list = document.createElement('div');
