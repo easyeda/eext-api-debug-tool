@@ -10,6 +10,7 @@ class FileTreeUI {
 		this.expandedFolders = new Set();
 		this.selectedItems = new Set(); // 存储选中的文件/文件夹路径
 		this.lastSelectedItem = null; // 用于 Shift 多选
+	this._dirty = false;
 	}
 
 	// 获取文件图标
@@ -90,11 +91,12 @@ class FileTreeUI {
 				const isSelected = this.selectedItems.has(file.fileName);
 				const indent = level * 16;
 				const displayName = file.fileName.split('/').pop();
+				const isModified = isActive && this._isFileModified();
 
 				html += `
 				<div class="file-tree-item ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" data-filename="${this.escapeHtml(file.fileName)}" data-type="file" style="padding-left: ${indent}px;">
 					<span class="file-icon">${this.getFileIcon(displayName)}</span>
-					<span class="file-name">${this.escapeHtml(displayName)}</span>
+					<span class="file-name">${this.escapeHtml(displayName)}${isModified ? ' <span style="color:var(--eext-warning);">*</span>' : ''}</span>
 				</div>
 			`;
 			});
@@ -300,34 +302,89 @@ class FileTreeUI {
 		return items;
 	}
 
-	// 加载文件到编辑器
-	async loadFile(fileName) {
-		const isBuiltIn = this.projectManager.currentProject && this.projectManager.currentProject.isBuiltIn;
+		// 加载文件到编辑器
+		async loadFile(fileName, skipDirtyCheck) {
+			// 如果文件已打开且是当前文件，直接返回，防止重复打开
+			if (fileName === this.projectManager.currentFile) return;
 
-		// 保存当前文件（仅非内置项目）
-		if (this.projectManager.currentFile && !isBuiltIn) {
-			await this.projectManager.saveFileContent(this.projectManager.currentFile, this.editor.getValue());
+			var isBuiltIn = this.projectManager.currentProject && this.projectManager.currentProject.isBuiltIn;
+
+			// 检查当前文件是否有未保存修改
+			if (!skipDirtyCheck && this._isFileModified()) {
+				var result = await Swal.fire({
+					title: "未保存的更改",
+					html: "当前文件 <strong>" + (this.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+					icon: "warning",
+					showDenyButton: true,
+					showCancelButton: true,
+					confirmButtonText: "保存",
+					denyButtonText: "不保存",
+					cancelButtonText: "取消",
+				});
+				if (result.isConfirmed) {
+					await window.projectManager.saveFileContent(this.projectManager.currentFile, this.editor.getValue());
+					window.projectManager._savedContent = this.editor.getValue();
+				} else if (result.isDenied) {
+					// 不保存，继续
+				} else {
+					return; // 取消，不切换文件
+				}
+			}
+
+			// 清理旧文件注册的脏监听器
+			if (this._dirtyListener) {
+				this.editor.session.off("change", this._dirtyListener);
+				this._dirtyListener = null;
+			}
+
+			// 加载新文件
+			var content = this.projectManager.getFileContent(fileName);
+			this.editor.setValue(content, -1);
+			this.editor.clearSelection();
+			this.projectManager.currentFile = fileName;
+			this.projectManager._savedContent = content;
+			this.editor.setReadOnly(!!isBuiltIn);
+			this._dirty = false;
+
+			// 添加到标签栏
+			if (typeof TabManager !== "undefined") TabManager.open(window.projectManager.currentProject ? window.projectManager.currentProject.id : null, fileName, fileName.split("/").pop());
+
+			// 根据文件类型设置编辑器模式
+			this.setEditorMode(fileName);
+
+			// 根据文件类型更新运行按钮文本
+			var ext = fileName.split(".").pop().toLowerCase();
+			var runBtn = document.getElementById("run-btn");
+			if (runBtn) runBtn.textContent = (ext === "md" || ext === "markdown") ? "预览" : "运行";
+
+			// 注册脏标记监听器（用户编辑时触发）
+			this._registerDirtyListener();
+
+			// 更新UI
+			this.render();
 		}
 
-		// 加载新文件
-		const content = this.projectManager.getFileContent(fileName);
-		this.editor.setValue(content, -1);
-		this.projectManager.currentFile = fileName;
-		this.editor.setReadOnly(!!isBuiltIn);
-
-		// 根据文件类型设置编辑器模式
-		this.setEditorMode(fileName);
-
-		// 根据文件类型更新运行按钮文本
-		const ext = fileName.split('.').pop().toLowerCase();
-		const runBtn = document.getElementById('run-btn');
-		if (runBtn) {
-			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? '预览' : '运行';
+		// 注册脏标记监听器 — 使用 on+off 代替 once 确保兼容性
+		_registerDirtyListener() {
+			if (this._dirtyListener) {
+				this.editor.session.off("change", this._dirtyListener);
+				this._dirtyListener = null;
+			}
+			var self = this;
+			this._dirtyListener = function() {
+				if (self._dirtyListener !== null) {
+					self.editor.session.off("change", self._dirtyListener);
+					self._dirtyListener = null;
+				}
+				if (self.projectManager.currentFile) {
+					self._dirty = true;
+					if (typeof TabManager !== "undefined") TabManager.markDirty(window.projectManager.currentProject ? window.projectManager.currentProject.id : null, self.projectManager.currentFile, true);
+					self.render();
+				}
+			};
+			this.editor.session.on("change", this._dirtyListener);
 		}
 
-		// 更新UI
-		this.render();
-	}
 
 	// 设置编辑器模式
 	setEditorMode(fileName) {
@@ -687,6 +744,13 @@ class FileTreeUI {
 			await this.render();
 			eda.sys_Message.showToastMessage(`批量删除成功，共删除 ${totalFiles} 个文件`, 'success', 2);
 		}
+	}
+
+
+	// 检查当前文件是否有未保存修改
+	_isFileModified() {
+		if (!this.projectManager.currentFile || this.projectManager._savedContent == null) return false;
+		return this.editor.getValue() !== this.projectManager._savedContent;
 	}
 
 	// HTML转义

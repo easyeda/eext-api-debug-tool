@@ -27,10 +27,8 @@ function showFileContextMenu(e, editor) {
 
 	const menuItems = [
 		{ text: '新建项目', action: () => showNewProjectDialog(editor) },
+	{ text: '新建脚本', action: () => showNewScriptDialog(editor) },
 		{ text: '---', action: null },
-		{ text: '加载代码', action: () => Code_OpenLoadWindow(editor) },
-		{ text: '保存代码', action: () => Code_SaveCode(editor) },
-		{ text: '删除已保存代码', action: () => Code_OpenDeleteWindow(editor) },
 		{ text: '保存到快捷按钮', action: () => Code_SaveToBtnList(editor) },
 		{ text: '保存为插件', action: () => ExtStore_SavePlugin(editor, true) },
 	];
@@ -70,6 +68,73 @@ function showFileContextMenu(e, editor) {
 }
 
 /**
+ * 迁移旧版 CodeStore 中的已保存代码到项目系统（脚本）
+ * 在启动时调用，仅执行一次
+ */
+async function migrateCodeStoreToProjects() {
+	try {
+		var db = await new Promise(function(resolve, reject) {
+			var req = indexedDB.open("CodeStore", 1);
+			req.onsuccess = function(e) { resolve(e.target.result); };
+			req.onerror = function() { resolve(null); };
+		});
+		if (!db || !db.objectStoreNames.contains("CodeList")) return;
+
+		var items = await new Promise(function(resolve) {
+			var tx = db.transaction(["CodeList"], "readonly");
+			var store = tx.objectStore("CodeList");
+			var req = store.getAll();
+			req.onsuccess = function(e) { resolve(e.target.result || []); };
+			req.onerror = function() { resolve([]); };
+		});
+		db.close();
+
+		if (items.length === 0) {
+			indexedDB.deleteDatabase("CodeStore");
+			return;
+		}
+
+		var migrated = 0;
+		for (var i = 0; i < items.length; i++) {
+			var item = items[i];
+			var scriptName = (item.name || "unnamed").replace(/[^a-zA-Z0-9_一-鿿-]/g, "-");
+			if (!scriptName.endsWith(".js")) scriptName += ".js";
+			var projectName = scriptName.replace(/.js$/, "");
+			try {
+				var project = await window.projectManager.createProject(projectName);
+				if (project.files.length > 0) {
+					var tx2 = window.projectManager.db.transaction(["projects"], "readwrite");
+					var store2 = tx2.objectStore("projects");
+					var getReq = store2.get(project.id);
+					await new Promise(function(res, rej) {
+						getReq.onsuccess = function(e) {
+							var rec = e.target.result;
+							if (rec) {
+								rec.files[0].fileName = scriptName;
+								rec.files[0].content = item.code || "";
+								rec.isScript = true;
+								store2.put(rec).onsuccess = function() { res(); };
+							} else { res(); }
+						};
+						getReq.onerror = rej;
+					});
+				}
+				migrated++;
+			} catch(e) {
+				console.warn("Migrate " + scriptName + " failed:", e.message);
+			}
+		}
+
+		indexedDB.deleteDatabase("CodeStore");
+		if (migrated > 0) {
+			if (window.leftNavPanel) await window.leftNavPanel.loadProjectList();
+		}
+	} catch(e) {
+		console.warn("CodeStore migration skipped:", e.message);
+	}
+}
+
+/**
  * 显示新建项目对话框
  */
 async function showNewProjectDialog(editor) {
@@ -98,20 +163,85 @@ async function showNewProjectDialog(editor) {
 				window.projectCompleter.updateFiles();
 			}
 
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadProjectList();
+				window.leftNavPanel.switchView("project-design");
+			}
+
 			if (project.files.length > 0) {
 				var firstFile = project.files[0];
 				editor.setValue(firstFile.content, -1);
 				window.projectManager.currentFile = firstFile.fileName;
 			}
 
-			if (window.leftNavPanel) {
-				await window.leftNavPanel.loadProjectList();
-				window.leftNavPanel.switchView("project-design");
-			}
-
 			eda.sys_Message.showToastMessage("项目创建成功", "success", 2);
 		} catch (error) {
 			eda.sys_Message.showToastMessage("项目创建失败: " + error.message, "error", 3);
+		}
+	}
+}
+
+/**
+ * 显示新建脚本对话框
+ */
+async function showNewScriptDialog(editor) {
+	var result = await Swal.fire({
+		title: "新建脚本",
+		input: "text",
+		inputLabel: "脚本名称",
+		inputPlaceholder: "例如: my-script.js",
+		inputValue: "untitled.js",
+		showCancelButton: true,
+		confirmButtonText: "创建",
+		cancelButtonText: "取消",
+		inputValidator: function(value) {
+			if (!value) return "请输入脚本名称";
+			if (value.length < 2) return "脚本名称至少2个字符";
+		},
+	});
+
+	if (result.isConfirmed) {
+		try {
+			var name = result.value.trim();
+			if (!name.endsWith(".js")) name += ".js";
+			var projectName = name.replace(/.js$/, "");
+			var project = await window.projectManager.createProject(projectName);
+			if (project.files.length > 0) {
+				var tx = window.projectManager.db.transaction(["projects"], "readwrite");
+				var store = tx.objectStore("projects");
+				var getReq = store.get(project.id);
+				await new Promise(function(res, rej) {
+					getReq.onsuccess = function(e) {
+						var rec = e.target.result;
+						if (rec) {
+							rec.files[0].fileName = name;
+						rec.isScript = true;
+							rec.files[0].content = "// " + name;
+							var putReq = store.put(rec);
+							putReq.onsuccess = function() { window.projectManager._savedContent = '// ' + name; window.projectManager.currentFile = name; if (typeof TabManager !== 'undefined') TabManager.open(project.id, name, name); editor.setValue("// " + name, -1); window.projectManager._dirty = false; if (window.fileTreeUI && window.fileTreeUI._registerDirtyListener) window.fileTreeUI._registerDirtyListener(); res(); };
+							putReq.onerror = rej;
+						} else { res(); }
+					};
+					getReq.onerror = rej;
+				});
+			}
+
+			window.fileTreeUI = new FileTreeUI("file-tree", editor);
+			await window.fileTreeUI.render();
+
+			if (window.projectCompleter) {
+				window.projectCompleter.clear();
+				window.projectCompleter.updateFiles();
+			}
+
+			if (window.leftNavPanel) {
+				await window.leftNavPanel.loadProjectList();
+				window.leftNavPanel.switchView("all-projects");
+			}
+
+			eda.sys_Message.showToastMessage("脚本创建成功", "success", 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage("脚本创建失败: " + error.message, "error", 3);
 		}
 	}
 }

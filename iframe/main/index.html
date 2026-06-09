@@ -20,6 +20,8 @@
 				<ul id="quick-btn-list"></ul>
 				<button id="ai-btn" style="margin-left:auto;">Copilot</button>
 			</div>
+			<!-- 标签栏 -->
+			<div id="tab-bar"></div>
 			<!-- 主内容区 -->
 			<div id="main-content">
 				<!-- 左侧导航面板 -->
@@ -271,12 +273,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 						return bridge + '\n' + html;
 					}
 
-					// 加载上次关闭时的缓存（|| '' 防止 null/undefined 写入编辑器）
-					let HistoryCode = '';
-					try {
-						HistoryCode = eda.sys_Storage.getExtensionUserConfig('editor_value') || '';
-					} catch (e) {}
-					editor.setValue(HistoryCode, -1);
+					editor.setValue("", -1);
 
 					// 注册 Ctrl+滚轮缩放字体
 					let currentFontSize = 14;
@@ -288,10 +285,8 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					// 加载用户自定义补全
 					UserCompleter_LoadAll(editor);
 
-					// 自动缓存编辑器内容
-					editor.session.on('change', function() {
-						try { eda.sys_Storage.setExtensionUserConfig('editor_value', editor.getValue()); } catch (e) {}
-					});
+
+					
 
 					const loadingBar = document.getElementById('loading-bar');
 					const loadingOverlay = document.getElementById('loading-overlay');
@@ -324,25 +319,177 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 
 						// 初始化文件树（但不显示，由导航面板控制）
 						window.fileTreeUI = new FileTreeUI('file-tree', editor);
+
 						await window.fileTreeUI.render();
 
 						// 初始化项目文件补全器
 						window.projectCompleter = new ProjectCompleter(editor);
 
-						// 自动保存文件内容
-						let saveTimeout;
-						editor.session.on('change', function() {
-							if (window.projectManager.currentFile && !(window.projectManager.currentProject && window.projectManager.currentProject.isBuiltIn)) {
-								clearTimeout(saveTimeout);
-								saveTimeout = setTimeout(async () => {
-									await window.projectManager.saveFileContent(
-										window.projectManager.currentFile,
-										editor.getValue()
-									);
-								}, 1000);
+			})();
+					// 迁移旧版 CodeStore 已保存代码到项目系统
+					if (typeof migrateCodeStoreToProjects === "function") {
+						migrateCodeStoreToProjects();
+					}
+
+					async function saveCurrentProjectFile() {
+						if (!window.projectManager.currentFile || !window.projectManager.currentProject) {
+							eda.sys_Message.showToastMessage("没有打开的项目文件", "warn", 1);
+							return;
+						}
+						if (window.projectManager.currentProject.isBuiltIn) {
+							eda.sys_Message.showToastMessage("内置项目不可保存", "warn", 1);
+							return;
+						}
+						try {
+							await window.projectManager.saveFileContent(window.projectManager.currentFile, editor.getValue());
+							window.projectManager._savedContent = editor.getValue();
+							if (typeof TabManager !== "undefined") TabManager.markDirty(window.projectManager.currentProject ? window.projectManager.currentProject.id : null, window.projectManager.currentFile, false);
+							if (window.fileTreeUI) {
+								window.fileTreeUI._dirty = false;
+						window.fileTreeUI._registerDirtyListener();
+								await window.fileTreeUI.render();
 							}
-						});
-					})();
+							eda.sys_Message.showToastMessage("已保存: " + window.projectManager.currentFile, "success", 1);
+						} catch(e) {
+							eda.sys_Message.showToastMessage("保存失败: " + e.message, "error", 2);
+						}
+					}
+
+					// ========== TabManager ==========
+					// ========== TabManager (UUID-based) ==========
+					var TabManager = {
+						_tabs: [],       // [{ key, label, dirty, projectId, fileName }]
+						_activeKey: null,
+
+						// 生成唯一 key: projectId:fileName
+						_makeKey: function(projectId, fileName) {
+							return (projectId || "_") + ":" + (fileName || "_");
+						},
+
+						// 打开或激活一个 tab
+						open: function(projectId, fileName, label) {
+							if (!fileName) return;
+							var key = this._makeKey(projectId, fileName);
+							var existing = this._tabs.find(function(t) { return t.key === key; });
+							if (!existing) {
+								this._tabs.push({ key: key, label: label || fileName.split("/").pop(), dirty: false, projectId: projectId, fileName: fileName });
+							}
+							this._activeKey = key;
+							this.render();
+						},
+
+						// 检查某个 key 是否已打开
+						isOpen: function(projectId, fileName) {
+							var key = this._makeKey(projectId, fileName);
+							return !!this._tabs.find(function(t) { return t.key === key; });
+						},
+
+						// 获取当前活跃 tab 的 key
+						getActiveKey: function() { return this._activeKey; },
+
+						// 通过 key 获取 tab 信息
+						getTab: function(projectId, fileName) {
+							var key = this._makeKey(projectId, fileName);
+							return this._tabs.find(function(t) { return t.key === key; });
+						},
+
+						// 标记脏状态
+						markDirty: function(projectId, fileName, dirty) {
+							var key = this._makeKey(projectId, fileName);
+							var tab = this._tabs.find(function(t) { return t.key === key; });
+							if (tab) { tab.dirty = !!dirty; }
+							this.render();
+						},
+
+						// 通过 key 关闭 tab
+						close: async function(projectId, fileName) {
+							var key = this._makeKey(projectId, fileName);
+							var idx = this._tabs.findIndex(function(t) { return t.key === key; });
+							if (idx < 0) return;
+							var tab = this._tabs[idx];
+
+							if (tab.dirty) {
+								var result = await Swal.fire({
+									title: "未保存的更改",
+									html: "文件 <strong>" + tab.label + "</strong> 有未保存的更改，是否保存？",
+									icon: "warning",
+									showDenyButton: true,
+									showCancelButton: true,
+									confirmButtonText: "保存",
+									denyButtonText: "不保存",
+									cancelButtonText: "取消",
+								});
+								if (result.isConfirmed) {
+									await window.projectManager.saveFileContent(tab.fileName, editor.getValue());
+									if (window.fileTreeUI) { window.fileTreeUI._dirty = false; window.fileTreeUI._registerDirtyListener(); }
+									eda.sys_Message.showToastMessage("已保存: " + tab.label, "success", 1);
+								} else if (result.isDenied) {
+								} else { return; }
+							}
+
+							this._tabs.splice(idx, 1);
+							if (this._activeKey === key) {
+								var next = this._tabs.length > 0 ? this._tabs[this._tabs.length-1] : null;
+								this._activeKey = next ? next.key : null;
+								if (next && window.fileTreeUI && next.fileName !== window.projectManager.currentFile) {
+									await window.fileTreeUI.loadFile(next.fileName, true);
+								} else if (!next) {
+									editor.setValue("", -1);
+									window.projectManager.currentFile = null;
+									window.projectManager.currentProject = null;
+								}
+							}
+							this.render();
+						},
+
+						// 切换到指定 key
+						switchTo: function(projectId, fileName) {
+							var key = this._makeKey(projectId, fileName);
+							var tab = this._tabs.find(function(t) { return t.key === key; });
+							if (tab) { this._activeKey = key; this.render(); }
+						},
+
+						// 渲染标签栏
+						render: function() {
+							var bar = document.getElementById("tab-bar");
+							if (!bar) return;
+							if (this._tabs.length === 0) {
+								bar.className = "empty";
+								bar.innerHTML = "";
+								return;
+							}
+							bar.className = "";
+							var self = this;
+							bar.innerHTML = "";
+							this._tabs.forEach(function(tab) {
+								var isActive = tab.key === self._activeKey;
+								var div = document.createElement("div");
+								div.className = "tab-item" + (isActive ? " active" : "") + (tab.dirty ? " dirty" : "");
+								div.title = tab.key;
+								div.textContent = tab.label;
+								div.onclick = async function() {
+									if (tab.key === self._activeKey) return;
+									var curPid = window.projectManager.currentProject ? window.projectManager.currentProject.id : null;
+									if (tab.projectId && tab.projectId !== curPid && tab.projectId > 0) {
+										var proj = await window.projectManager.loadProject(tab.projectId);
+										window.projectManager.currentProject = proj;
+										if (window.fileTreeUI) { window.fileTreeUI = new FileTreeUI("file-tree", editor); await window.fileTreeUI.render(); }
+									}
+									if (window.fileTreeUI) await window.fileTreeUI.loadFile(tab.fileName);
+								};
+								var closeBtn = document.createElement("button");
+								closeBtn.className = "tab-close";
+								closeBtn.textContent = "x";
+								closeBtn.onclick = function(e) {
+									e.stopPropagation();
+									self.close(tab.projectId, tab.fileName);
+								};
+								div.appendChild(closeBtn);
+								bar.appendChild(div);
+							});
+						},
+					};
+
 
 					// 注册右键跳转文档
 					const methodList = edcode.map((item) => item.methodPath);
@@ -507,18 +654,6 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					document.getElementById('ai-btn').addEventListener('click', () => {
 						SetVibeCodingConfig();
 					});
-					document.getElementById('save-btn')?.addEventListener('click', () => {
-						Code_SaveCode(editor);
-					});
-					document.getElementById('load-btn')?.addEventListener('click', () => {
-						Code_OpenLoadWindow(editor);
-					});
-					document.getElementById('theme-btn')?.addEventListener('click', () => {
-						SetTheme(editor, null, null);
-					});
-					document.getElementById('delete-btn')?.addEventListener('click', () => {
-						Code_OpenDeleteWindow(editor);
-					});
 					document.getElementById('import-btn')?.addEventListener('click', () => {
 						ImportFile(editor);
 					});
@@ -586,13 +721,11 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 							if (matchesShortcut(e, shortcuts.run[platform])) {
 								e.preventDefault();
 								ACE_RunCode(editor);
+								} else if (matchesShortcut(e, shortcuts.saveFile[platform])) {
+									e.preventDefault();
+									saveCurrentProjectFile();
 							}
-							// 保存代码
-							else if (matchesShortcut(e, shortcuts.save[platform])) {
-								e.preventDefault();
-								Code_SaveCode(editor);
-							}
-							// 导入文件
+														// 导入文件
 							else if (matchesShortcut(e, shortcuts.import[platform])) {
 								e.preventDefault();
 								ImportFile(editor);
@@ -602,17 +735,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 								e.preventDefault();
 								ExportFileForJs(editor.getValue(), Date() + '_script.js');
 							}
-							// 加载代码
-							else if (matchesShortcut(e, shortcuts.load[platform])) {
-								e.preventDefault();
-								Code_OpenLoadWindow(editor);
-							}
-							// 删除代码
-							else if (matchesShortcut(e, shortcuts.delete[platform])) {
-								e.preventDefault();
-								Code_OpenDeleteWindow(editor);
-							}
-							// 保存到列表
+																					// 保存到列表
 							else if (matchesShortcut(e, shortcuts.saveToList[platform])) {
 								e.preventDefault();
 								Code_SaveToBtnList(editor);

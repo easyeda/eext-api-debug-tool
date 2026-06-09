@@ -265,18 +265,21 @@ class LeftNavPanel {
 		if (userProjects.length > 0) {
 			html += '<div class="project-section-title">我的项目</div>';
 			userProjects.forEach((project) => {
-				const date = new Date(project.updatedAt).toLocaleDateString('zh-CN');
-				const isSelected = this.selectedProjectId === project.id;
-				html += `
-					<div class="project-item ${isSelected ? 'selected' : ''}" data-project-id="${project.id}">
-						<div class="project-item-name">${this.escapeHtml(project.projectName)}</div>
-						<div class="project-item-info">
-							<span>${project.files.length} 文件</span>
-							<span>${date}</span>
-						</div>
-					</div>
-				`;
-			});
+					const date = new Date(project.updatedAt).toLocaleDateString('zh-CN');
+					const isSelected = this.selectedProjectId === project.id;
+					const isScript = !!(project.files && project.files.length === 1 && /.js$/i.test(project.files[0].fileName) && project.isScript);
+					if (isScript) {
+						html += '<div class="project-item script-item ' + (isSelected ? 'selected' : '') + '" data-project-id="' + project.id + '" data-is-script="true">';
+						html += '<div class="project-item-name"><span class="project-builtin-badge" style="background:var(--eext-brand);">脚本</span>' + this.escapeHtml(project.projectName) + '</div>';
+						html += '<div class="project-item-info"><span>脚本</span><span>' + date + '</span></div>';
+						html += '</div>';
+					} else {
+						html += '<div class="project-item ' + (isSelected ? 'selected' : '') + '" data-project-id="' + project.id + '">';
+						html += '<div class="project-item-name">' + this.escapeHtml(project.projectName) + '</div>';
+						html += '<div class="project-item-info"><span>' + project.files.length + ' 文件</span><span>' + date + '</span></div>';
+						html += '</div>';
+					}
+				});
 		}
 
 		container.innerHTML = html;
@@ -306,6 +309,9 @@ class LeftNavPanel {
 					}
 					if (this.sidebarExpanded) this.toggleSidebar();
 					await this.openBuiltInProject(projectId);
+				} else if (item.dataset.isScript === "true") {
+					if (this.sidebarExpanded) this.toggleSidebar();
+					await this.openScriptProject(projectId);
 				} else {
 					this.selectProject(projectId);
 				}
@@ -313,7 +319,7 @@ class LeftNavPanel {
 
 			// 双击：用户项目打开
 			item.addEventListener('dblclick', async () => {
-				if (!isBuiltIn) await this.openProject(projectId);
+				if (!isBuiltIn && item.dataset.isScript !== "true") await this.openProject(projectId);
 			});
 
 			// 右键菜单
@@ -482,47 +488,106 @@ class LeftNavPanel {
 		});
 	}
 
-	// 打开项目
-	async openProject(projectId) {
-		try {
-			// 保存当前文件（仅非内置项目）
-			if (window.projectManager.currentFile && window.projectManager.currentProject && !window.projectManager.currentProject.isBuiltIn) {
-				await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
+		// 打开项目 — 仅显示文件树，由用户选择文件
+		async openProject(projectId) {
+			try {
+				// 脏检查：当前文件未保存则提示
+				if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
+					var result = await Swal.fire({
+						title: "未保存的更改",
+						html: "当前文件 <strong>" + (window.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+						icon: "warning",
+						showDenyButton: true,
+						showCancelButton: true,
+						confirmButtonText: "保存",
+						denyButtonText: "不保存",
+						cancelButtonText: "取消",
+					});
+					if (result.isConfirmed) {
+						await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
+						window.projectManager._savedContent = this.editor.getValue();
+						if (window.fileTreeUI) window.fileTreeUI._dirty = false;
+					} else if (result.isDenied) {
+					} else { return; }
+				}
+
+				// 如果是已打开的项目，只刷新文件树
+				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
+					if (window.fileTreeUI) {
+						window.fileTreeUI = new FileTreeUI("file-tree", this.editor);
+						await window.fileTreeUI.render();
+					}
+					this.switchView("project-design");
+					return;
+				}
+
+				if (window.projectCompleter) window.projectCompleter.clear();
+				var project = await window.projectManager.loadProject(projectId);
+				window.projectManager.currentProject = project;
+				window.projectManager.currentFile = null;
+				this.editor.setReadOnly(false);
+
+				window.fileTreeUI = new FileTreeUI("file-tree", this.editor);
+				await window.fileTreeUI.render();
+
+				if (window.projectCompleter) window.projectCompleter.updateFiles();
+				this.switchView("project-design");
+				eda.sys_Message.showToastMessage("项目已打开，请在文件树中选择文件", "success", 2);
+			} catch (error) {
+				eda.sys_Message.showToastMessage("项目加载失败: " + error.message, "error", 3);
+			}
+		}
+
+		// 打开脚本项目 — 直接加载唯一 JS 文件
+		async openScriptProject(projectId) {
+			try {
+				// 如果是当前已打开的项目，直接返回
+				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
+					if (typeof TabManager !== "undefined" && window.projectManager.currentFile) TabManager.render();
+					return;
+				}
+
+				// 脏检查
+				if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
+					var result = await Swal.fire({
+						title: "未保存的更改",
+						html: "当前文件 <strong>" + (window.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+						icon: "warning",
+						showDenyButton: true,
+						showCancelButton: true,
+						confirmButtonText: "保存",
+						denyButtonText: "不保存",
+						cancelButtonText: "取消",
+					});
+					if (result.isConfirmed) {
+						await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
+						window.projectManager._savedContent = this.editor.getValue();
+					if (window.fileTreeUI) window.fileTreeUI._dirty = false;
+				} else if (result.isDenied) {
+				} else { return; }
 			}
 
-			// 清除旧项目的补全器
-			if (window.projectCompleter) {
-				window.projectCompleter.clear();
-			}
-
-			// 加载新项目
-			const project = await window.projectManager.loadProject(projectId);
-			window.fileTreeUI = new FileTreeUI('file-tree', this.editor);
-			await window.fileTreeUI.render();
-
-			// 更新项目补全器
-			if (window.projectCompleter) {
-				window.projectCompleter.updateFiles();
-			}
-
-			// 恢复可编辑状态
+			if (window.projectCompleter) window.projectCompleter.clear();
+			var project = await window.projectManager.loadProject(projectId);
+			window.projectManager.currentProject = project;
 			this.editor.setReadOnly(false);
 
-			// 加载第一个文件
 			if (project.files.length > 0) {
-				const firstFile = project.files[0];
-				this.editor.setValue(firstFile.content, -1);
-				window.projectManager.currentFile = firstFile.fileName;
+					var file = project.files[0];
+					this.editor.setValue(file.content, -1);
+					window.projectManager._savedContent = file.content;
+					window.projectManager.currentFile = file.fileName;
+					if (typeof TabManager !== "undefined") TabManager.open(project.id, file.fileName, file.fileName.split("/").pop());
+					if (window.fileTreeUI && window.fileTreeUI._registerDirtyListener) window.fileTreeUI._registerDirtyListener();
+				}
+
+				this.switchView("all-projects");
+				if (window.fileTreeUI) await window.fileTreeUI.render();
+				eda.sys_Message.showToastMessage("脚本已打开", "success", 2);
+			} catch (error) {
+				eda.sys_Message.showToastMessage("打开脚本失败: " + error.message, "error", 3);
 			}
-
-			// 自动切换到项目设计视图
-			this.switchView('project-design');
-
-			eda.sys_Message.showToastMessage('项目加载成功', 'success', 2);
-		} catch (error) {
-			eda.sys_Message.showToastMessage('项目加载失败: ' + error.message, 'error', 3);
 		}
-	}
 
 	// 打开内置项目 — 在编辑器区域直接渲染 index.html
 	async openBuiltInProject(builtInId) {
