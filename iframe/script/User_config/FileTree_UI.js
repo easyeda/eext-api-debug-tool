@@ -638,7 +638,7 @@ class FileTreeUI {
 			showCancelButton: true,
 			confirmButtonText: '删除',
 			cancelButtonText: '取消',
-			confirmButtonColor: '#d33',
+			confirmButtonColor: '#1890ff',
 		});
 
 		if (result.isConfirmed) {
@@ -670,7 +670,7 @@ class FileTreeUI {
 			showCancelButton: true,
 			confirmButtonText: '删除',
 			cancelButtonText: '取消',
-			confirmButtonColor: '#d33',
+			confirmButtonColor: '#1890ff',
 		});
 
 		if (result.isConfirmed) {
@@ -722,7 +722,7 @@ class FileTreeUI {
 			showCancelButton: true,
 			confirmButtonText: '删除',
 			cancelButtonText: '取消',
-			confirmButtonColor: '#d33',
+			confirmButtonColor: '#1890ff',
 		});
 
 		if (result.isConfirmed) {

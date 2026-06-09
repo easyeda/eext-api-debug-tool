@@ -329,11 +329,42 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 						// 初始化项目文件补全器
 						window.projectCompleter = new ProjectCompleter(editor);
 
+						// 等待 TabManager 定义完成后恢复标签页
+						// 使用微任务确保在 TabManager 定义后立即执行
+						Promise.resolve().then(function() {
+							if (typeof TabManager !== "undefined") {
+								TabManager.restoreTabs();
+							} else {
+								// 如果 TabManager 还未定义，稍后重试
+								setTimeout(function() {
+									if (typeof TabManager !== "undefined") {
+										TabManager.restoreTabs();
+									}
+								}, 100);
+							}
+						});
+
 			})();
 					// 迁移旧版 CodeStore 已保存代码到项目系统
 					if (typeof migrateCodeStoreToProjects === "function") {
 						migrateCodeStoreToProjects();
 					}
+
+					// 在 iframe 关闭前保存标签页状态（使用 localStorage 同步备份）
+					window.addEventListener('beforeunload', function() {
+						if (typeof TabManager !== "undefined" && TabManager._tabs) {
+							try {
+								var data = TabManager._tabs.map(function(t) { return { projectId: t.projectId, fileName: t.fileName, label: t.label }; });
+								// 同步保存到 localStorage 作为备份
+								localStorage.setItem('__open_tabs_backup', JSON.stringify(data));
+								console.log('[beforeunload] Tabs saved to localStorage backup:', data.length, 'tabs');
+								// 尝试同步保存到 EDA 存储（可能不会完成，但 localStorage 已经保存了）
+								try { eda.sys_Storage.setExtensionUserConfig('__open_tabs', JSON.stringify(data)); } catch(e) {}
+							} catch(e) {
+								console.error('[beforeunload] Failed to save tabs:', e);
+							}
+						}
+					});
 
 					async function saveCurrentProjectFile() {
 						if (!window.projectManager.currentFile || !window.projectManager.currentProject) {
@@ -364,6 +395,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 					var TabManager = {
 						_tabs: [],       // [{ key, label, dirty, projectId, fileName }]
 						_activeKey: null,
+						_restoring: false,  // 恢复状态标志
 
 						// 生成唯一 key: projectId:fileName
 						_makeKey: function(projectId, fileName) {
@@ -380,6 +412,8 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 							}
 							this._activeKey = key;
 							this.render();
+							// 如果不在恢复过程中，保存标签页状态
+							if (!this._restoring) this.saveTabs();
 						},
 
 						// 检查某个 key 是否已打开
@@ -434,6 +468,7 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 
 							this._tabs.splice(idx, 1);
 							_updateDirtyFlag();
+							this.saveTabs();
 							if (this._activeKey === key) {
 								var next = this._tabs.length > 0 ? this._tabs[this._tabs.length-1] : null;
 								this._activeKey = next ? next.key : null;
@@ -455,8 +490,69 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 							if (tab) { this._activeKey = key; this.render(); }
 						},
 
-						// 渲染标签栏
-						render: function() {
+					saveTabs: async function() {
+						var data = this._tabs.map(function(t) { return { projectId: t.projectId, fileName: t.fileName, label: t.label }; });
+						console.log("[saveTabs] saving", data.length, "tabs:", JSON.stringify(data));
+						// 同步保存到 localStorage 作为备份
+						try { localStorage.setItem('__open_tabs_backup', JSON.stringify(data)); } catch(e) { console.error("[saveTabs] localStorage FAIL:", e); }
+						// 异步保存到 EDA 存储
+						try { await eda.sys_Storage.setExtensionUserConfig('__open_tabs', JSON.stringify(data)); console.log("[saveTabs] done"); } catch(e) { console.error("[saveTabs] FAIL:", e); }
+					},
+
+					restoreTabs: async function() {
+						console.log("[restoreTabs] START");
+						this._restoring = true;  // 设置恢复标志
+						try {
+							// 优先检查 localStorage 备份（来自 beforeunload 的同步保存）
+							var raw = localStorage.getItem('__open_tabs_backup');
+							if (!raw) {
+								// 如果没有备份，检查 EDA 存储
+								raw = await eda.sys_Storage.getExtensionUserConfig('__open_tabs');
+							} else {
+								console.log("[restoreTabs] Using localStorage backup");
+							}
+							console.log("[restoreTabs] raw data:", raw ? raw.substring(0,200) : "null/empty");
+							if (!raw) { console.log("[restoreTabs] no data, exit"); return; }
+							var data = JSON.parse(raw);
+							if (!data || !data.length) { console.log("[restoreTabs] empty array, exit"); return; }
+							console.log("[restoreTabs] restoring", data.length, "tabs");
+							if (!window.projectManager.db) { console.log("[restoreTabs] initDB..."); await window.projectManager.initDB(); }
+							if (!window.fileTreeUI) { console.log("[restoreTabs] no fileTreeUI, creating"); window.fileTreeUI = new FileTreeUI("file-tree", editor); }
+
+							for (var i = 0; i < data.length; i++) {
+								var t = data[i];
+								console.log("[restoreTabs] tab " + (i+1) + "/" + data.length + ":", JSON.stringify(t));
+								if (!t.fileName) continue;
+								try {
+									if (t.projectId && t.projectId > 0) {
+										console.log("[restoreTabs] loadProject id=" + t.projectId);
+										var proj = await window.projectManager.loadProject(t.projectId);
+										console.log("[restoreTabs] project loaded:", proj.projectName);
+										window.projectManager.currentProject = proj;
+									}
+									if (i === data.length - 1) {
+										console.log("[restoreTabs] loading last file into editor:", t.fileName);
+										if (window.fileTreeUI) await window.fileTreeUI.loadFile(t.fileName);
+										this._activeKey = this._makeKey(t.projectId, t.fileName);
+									}
+									console.log("[restoreTabs] adding tab:", t.fileName);
+									this.open(t.projectId, t.fileName, t.label || t.fileName.split("/").pop());
+								} catch(e) { console.error("[restoreTabs] tab " + t.fileName + " FAILED:", e); }
+							}
+							console.log("[restoreTabs] all done, rendering");
+							this.render();
+							// 清除 localStorage 备份（已成功恢复）
+							try { localStorage.removeItem('__open_tabs_backup'); } catch(e) {}
+						} catch(e) { console.error("[restoreTabs] FATAL:", e); }
+						finally {
+							this._restoring = false;  // 清除恢复标志
+							// 恢���完成后保存最终状态
+							await this.saveTabs();
+						}
+					},
+
+					// 渲染标签栏
+					render: function() {
 							var bar = document.getElementById("tab-bar");
 							if (!bar) return;
 							if (this._tabs.length === 0) {
@@ -497,9 +593,11 @@ hr { border: none; border-top: 1px solid ${borderColor}; margin: 24px 0; }
 						},
 					};
 
-					function _updateDirtyFlag() {
-						try { eda.sys_Storage.setExtensionUserConfig('__has_dirty', TabManager._tabs.some(function(t) { return t.dirty; }) ? 'true' : 'false'); } catch(e) {}
-					}
+
+					async function _updateDirtyFlag() {
+						var isDirty = TabManager._tabs.some(function(t) { return t.dirty; }); console.log("[_updateDirtyFlag] dirty=" + isDirty);
+						try { await eda.sys_Storage.setExtensionUserConfig('__has_dirty', isDirty ? 'true' : 'false'); } catch(e) { console.error("[_updateDirtyFlag] FAIL:", e); }
+t				}
 
 
 					// 注册右键跳转文档

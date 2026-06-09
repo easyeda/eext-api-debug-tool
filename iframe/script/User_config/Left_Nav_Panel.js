@@ -84,7 +84,7 @@ class LeftNavPanel {
 						showCancelButton: true,
 						confirmButtonText: '覆盖',
 						cancelButtonText: '取消',
-						confirmButtonColor: '#d33',
+						confirmButtonColor: '#1890ff',
 					});
 					if (!result.isConfirmed) return;
 
@@ -359,14 +359,29 @@ class LeftNavPanel {
 			min-width: 120px;
 		`;
 
-		const menuItems = [
-			{ text: '打开项目', action: () => this.openProject(projectId) },
-			{ text: '保存到快捷按钮', action: () => Project_SaveToBtnList(projectId) },
-			{ text: '导出项目文件', action: () => this.exportProjectAsZip(projectId) },
-			{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
-			{ text: '---', action: null },
-			{ text: '删除项目', action: () => this.showDeleteProjectConfirm(projectId) },
-		];
+			var isScriptProj = !!this.projects.find(function(p) { return p.id === projectId && p.isScript; });
+			var menuItems;
+			if (isScriptProj) {
+				menuItems = [
+					{ text: '打开', action: () => this.openScriptProject(projectId) },
+					{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: '---', action: null },
+					{ text: '映射到顶部菜单', action: () => Project_SaveToBtnList(projectId) },
+					{ text: '保存为插件', action: () => ExtStore_SavePlugin(this.editor, true) },
+					{ text: '---', action: null },
+					{ text: '删除', action: () => this.showDeleteProjectConfirm(projectId) },
+				];
+			} else {
+				menuItems = [
+					{ text: '打开', action: () => this.openProject(projectId) },
+					{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: '导出', action: () => this.exportProjectAsZip(projectId) },
+					{ text: '---', action: null },
+					{ text: '映射到顶部菜单', action: () => Project_SaveToBtnList(projectId) },
+					{ text: '---', action: null },
+					{ text: '删除', action: () => this.showDeleteProjectConfirm(projectId) },
+				];
+			}
 
 		menuItems.forEach((item) => {
 			if (item.text === '---') {
@@ -378,7 +393,7 @@ class LeftNavPanel {
 			const menuItem = document.createElement('div');
 			menuItem.textContent = item.text;
 			menuItem.style.cssText = `padding:8px 16px;cursor:pointer;color:${textColor};user-select:none;transition:background 0.2s;`;
-			if (item.text === '删除项目') menuItem.style.color = '#d33';
+			
 			menuItem.onmouseenter = () => (menuItem.style.backgroundColor = hoverBg);
 			menuItem.onmouseleave = () => (menuItem.style.backgroundColor = '');
 			menuItem.onclick = () => {
@@ -448,12 +463,12 @@ class LeftNavPanel {
 
 		const result = await Swal.fire({
 			title: '确认删除',
-			html: `确定要删除项目 "<strong>${this.escapeHtml(project.projectName)}</strong>" 吗？<br><br>这将删除项目中的 <strong>${project.files.length}</strong> 个文件。<br><br><span style="color: #d33;">此操作不可恢复！</span>`,
+			html: `确定要删除项目 "<strong>${this.escapeHtml(project.projectName)}</strong>" 吗？<br><br>这将删除项目中的 <strong>${project.files.length}</strong> 个文件。<br><br>此操作不可恢复！`,
 			icon: 'warning',
 			showCancelButton: true,
 			confirmButtonText: '确认删除',
 			cancelButtonText: '取消',
-			confirmButtonColor: '#d33',
+			confirmButtonColor: '#1890ff',
 		});
 
 		if (result.isConfirmed) {
@@ -1087,7 +1102,7 @@ class LeftNavPanel {
 			showCancelButton: true,
 			confirmButtonText: '删除',
 			cancelButtonText: '取消',
-			confirmButtonColor: '#d33',
+			confirmButtonColor: '#1890ff',
 		});
 
 		if (result.isConfirmed) {

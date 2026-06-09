@@ -491,6 +491,45 @@ async function Project_SaveToBtnList(projectId) {
 		return;
 	}
 
+	// 脚本：直接执行内容
+	var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith('.js')));
+	if (isScript) {
+		var scriptCode = project.files[0].content;
+		if (!scriptCode || !scriptCode.trim()) {
+			eda.sys_Message.showToastMessage('脚本内容为空', 'warn', 2);
+			return;
+		}
+		var sRes = await Swal.fire({
+			title: '映射到顶部菜单',
+			input: 'text',
+			inputLabel: '按钮名称',
+			inputValue: project.projectName,
+			inputPlaceholder: '例如：我的脚本',
+			showCancelButton: true,
+			confirmButtonText: '保存',
+			cancelButtonText: '取消',
+			inputValidator: function(value) {
+				if (!value || !value.trim()) return '请输入按钮名称';
+			},
+		});
+		if (!scriptNameResult.isConfirmed) return;
+		var sBtnName = scriptNameResult.value.trim();
+		try {
+			var db = await BtnStore_Init();
+			await new Promise(function(res, rej) {
+				var tx = db.transaction(['BtnList'], 'readwrite');
+				tx.objectStore('BtnList').add({ name: sBtnName, code: scriptCode, createdAt: new Date().toISOString() });
+				tx.oncomplete = res;
+				tx.onerror = rej;
+			});
+			document.getElementById('quick-btn-list')?.appendChild(createQuickButton(window.editor, sBtnName, scriptCode));
+			eda.sys_Message.showToastMessage('已映射到顶部菜单', 'success', 2);
+		} catch(e) {
+			eda.sys_Message.showToastMessage('保存失败: ' + e.message, 'error', 2);
+		}
+		return;
+	}
+
 	const htmlFiles = project.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
 	if (htmlFiles.length === 0) {
 		eda.sys_Message.showToastMessage('项目中没有 HTML 文件', 'warn', 2);

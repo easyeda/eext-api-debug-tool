@@ -28,9 +28,6 @@ function showFileContextMenu(e, editor) {
 	const menuItems = [
 		{ text: '新建项目', action: () => showNewProjectDialog(editor) },
 	{ text: '新建脚本', action: () => showNewScriptDialog(editor) },
-		{ text: '---', action: null },
-		{ text: '保存到快捷按钮', action: () => Code_SaveToBtnList(editor) },
-		{ text: '保存为插件', action: () => ExtStore_SavePlugin(editor, true) },
 	];
 
 	menu.innerHTML = '';

@@ -14,33 +14,37 @@ export async function openScriptTool(): void {
 	const height = await eda.sys_Storage.getExtensionUserConfig('UI_height');
 	try {
 		eda.sys_Storage.setExtensionUserConfig('version', extensionConfig.version);
-	} catch (e) {
-		// storage corrupted, ignore
-	}
+	} catch (e) {}
+
+	let _closing = false;
 	eda.sys_IFrame.openIFrame('iframe/main/index.html', parseInt(width || '1200', 10), parseInt(height || '500', 10), 'ScriptTool', {
 		maximizeButton: true,
 		minimizeButton: true,
 		onBeforeCloseCallFn: () => {
-				// 取消关闭，异步检查后再决定
-				setTimeout(async () => {
-					try {
-						var hasDirty = await eda.sys_Storage.getExtensionUserConfig('__has_dirty');
-						if (hasDirty === 'true') {
-							var result = await eda.sys_Dialog.showConfirmationMessage(
-								'有未保存的文件，确定关闭窗口？',
-								'关闭确认',
-							);
-							if (result) {
-								await eda.sys_IFrame.closeIFrame('ScriptTool');
+			if (_closing) return true;
+			setTimeout(() => {
+				try {
+					const hasDirty = eda.sys_Storage.getExtensionUserConfig('__has_dirty');
+					if (hasDirty === 'true') {
+						eda.sys_Dialog.showConfirmationMessage(
+							'有未保存的文件，确定关闭窗口？',
+							'关闭确认',
+							'确定',
+							'取消',
+							(confirmed: boolean) => {
+								if (confirmed) {
+									_closing = true;
+									eda.sys_IFrame.closeIFrame('ScriptTool');
+								}
 							}
-						} else {
-							await eda.sys_IFrame.closeIFrame('ScriptTool');
-						}
-					} catch(e) {
-						await eda.sys_IFrame.closeIFrame('ScriptTool');
+						);
+						return;
 					}
-				}, 50);
-				return false;
-			},
+				} catch(e) {}
+				_closing = true;
+				eda.sys_IFrame.closeIFrame('ScriptTool');
+			}, 50);
+			return false;
+		},
 	});
 }
