@@ -328,9 +328,22 @@ var TabManager = {
 		if (this._activeKey === key) {
 			var next = this._tabs.length > 0 ? this._tabs[this._tabs.length-1] : null;
 			this._activeKey = next ? next.key : null;
-			if (next && window.fileTreeUI && next.fileName !== window.projectManager.currentFile) {
-				await window.fileTreeUI.loadFile(next.fileName, true);
-			} else if (!next) {
+			if (next) {
+				// 先加载下一个 tab 对应的项目，确保 loadFile 中的 TabManager.open 使用正确的 projectId
+				var curPid = window.projectManager.currentProject ? window.projectManager.currentProject.id : null;
+				if (next.projectId && next.projectId !== curPid && next.projectId > 0) {
+					var proj = await window.projectManager.loadProject(next.projectId);
+					window.projectManager.currentProject = proj;
+					if (window.fileTreeUI) {
+						window.fileTreeUI = new FileTreeUI("file-tree", editor);
+						await window.fileTreeUI.render();
+					}
+				}
+				// 加载下一个 tab 的文件内容
+				if (window.fileTreeUI && next.fileName !== window.projectManager.currentFile) {
+					await window.fileTreeUI.loadFile(next.fileName, true);
+				}
+			} else {
 				editor.setValue("", -1);
 				window.projectManager.currentFile = null;
 				window.projectManager.currentProject = null;
