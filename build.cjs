@@ -167,11 +167,38 @@ for (let i = 0; i < lines.length; i++) {
 		// 方法：word( 开头（含 async word(）
 		const methodMatch = line.match(/^(?:async\s+)?(\w+)\s*\(/);
 		if (methodMatch && pendingJsdoc && pendingJsdoc.description) {
+			// 收集完整签名（可能跨多行），检测返回类型是否为 Promise
+				let sigText = line;
+				if (!line.trimEnd().endsWith(';')) {
+					// 跟踪括号嵌套深度，避免参数对象内的 ; 导致提前终止
+					let depth = 0;
+					for (const ch of line) {
+						if (ch === '{' || ch === '(') depth++;
+						if (ch === '}' || ch === ')') depth--;
+					}
+					let k = i + 1;
+					while (k < lines.length && k < i + 20) {
+						sigText += '\n' + lines[k];
+						const trimmed = lines[k].trimEnd();
+						for (const ch of trimmed) {
+							if (ch === '{' || ch === '(') depth++;
+							if (ch === '}' || ch === ')') depth--;
+						}
+						if (depth <= 0 && trimmed.endsWith(';')) break;
+						k++;
+					}
+				}
+				const returnIdx = sigText.lastIndexOf('):');
+				const isAsync =
+					returnIdx !== -1 &&
+					sigText.substring(returnIdx).trimStart().startsWith('): Promise');
+
 			const item = {
 				methodPath: `eda.${formatClassName(currentClass)}.${methodMatch[1]}`,
 				description: pendingJsdoc.description,
 				parameters: pendingJsdoc.params,
 			};
+			item.isAsync = isAsync;
 			if (pendingJsdoc.remarks) item.remarks = pendingJsdoc.remarks;
 			if (pendingJsdoc.returns) item.returns = pendingJsdoc.returns;
 			if (pendingJsdoc.tags.length) item.tags = pendingJsdoc.tags;
@@ -257,6 +284,7 @@ const outputObject = merged.map((item) => {
 		obj.isEnumMember = true;
 		obj.enumType = item.enumType;
 	}
+	if (item.isAsync !== undefined) obj.isAsync = item.isAsync;
 	return obj;
 });
 

@@ -29,11 +29,17 @@ function _shouldWrapWithVariable() {
 		return value === "true" || value === true;
 	} catch (e) { return false; }
 }
+function _shouldAutoAwait() {
+	try {
+		var value = eda.sys_Storage.getExtensionUserConfig('completion_auto_await');
+		return value === 'true' || value === true;
+	} catch (e) { return false; }
+}
 
 function _generateRandomVarName(editor) {
 	var content = editor.getValue();
 	var usedNames = {};
-	var re = /(const|let|var)s+(w+)s*=/g;
+	var re = /\b(const|let|var)\s+(\w+)\s*=/g;
 	var m;
 	while ((m = re.exec(content)) !== null) { usedNames[m[2]] = true; }
 	var chars = "abcdefghijklmnopqrstuvwxyz";
@@ -49,6 +55,12 @@ function _generateRandomVarName(editor) {
 
 function _buildCompletionInsertText(item, editor) {
 	var text = item.value;
+	// 随机变量模式自动联动异步补全 await
+	if (_shouldWrapWithVariable() && item._isAsync) {
+		text = "await " + text;
+	} else if (_shouldAutoAwait() && item._isAsync) {
+		text = "await " + text;
+	}
 	if (_shouldWrapWithVariable()) {
 		var varName = _generateRandomVarName(editor);
 		text = "const " + varName + " = " + text;
@@ -60,24 +72,45 @@ function _buildCompletionInsertText(item, editor) {
 }
 
 function _selectFirstParam(editor, text, startRow, startCol) {
-	// 如果启用了随机变量，光标定位到 = 右边
+	// 如果启用了随机变量，选中第一个参数，无参则定位到行末
 	if (_shouldWrapWithVariable()) {
-		// 在编辑器中查找包含 const 的行并定位到 = 后
-		for (var i = startRow; i <= startRow + 3; i++) {
-			var lineText = editor.session.getLine(i);
-			if (lineText && lineText.indexOf('const ') >= 0 && lineText.indexOf(' = ') >= 0) {
-				var eqPos = lineText.indexOf(' = ');
-				editor.selection.moveTo(i, eqPos + 3);
-				return;
-			}
-		}
-		// 降级：直接在当前行查找
-		var currentLine = editor.session.getLine(startRow);
-		if (currentLine && currentLine.indexOf(' = ') >= 0) {
-			var eqPos = currentLine.indexOf(' = ');
-			editor.selection.moveTo(startRow, eqPos + 3);
+		var parenIdx = text.indexOf('(');
+		if (parenIdx === -1) return;
+		var suffix = text.substring(parenIdx + 1);
+		var closeIdx = suffix.lastIndexOf(')');
+		if (closeIdx === -1) return;
+		var inner = suffix.substring(0, closeIdx);
+
+		var lines = text.substring(0, parenIdx + 1).split('\n');
+		var cursorRow = startRow + lines.length - 1;
+		var cursorCol = lines.length > 1 ? lines[lines.length - 1].length : startCol + lines[0].length;
+
+		// 如果没有参数，光标定位到行末
+		if (!inner || !inner.trim()) {
+			var lastLine = editor.session.getLine(cursorRow);
+			editor.selection.moveTo(cursorRow, lastLine.length);
 			return;
 		}
+
+		// 查找第一个参数并选中
+		var firstParam = inner.split(',')[0].trim();
+		if (!firstParam) {
+			var lastLine2 = editor.session.getLine(cursorRow);
+			editor.selection.moveTo(cursorRow, lastLine2.length);
+			return;
+		}
+		var searchLine = editor.session.getLine(cursorRow);
+		var paramIdx = searchLine.indexOf(firstParam, cursorCol);
+		if (paramIdx === -1) {
+			var lastLine3 = editor.session.getLine(cursorRow);
+			editor.selection.moveTo(cursorRow, lastLine3.length);
+			return;
+		}
+		editor.selection.setRange({
+			start: { row: cursorRow, column: paramIdx },
+			end: { row: cursorRow, column: paramIdx + firstParam.length },
+		});
+		return;
 	}
 	var parenIdx = text.indexOf('(');
 	if (parenIdx === -1) return;
@@ -261,9 +294,10 @@ function ACE_CodingForEDA(editor, edcode) {
 				caption: e.methodPath,
 				value: value,
 				score: 1000,
-				meta: 'method',
+				meta: e.isAsync ? 'async method' : 'sync method',
 				docText: doc,
 				_lc: e.methodPath.toLowerCase(),
+				_isAsync: e.isAsync || false,
 				description: e.description,
 				completer: {
 					insertMatch: function (editor, data) {
@@ -293,6 +327,7 @@ function ACE_CodingForEDA(editor, edcode) {
 				meta: 'desc',
 				docText: doc,
 				_lc: e.description.toLowerCase(),
+				_isAsync: e.isAsync || false,
 				description: e.description,
 				completer: {
 					insertMatch: function (editor, data) {
@@ -387,6 +422,11 @@ function buildDocText(item) {
 	}
 	if (item.returns) {
 		doc += '\n\n返回值:' + item.returns;
+	}
+	if (item.isAsync) {
+		doc += '\n\n★ 异步方法 — 调用时需使用 await';
+	} else if (item.isAsync === false) {
+		doc += '\n\n★ 同步方法 — 无需 await，直接调用';
 	}
 	return doc.trim();
 }
