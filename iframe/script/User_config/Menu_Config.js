@@ -308,7 +308,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 	const modal = document.createElement('div');
 	modal.id = 'settings-modal-content';
-	modal.style.cssText = `background:var(--eext-bg-modal);border:1px solid var(--eext-border);border-radius:4px;width:680px;max-width:95%;height:520px;max-height:85vh;box-shadow:0 0 15px rgba(50,50,50,0.3);display:flex;flex-direction:column;color:var(--eext-text-primary);`;
+	modal.style.cssText = `background:var(--eext-bg-modal);border:1px solid var(--eext-border);border-radius:4px;width:880px;max-width:95%;height:560px;max-height:85vh;box-shadow:0 0 15px rgba(50,50,50,0.3);display:flex;flex-direction:column;color:var(--eext-text-primary);`;
 
 	/* Header */
 	const header = document.createElement('div');
@@ -864,21 +864,49 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			loadPluginList();
 		} else if (activeMenu === 'completer') {
 			section('补全仓库');
-			const list = document.createElement('div');
-			list.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
-			contentPane.appendChild(list);
+			const toolbar = document.createElement('div');
+			toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;';
+			const hint = document.createElement('div');
+			hint.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);';
+			hint.textContent = '提示：双击补全项可编辑';
+			toolbar.appendChild(hint);
+			const addBtn = document.createElement('button');
+			addBtn.textContent = '新增补全项';
+			addBtn.style.cssText = 'padding:5px 14px;font-size:11px;border:1px solid var(--eext-brand);border-radius:4px;background:var(--eext-brand);color:#fff;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;';
+			addBtn.onmouseenter = function() { addBtn.style.opacity = '0.85'; };
+			addBtn.onmouseleave = function() { addBtn.style.opacity = '1'; };
+			addBtn.onclick = function() { _showCompleterEditDialog(null, editor, loadCompleters); };
+			toolbar.appendChild(addBtn);
+			contentPane.appendChild(toolbar);
+			const listWrap = document.createElement('div');
+			listWrap.style.cssText = 'max-height:420px;overflow-x:hidden;overflow-y:auto;border:1px solid var(--eext-border);border-radius:4px;background:var(--eext-bg-modal);';
+			const table = document.createElement('table');
+			table.style.cssText = 'width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;';
+			const thead = document.createElement('thead');
+			thead.style.cssText = 'background:var(--eext-bg-item);';
+			thead.innerHTML = '<tr>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:20%;\'>名称</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:28%;\'>描述</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:34%;\'>补全值</th>' +
+				'<th style=\'padding:8px 12px;text-align:right;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:18%;\'>操作</th>' +
+				'</tr>';
+			table.appendChild(thead);
+			const tbody = document.createElement('tbody');
+			table.appendChild(tbody);
+			listWrap.appendChild(table);
+			contentPane.appendChild(listWrap);
 			async function loadCompleters() {
-				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">加载中...</div>';
+				tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>加载中...</td></tr>';
 				try {
 					const items = await new Promise(function(r) { try { var x = indexedDB.open('UserCompleterStore', 1); x.onsuccess = function() { var t = x.result.transaction('completions','readonly'); var g = t.objectStore('completions').getAll(); g.onsuccess = function() { r(g.result || []); }; g.onerror = function() { r([]); }; }; x.onerror = function() { r([]); }; } catch(e) { r([]); } });
 					if (!items || items.length === 0) {
-						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">暂无自定义补全项。</div>';
+						tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>暂无自定义补全项。</td></tr>';
 						return;
 					}
-					list.innerHTML = '';
-					items.forEach(function(c) { list.appendChild(_buildCompleterCard(c, editor, loadCompleters)); });
+					tbody.innerHTML = '';
+					items.forEach(function(c, idx) { tbody.appendChild(_buildCompleterRow(c, editor, loadCompleters, idx)); });
 				} catch(e) {
-					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">加载失败: ' + e.message + '</div>';
+					tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-error);font-size:12px;\'>加载失败: ' + e.message + '</td></tr>';
 				}
 			}
 			loadCompleters();
@@ -917,9 +945,12 @@ var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}
 	overlay.appendChild(modal);
 	document.body.appendChild(overlay);
 
-	/* Escape to close */
+	/* Escape to close (skipped if a child dialog is open) */
 	document.addEventListener('keydown', function escH(e) {
-		if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escH); }
+		if (e.key !== 'Escape') return;
+		if (document.getElementById('eext-cs-edit-overlay')) return;
+		overlay.remove();
+		document.removeEventListener('keydown', escH);
 	});
 
 	/* Close button */
@@ -931,69 +962,53 @@ var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}
 }
 
 /* ============================================
-   补全仓库 - 卡片渲染与编辑
+   补全仓库 - 表格渲染与编辑
    ============================================ */
 
 /**
- * 构建单个补全项的卡片 DOM
+ * 构建单个补全项的表格行 DOM
  * @param {Object} rec - 补全记录 {id, caption, value, params, description}
  * @param {Object} editor - ACE 编辑器实例
  * @param {Function} reloadFn - 重新加载列表的回调
+ * @param {number} rowIndex - 当前行的索引（用于斑马纹）
  */
-function _buildCompleterCard(rec, editor, reloadFn) {
-	const card = document.createElement("div");
-	card.className = "cs-item";
+function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
+	const tr = document.createElement("tr");
+	const stripe = (rowIndex % 2 === 1) ? "rgba(125,125,125,0.06)" : "transparent";
+	tr.style.cssText = "background:" + stripe + ";transition:background 0.15s;cursor:pointer;";
+	tr.onmouseenter = function() { tr.style.background = "var(--eext-hover-bg)"; };
+	tr.onmouseleave = function() { tr.style.background = stripe; };
 
-	/* 信息区 */
-	const info = document.createElement("div");
-	info.className = "cs-item-info";
+	/* 名称单元格 */
+	const tdCaption = document.createElement("td");
+	tdCaption.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+	tdCaption.textContent = rec.caption || "未命名";
+	tdCaption.title = "名称: " + (rec.caption || "未命名");
+	tr.appendChild(tdCaption);
 
-	const caption = document.createElement("span");
-	caption.className = "cs-item-caption";
-	caption.textContent = rec.caption || "未命名";
-	caption.title = "名称: " + (rec.caption || "未命名");
-	info.appendChild(caption);
+	/* 描述单元格 */
+	const tdDesc = document.createElement("td");
+	tdDesc.style.cssText = "padding:8px 12px;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+	tdDesc.textContent = rec.description || "—";
+	tdDesc.title = rec.description ? "描述: " + rec.description : "";
+	tr.appendChild(tdDesc);
 
-	const value = document.createElement("span");
-	value.className = "cs-item-value";
-	value.textContent = rec.value || "";
-	value.title = "补全值: " + (rec.value || "");
-	info.appendChild(value);
+	/* 补全值单元格 */
+	const tdValue = document.createElement("td");
+	tdValue.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);font-family:Consolas,Monaco,'Courier New',monospace;font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+	tdValue.textContent = rec.value || "";
+	tdValue.title = "补全值: " + (rec.value || "");
+	tr.appendChild(tdValue);
 
-	if (rec.description) {
-		const desc = document.createElement("span");
-		desc.className = "cs-item-desc";
-		desc.textContent = rec.description;
-		desc.title = "描述: " + rec.description;
-		info.appendChild(desc);
-	}
-
-	if (rec.params && rec.params.length > 0) {
-		const params = document.createElement("span");
-		params.className = "cs-item-params";
-		params.textContent = "参数: " + rec.params.join(", ");
-		info.appendChild(params);
-	}
-
-	card.appendChild(info);
-
-	/* 操作按钮 */
-	const actions = document.createElement("div");
-	actions.className = "cs-item-actions";
-
-	const editBtn = document.createElement("button");
-	editBtn.className = "cs-btn cs-btn-edit";
-	editBtn.textContent = "编辑";
-	editBtn.onclick = function() {
-		if (card.querySelector(".cs-edit-form")) return;
-		card.appendChild(_buildCompleterEditForm(rec, editor, card, reloadFn));
-	};
-	actions.appendChild(editBtn);
-
+	/* 操作单元格 */
+	const tdAction = document.createElement("td");
+	tdAction.style.cssText = "padding:8px 12px;text-align:right;border-bottom:1px solid var(--eext-border);white-space:nowrap;";
 	const delBtn = document.createElement("button");
 	delBtn.className = "eext-modal-btn-delete";
+	delBtn.style.cssText = "padding:4px 12px;font-size:11px;min-width:auto;height:auto;";
 	delBtn.textContent = "删除";
-	delBtn.onclick = function() {
+	delBtn.onclick = function(ev) {
+		ev.stopPropagation();
 		eda.sys_Dialog.showConfirmationMessage(
 			"确定删除补全项 \"" + (rec.caption || "未命名") + "\" 吗？此操作不可撤销。",
 			"提示", "确认", "取消",
@@ -1004,7 +1019,6 @@ function _buildCompleterCard(rec, editor, reloadFn) {
 					if (typeof _removeUserCompleterFromEditor === "function") {
 						_removeUserCompleterFromEditor(editor);
 					}
-					/* 重新注册剩余补全项 */
 					try {
 						const db = await UserCompleterStore_Init();
 						const all = await new Promise(function(res, rej) {
@@ -1028,56 +1042,144 @@ function _buildCompleterCard(rec, editor, reloadFn) {
 			}
 		);
 	};
-	actions.appendChild(delBtn);
+	tdAction.appendChild(delBtn);
+	tr.appendChild(tdAction);
 
-	card.appendChild(actions);
-	return card;
+	/* 双击任意非按钮单元格进入编辑 */
+	tdCaption.ondblclick = function() { _showCompleterEditDialog(rec, editor, reloadFn); };
+	tdValue.ondblclick = tdCaption.ondblclick;
+	tdDesc.ondblclick = tdCaption.ondblclick;
+	tr.title = "双击行编辑";
+	return tr;
 }
 
 /**
- * 构建补全项的内联编辑表单
- * @param {Object} rec - 补全记录
+ * 显示补全项编辑/新增弹窗
+ * 点击弹窗外区域不关闭，仅"×"、"取消"或"保存"可关闭
+ * 自定义模态框样式参考 example.png
+ * @param {Object|null} rec - 补全记录（null 表示新增模式）
  * @param {Object} editor - ACE 编辑器实例
- * @param {HTMLElement} card - 卡片容器
  * @param {Function} reloadFn - 重新加载列表的回调
  */
-function _buildCompleterEditForm(rec, editor, card, reloadFn) {
-	const form = document.createElement("div");
-	form.className = "cs-edit-form";
+function _showCompleterEditDialog(rec, editor, reloadFn) {
+	/* 移除可能存在的旧实例 */
+	const old = document.getElementById("eext-cs-edit-overlay");
+	if (old) old.remove();
 
-	function addRow(label, val, placeholder, inputId) {
-		const row = document.createElement("div");
-		row.className = "cs-edit-row";
-		const lbl = document.createElement("label");
-		lbl.textContent = label;
-		const inp = document.createElement("input");
-		inp.className = "cs-edit-input";
-		inp.value = val || "";
-		inp.placeholder = placeholder || "";
-		inp.id = inputId;
-		row.appendChild(lbl);
-		row.appendChild(inp);
-		form.appendChild(row);
-		return inp;
+	const isAdd = !rec || !rec.id;
+	const modeTitle = isAdd ? "新增补全项" : "编辑补全项";
+
+	const overlay = document.createElement("div");
+	overlay.id = "eext-cs-edit-overlay";
+	overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:100000;display:flex;align-items:center;justify-content:center;font-family:inherit;";
+	/* 点击遮罩不关闭（保留原需求），但阻止事件冒泡到下层 */
+	overlay.addEventListener("mousedown", function(ev) { if (ev.target === overlay) ev.stopPropagation(); });
+
+	const modal = document.createElement("div");
+	modal.style.cssText = "background:var(--eext-bg-modal);border:1px solid var(--eext-border);border-radius:8px;width:440px;max-width:92%;box-shadow:0 12px 32px rgba(0,0,0,0.2);display:flex;flex-direction:column;overflow:hidden;color:var(--eext-text-primary);";
+
+	/* Header */
+	const header = document.createElement("div");
+	header.style.cssText = "padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--eext-border);";
+	const title = document.createElement("span");
+	title.textContent = modeTitle;
+	title.style.cssText = "font-size:14px;font-weight:600;color:var(--eext-text-primary);";
+	header.appendChild(title);
+	const closeBtn = document.createElement("button");
+	closeBtn.innerHTML = "&times;";
+	closeBtn.style.cssText = "width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--eext-text-secondary);font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.15s,color 0.15s;";
+	closeBtn.onmouseenter = function() { closeBtn.style.background = "var(--eext-hover-bg)"; closeBtn.style.color = "var(--eext-text-primary)"; };
+	closeBtn.onmouseleave = function() { closeBtn.style.background = "transparent"; closeBtn.style.color = "var(--eext-text-secondary)"; };
+	closeBtn.onclick = function() { closeDialog(); };
+	header.appendChild(closeBtn);
+	modal.appendChild(header);
+
+	/* Body */
+	const body = document.createElement("div");
+	body.style.cssText = "padding:20px;display:flex;flex-direction:column;gap:14px;";
+
+	function buildField(labelText, placeholder, id, type) {
+		const wrap = document.createElement("div");
+		wrap.style.cssText = "display:flex;flex-direction:column;gap:6px;";
+		const label = document.createElement("label");
+		label.textContent = labelText;
+		label.style.cssText = "font-size:12px;color:var(--eext-text-secondary);font-weight:500;";
+		label.setAttribute("for", id);
+		wrap.appendChild(label);
+		const input = document.createElement("input");
+		input.type = type || "text";
+		input.id = id;
+		input.placeholder = placeholder;
+		input.style.cssText = "width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--eext-border);border-radius:4px;font-size:13px;color:var(--eext-text-primary);background:var(--eext-bg-input);outline:none;transition:border-color 0.15s;";
+		input.onfocus = function() { input.style.borderColor = "var(--eext-brand)"; };
+		input.onblur = function() { input.style.borderColor = "var(--eext-border)"; };
+		wrap.appendChild(input);
+		body.appendChild(wrap);
+		return input;
 	}
 
-	const inpCaption = addRow("名称:", rec.caption || "", "补全显示名称（中文映射）", "cs-edit-caption");
-	const inpValue = addRow("补全值:", rec.value || "", "选中后插入的代码内容", "cs-edit-value");
-	const inpDesc = addRow("描述:", rec.description || "", "补全提示说明", "cs-edit-desc");
+	const captionInput = buildField("名称", "请输入名称（中文映射）", "eext-cs-edit-caption", "text");
+	const valueInput = buildField("补全值", "请输入补全值（选中后插入的代码）", "eext-cs-edit-value", "text");
+	valueInput.style.fontFamily = "Consolas,Monaco,'Courier New',monospace";
+	valueInput.style.fontSize = "12px";
+	const descInput = buildField("描述", "请输入描述（补全提示说明，可选）", "eext-cs-edit-desc", "text");
 
-	const btnRow = document.createElement("div");
-	btnRow.className = "cs-edit-actions";
+	captionInput.value = (rec && rec.caption) || "";
+	valueInput.value = (rec && rec.value) || "";
+	descInput.value = (rec && rec.description) || "";
 
+	modal.appendChild(body);
+
+	/* Footer */
+	const footer = document.createElement("div");
+	footer.style.cssText = "padding:12px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--eext-border);background:var(--eext-bg-item);";
+	const cancelBtn = document.createElement("button");
+	cancelBtn.textContent = "取消";
+	cancelBtn.style.cssText = "padding:8px 18px;border:1px solid var(--eext-border);border-radius:4px;background:transparent;color:var(--eext-text-primary);font-size:12px;cursor:pointer;transition:background 0.15s;";
+	cancelBtn.onmouseenter = function() { cancelBtn.style.background = "var(--eext-hover-bg)"; };
+	cancelBtn.onmouseleave = function() { cancelBtn.style.background = "transparent"; };
+	cancelBtn.onclick = function() { closeDialog(); };
+	footer.appendChild(cancelBtn);
 	const saveBtn = document.createElement("button");
-	saveBtn.className = "cs-btn cs-btn-save";
 	saveBtn.textContent = "保存";
-	saveBtn.onclick = async function() {
-		const newCaption = inpCaption.value.trim();
-		const newValue = inpValue.value.trim();
-		const newDesc = inpDesc.value.trim();
+	saveBtn.style.cssText = "padding:8px 20px;border:none;border-radius:4px;background:var(--eext-brand);color:#fff;font-size:12px;cursor:pointer;font-weight:500;transition:opacity 0.15s;";
+	saveBtn.onmouseenter = function() { saveBtn.style.opacity = "0.85"; };
+	saveBtn.onmouseleave = function() { saveBtn.style.opacity = "1"; };
+	footer.appendChild(saveBtn);
+	modal.appendChild(footer);
 
-		if (!newCaption) { eda.sys_Message.showToastMessage("名称不能为空", "warn", 1); return; }
-		if (!newValue) { eda.sys_Message.showToastMessage("补全值不能为空", "warn", 1); return; }
+	overlay.appendChild(modal);
+	document.body.appendChild(overlay);
+
+	setTimeout(function() { captionInput.focus(); captionInput.select(); }, 50);
+
+	/* 统一关闭：先解绑 document 监听，再移除 DOM */
+	function closeDialog() {
+		document.removeEventListener("keydown", keyHandler, true);
+		if (overlay.parentNode) overlay.remove();
+	}
+
+	/* Enter 提交、Escape 关闭本弹窗（capture 阶段先于父级 settings 弹窗响应，
+	   并通过 stopImmediatePropagation 阻止父级 ESC 处理器触发） */
+	function keyHandler(e) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			saveBtn.click();
+		} else if (e.key === "Escape") {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			closeDialog();
+		}
+	}
+	document.addEventListener("keydown", keyHandler, true);
+
+	saveBtn.onclick = async function() {
+		var newCaption = captionInput.value.trim();
+		var newValue = valueInput.value.trim();
+		var newDesc = descInput.value.trim();
+		if (!newCaption) { captionInput.focus(); eda.sys_Message.showToastMessage("名称不能为空", "error", 1); return; }
+		if (!newValue) { valueInput.focus(); eda.sys_Message.showToastMessage("补全值不能为空", "error", 1); return; }
 
 		/* 自动提取参数 */
 		var newParams = [];
@@ -1086,35 +1188,66 @@ function _buildCompleterEditForm(rec, editor, card, reloadFn) {
 			if (parsed && parsed.params) newParams = parsed.params;
 		}
 
-		saveBtn.textContent = "保存中...";
 		saveBtn.disabled = true;
+		saveBtn.textContent = "保存中...";
+		cancelBtn.disabled = true;
 		try {
-			if (typeof _updateCompleter === "function") {
-				await _updateCompleter(rec.id, {
-					caption: newCaption,
-					value: newValue,
-					params: newParams,
-					description: newDesc,
-				});
-			} else {
-				/* 回退：手动更新 IndexedDB */
+			if (isAdd) {
+				/* 新增模式：先检查重名，再 store.add */
 				const db = await UserCompleterStore_Init();
+				const dupCheck = await new Promise(function(res, rej) {
+					const tx = db.transaction(["completions"], "readonly");
+					const req = tx.objectStore("completions").index("caption").get(newCaption);
+					req.onsuccess = function() { res(!!req.result); };
+					req.onerror = rej;
+				});
+				if (dupCheck) {
+					saveBtn.disabled = false;
+					saveBtn.textContent = "保存";
+					cancelBtn.disabled = false;
+					captionInput.focus();
+					eda.sys_Message.showToastMessage("名称 \"" + newCaption + "\" 已存在", "error", 1);
+					return;
+				}
 				await new Promise(function(resolve, reject) {
 					const tx = db.transaction(["completions"], "readwrite");
-					const store = tx.objectStore("completions");
-					const getReq = store.get(rec.id);
-					getReq.onsuccess = function() {
-						const record = getReq.result;
-						if (!record) return reject(new Error("记录不存在"));
-						Object.assign(record, { caption: newCaption, value: newValue, params: newParams, description: newDesc });
-						const putReq = store.put(record);
-						putReq.onsuccess = resolve;
-						putReq.onerror = function() { reject(putReq.error); };
-					};
-					getReq.onerror = function() { reject(getReq.error); };
+					const req = tx.objectStore("completions").add({
+						caption: newCaption,
+						value: newValue,
+						params: newParams,
+						description: newDesc,
+						createdAt: new Date().toISOString(),
+					});
+					req.onsuccess = resolve;
+					req.onerror = function() { reject(req.error); };
 				});
+			} else {
+				/* 编辑模式：优先走 _updateCompleter */
+				if (typeof _updateCompleter === "function") {
+					await _updateCompleter(rec.id, {
+						caption: newCaption,
+						value: newValue,
+						params: newParams,
+						description: newDesc,
+					});
+				} else {
+					const db = await UserCompleterStore_Init();
+					await new Promise(function(resolve, reject) {
+						const tx = db.transaction(["completions"], "readwrite");
+						const store = tx.objectStore("completions");
+						const getReq = store.get(rec.id);
+						getReq.onsuccess = function() {
+							const record = getReq.result;
+							if (!record) return reject(new Error("记录不存在"));
+							Object.assign(record, { caption: newCaption, value: newValue, params: newParams, description: newDesc });
+							const putReq = store.put(record);
+							putReq.onsuccess = resolve;
+							putReq.onerror = function() { reject(putReq.error); };
+						};
+						getReq.onerror = function() { reject(getReq.error); };
+					});
+				}
 			}
-			/* 刷新编辑器补全器 */
 			if (typeof _removeUserCompleterFromEditor === "function") {
 				_removeUserCompleterFromEditor(editor);
 			}
@@ -1133,24 +1266,15 @@ function _buildCompleterEditForm(rec, editor, card, reloadFn) {
 			if (window.leftNavPanel && window.leftNavPanel.loadCompleterStore) {
 				window.leftNavPanel.loadCompleterStore();
 			}
+			closeDialog();
 			reloadFn();
-			eda.sys_Message.showToastMessage("已更新: " + newCaption, "success", 1);
+			eda.sys_Message.showToastMessage((isAdd ? "已新增: " : "已更新: ") + newCaption, "success", 1);
 		} catch(err) {
-			eda.sys_Message.showToastMessage("更新失败: " + err.message, "error", 1);
-			saveBtn.textContent = "保存";
 			saveBtn.disabled = false;
+			saveBtn.textContent = "保存";
+			cancelBtn.disabled = false;
+			eda.sys_Message.showToastMessage((isAdd ? "新增失败: " : "更新失败: ") + err.message, "error", 1);
 		}
 	};
-	btnRow.appendChild(saveBtn);
-
-	const cancelBtn = document.createElement("button");
-	cancelBtn.className = "cs-btn cs-btn-cancel";
-	cancelBtn.textContent = "取消";
-	cancelBtn.onclick = function() { form.remove(); };
-	btnRow.appendChild(cancelBtn);
-
-	form.appendChild(btnRow);
-	/* 自动聚焦到名称输入框 */
-	setTimeout(function() { inpCaption.focus(); }, 50);
-	return form;
 }
+
