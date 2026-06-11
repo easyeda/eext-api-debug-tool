@@ -976,28 +976,37 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	const tr = document.createElement("tr");
 	const stripe = (rowIndex % 2 === 1) ? "rgba(125,125,125,0.06)" : "transparent";
 	tr.style.cssText = "background:" + stripe + ";transition:background 0.15s;cursor:pointer;";
-	tr.onmouseenter = function() { tr.style.background = "var(--eext-hover-bg)"; };
-	tr.onmouseleave = function() { tr.style.background = stripe; };
+
+	/* 仅当内容被截断时才显示 title 提示 */
+	function bindTruncateTitle(cell, fullText) {
+		if (!fullText) return;
+		cell.addEventListener("mouseenter", function() {
+			if (cell.scrollWidth > cell.clientWidth) cell.title = fullText;
+		});
+		cell.addEventListener("mouseleave", function() {
+			cell.removeAttribute("title");
+		});
+	}
 
 	/* 名称单元格 */
 	const tdCaption = document.createElement("td");
 	tdCaption.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdCaption.textContent = rec.caption || "未命名";
-	tdCaption.title = "名称: " + (rec.caption || "未命名");
+	bindTruncateTitle(tdCaption, "名称: " + (rec.caption || "未命名"));
 	tr.appendChild(tdCaption);
 
 	/* 描述单元格 */
 	const tdDesc = document.createElement("td");
 	tdDesc.style.cssText = "padding:8px 12px;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdDesc.textContent = rec.description || "—";
-	tdDesc.title = rec.description ? "描述: " + rec.description : "";
+	bindTruncateTitle(tdDesc, rec.description ? "描述: " + rec.description : "");
 	tr.appendChild(tdDesc);
 
 	/* 补全值单元格 */
 	const tdValue = document.createElement("td");
 	tdValue.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);font-family:Consolas,Monaco,'Courier New',monospace;font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdValue.textContent = rec.value || "";
-	tdValue.title = "补全值: " + (rec.value || "");
+	bindTruncateTitle(tdValue, "补全值: " + (rec.value || ""));
 	tr.appendChild(tdValue);
 
 	/* 操作单元格 */
@@ -1049,7 +1058,20 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	tdCaption.ondblclick = function() { _showCompleterEditDialog(rec, editor, reloadFn); };
 	tdValue.ondblclick = tdCaption.ondblclick;
 	tdDesc.ondblclick = tdCaption.ondblclick;
-	tr.title = "双击行编辑";
+
+	/* 悬停整行：换底色 + 提升文字对比度（描述由 secondary 升级为 primary） */
+	tr.onmouseenter = function() {
+		tr.style.background = "var(--eext-hover-bg)";
+		tdCaption.style.color = "var(--eext-text-primary)";
+		tdDesc.style.color = "var(--eext-text-primary)";
+		tdValue.style.color = "var(--eext-text-primary)";
+	};
+	tr.onmouseleave = function() {
+		tr.style.background = stripe;
+		tdCaption.style.color = "var(--eext-text-primary)";
+		tdDesc.style.color = "var(--eext-text-secondary)";
+		tdValue.style.color = "var(--eext-text-primary)";
+	};
 	return tr;
 }
 
