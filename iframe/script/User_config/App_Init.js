@@ -143,8 +143,6 @@ ACE_CodingForEDA(editor, edcode);
 // 加载用户自定义补全
 UserCompleter_LoadAll(editor);
 
-
-
 const loadingBar = document.getElementById('loading-bar');
 const loadingOverlay = document.getElementById('loading-overlay');
 if (loadingBar) loadingBar.style.width = '30%';
@@ -186,12 +184,10 @@ Code_LoadBtnListFromDB(editor);
 	window.projectCompleter = new ProjectCompleter(editor);
 
 	// 等待 TabManager 定义完成后恢复标签页
-	// 使用微任务确保在 TabManager 定义后立即执行
 	Promise.resolve().then(function() {
 		if (typeof TabManager !== "undefined") {
 			TabManager.restoreTabs();
 		} else {
-			// 如果 TabManager 还未定义，稍后重试
 			setTimeout(function() {
 				if (typeof TabManager !== "undefined") {
 					TabManager.restoreTabs();
@@ -211,14 +207,10 @@ window.addEventListener('beforeunload', function() {
 	if (typeof TabManager !== "undefined" && TabManager._tabs) {
 		try {
 			var data = TabManager._tabs.map(function(t) { return { projectId: t.projectId, fileName: t.fileName, label: t.label }; });
-			// 同步保存到 localStorage 作为备份
 			localStorage.setItem('__open_tabs_backup', JSON.stringify(data));
-			console.log('[beforeunload] Tabs saved to localStorage backup:', data.length, 'tabs');
 			// 尝试同步保存到 EDA 存储（可能不会完成，但 localStorage 已经保存了）
 			try { eda.sys_Storage.setExtensionUserConfig('__open_tabs', JSON.stringify(data)); } catch(e) {}
-		} catch(e) {
-			console.error('[beforeunload] Failed to save tabs:', e);
-		}
+		} catch(e) {}
 	}
 });
 
@@ -246,19 +238,16 @@ async function saveCurrentProjectFile() {
 	}
 }
 
-// ========== TabManager ==========
 // ========== TabManager (UUID-based) ==========
 var TabManager = {
-	_tabs: [],       // [{ key, label, dirty, projectId, fileName }]
+	_tabs: [],
 	_activeKey: null,
-	_restoring: false,  // 恢复状态标志
+	_restoring: false,
 
-	// 生成唯一 key: projectId:fileName
 	_makeKey: function(projectId, fileName) {
 		return (projectId || "_") + ":" + (fileName || "_");
 	},
 
-	// 打开或激活一个 tab
 	open: function(projectId, fileName, label) {
 		if (!fileName) return;
 		var key = this._makeKey(projectId, fileName);
@@ -268,26 +257,21 @@ var TabManager = {
 		}
 		this._activeKey = key;
 		this.render();
-		// 如果不在恢复过程中，保存标签页状态
 		if (!this._restoring) this.saveTabs();
 	},
 
-	// 检查某个 key 是否已打开
 	isOpen: function(projectId, fileName) {
 		var key = this._makeKey(projectId, fileName);
 		return !!this._tabs.find(function(t) { return t.key === key; });
 	},
 
-	// 获取当前活跃 tab 的 key
 	getActiveKey: function() { return this._activeKey; },
 
-	// 通过 key 获取 tab 信息
 	getTab: function(projectId, fileName) {
 		var key = this._makeKey(projectId, fileName);
 		return this._tabs.find(function(t) { return t.key === key; });
 	},
 
-	// 标记脏状态
 	markDirty: function(projectId, fileName, dirty) {
 		var key = this._makeKey(projectId, fileName);
 		var tab = this._tabs.find(function(t) { return t.key === key; });
@@ -296,7 +280,6 @@ var TabManager = {
 		_updateDirtyFlag();
 	},
 
-	// 通过 key 关闭 tab
 	close: async function(projectId, fileName) {
 		var key = this._makeKey(projectId, fileName);
 		var idx = this._tabs.findIndex(function(t) { return t.key === key; });
@@ -339,7 +322,6 @@ var TabManager = {
 						await window.fileTreeUI.render();
 					}
 				}
-				// 加载下一个 tab 的文件内容
 				if (window.fileTreeUI && next.fileName !== window.projectManager.currentFile) {
 					await window.fileTreeUI.loadFile(next.fileName, true);
 				}
@@ -352,7 +334,6 @@ var TabManager = {
 		this.render();
 	},
 
-	// 切换到指定 key
 	switchTo: function(projectId, fileName) {
 		var key = this._makeKey(projectId, fileName);
 		var tab = this._tabs.find(function(t) { return t.key === key; });
@@ -361,66 +342,47 @@ var TabManager = {
 
 	saveTabs: async function() {
 		var data = this._tabs.map(function(t) { return { projectId: t.projectId, fileName: t.fileName, label: t.label }; });
-		console.log("[saveTabs] saving", data.length, "tabs:", JSON.stringify(data));
-		// 同步保存到 localStorage 作为备份
-		try { localStorage.setItem('__open_tabs_backup', JSON.stringify(data)); } catch(e) { console.error("[saveTabs] localStorage FAIL:", e); }
-		// 异步保存到 EDA 存储
-		try { await eda.sys_Storage.setExtensionUserConfig('__open_tabs', JSON.stringify(data)); console.log("[saveTabs] done"); } catch(e) { console.error("[saveTabs] FAIL:", e); }
+		try { localStorage.setItem('__open_tabs_backup', JSON.stringify(data)); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('__open_tabs', JSON.stringify(data)); } catch(e) {}
 	},
 
 	restoreTabs: async function() {
-		console.log("[restoreTabs] START");
-		this._restoring = true;  // 设置恢复标志
+		this._restoring = true;
 		try {
-			// 优先检查 localStorage 备份（来自 beforeunload 的同步保存）
 			var raw = localStorage.getItem('__open_tabs_backup');
 			if (!raw) {
-				// 如果没有备份，检查 EDA 存储
 				raw = await eda.sys_Storage.getExtensionUserConfig('__open_tabs');
-			} else {
-				console.log("[restoreTabs] Using localStorage backup");
 			}
-			console.log("[restoreTabs] raw data:", raw ? raw.substring(0,200) : "null/empty");
-			if (!raw) { console.log("[restoreTabs] no data, exit"); return; }
+			if (!raw) return;
 			var data = JSON.parse(raw);
-			if (!data || !data.length) { console.log("[restoreTabs] empty array, exit"); return; }
-			console.log("[restoreTabs] restoring", data.length, "tabs");
-			if (!window.projectManager.db) { console.log("[restoreTabs] initDB..."); await window.projectManager.initDB(); }
-			if (!window.fileTreeUI) { console.log("[restoreTabs] no fileTreeUI, creating"); window.fileTreeUI = new FileTreeUI("file-tree", editor); }
+			if (!data || !data.length) return;
+			if (!window.projectManager.db) await window.projectManager.initDB();
+			if (!window.fileTreeUI) window.fileTreeUI = new FileTreeUI("file-tree", editor);
 
 			for (var i = 0; i < data.length; i++) {
 				var t = data[i];
-				console.log("[restoreTabs] tab " + (i+1) + "/" + data.length + ":", JSON.stringify(t));
 				if (!t.fileName) continue;
 				try {
 					if (t.projectId && t.projectId > 0) {
-						console.log("[restoreTabs] loadProject id=" + t.projectId);
 						var proj = await window.projectManager.loadProject(t.projectId);
-						console.log("[restoreTabs] project loaded:", proj.projectName);
 						window.projectManager.currentProject = proj;
 					}
 					if (i === data.length - 1) {
-						console.log("[restoreTabs] loading last file into editor:", t.fileName);
 						if (window.fileTreeUI) await window.fileTreeUI.loadFile(t.fileName);
 						this._activeKey = this._makeKey(t.projectId, t.fileName);
 					}
-					console.log("[restoreTabs] adding tab:", t.fileName);
 					this.open(t.projectId, t.fileName, t.label || t.fileName.split("/").pop());
-				} catch(e) { console.error("[restoreTabs] tab " + t.fileName + " FAILED:", e); }
+				} catch(e) {}
 			}
-			console.log("[restoreTabs] all done, rendering");
 			this.render();
-			// 清除 localStorage 备份（已成功恢复）
 			try { localStorage.removeItem('__open_tabs_backup'); } catch(e) {}
-		} catch(e) { console.error("[restoreTabs] FATAL:", e); }
+		} catch(e) {}
 		finally {
-			this._restoring = false;  // 清除恢复标志
-			// 恢复完成后保存最终状态
+			this._restoring = false;
 			await this.saveTabs();
 		}
 	},
 
-	// 渲染标签栏
 	render: function() {
 		var bar = document.getElementById("tab-bar");
 		if (!bar) return;
@@ -462,12 +424,10 @@ var TabManager = {
 	},
 };
 
-
 async function _updateDirtyFlag() {
-	var isDirty = TabManager._tabs.some(function(t) { return t.dirty; }); console.log("[_updateDirtyFlag] dirty=" + isDirty);
-	try { await eda.sys_Storage.setExtensionUserConfig('__has_dirty', isDirty ? 'true' : 'false'); } catch(e) { console.error("[_updateDirtyFlag] FAIL:", e); }
+	var isDirty = TabManager._tabs.some(function(t) { return t.dirty; });
+	try { await eda.sys_Storage.setExtensionUserConfig('__has_dirty', isDirty ? 'true' : 'false'); } catch(e) {}
 }
-
 
 // 注册右键跳转文档
 const methodList = edcode.map((item) => item.methodPath);
@@ -485,11 +445,9 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 
 	// 检查是否正在预览模式
 	if (previewContainer.classList.contains('active')) {
-		// 停止预览，返回编辑器
 		previewContainer.classList.remove('active');
 		editorDiv.style.display = 'block';
 
-		// 根据当前文件类型恢复按钮文本
 		if (window.projectManager && window.projectManager.currentFile) {
 			const ext = window.projectManager.currentFile.split('.').pop().toLowerCase();
 			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? '预览' : '运行';
@@ -498,7 +456,6 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 			runBtn.textContent = currentMode.indexOf('markdown') !== -1 ? '预览' : '运行';
 		}
 
-		// 清理 iframe
 		previewFrame.src = 'about:blank';
 		return;
 	}
@@ -509,7 +466,6 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 		const ext = fileName.split('.').pop().toLowerCase();
 
 		if (ext === 'html') {
-			// HTML 文件：在编辑器位置预览（内联项目中引用的 JS/CSS）
 			const currentFile = window.projectManager.currentProject?.files?.find(
 				f => f.fileName === fileName
 			);
@@ -530,12 +486,10 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 
 			eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
 
-			// 清理旧的 URL
 			previewFrame.addEventListener('load', () => {
 				URL.revokeObjectURL(url);
 			}, { once: true });
 		} else if (ext === 'md' || ext === 'markdown') {
-			// Markdown 文件：预览渲染
 			const mdContent = editor.getValue();
 			const htmlContent = buildMarkdownPreviewHTML(mdContent);
 			const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -552,19 +506,15 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 				URL.revokeObjectURL(url);
 			}, { once: true });
 		} else {
-			// 其他文件：运行 JS
 			ACE_RunCode(editor);
 		}
 	} else {
-		// 没有项目时，按优先级尝试：JS -> HTML -> MD
 		const content = editor.getValue().trim();
 
-		// 先尝试运行 JS
 		try {
 			const newcode = `(async () => {\n ${content}\n})();`;
 			eval(newcode);
 		} catch (jsError) {
-			// JS 执行失败，尝试 HTML 渲染
 			const isHTML = /^\s*<!DOCTYPE\s+html/i.test(content) ||
 				/^\s*<html[\s>]/i.test(content) ||
 				(/<!DOCTYPE\s+html/i.test(content.substring(0, 200)) &&
@@ -593,7 +543,6 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 					URL.revokeObjectURL(url);
 				}, { once: true });
 			} else {
-				// HTML 不匹配，尝试 MD 渲染
 				const isMarkdown = /^#{1,6}\s/m.test(content) ||
 					/^\s*[-*+]\s/m.test(content) ||
 					/^\s*\d+\.\s/m.test(content) ||
@@ -618,7 +567,6 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 						URL.revokeObjectURL(url);
 					}, { once: true });
 				} else {
-					// 全部失败
 					eda.sys_Message.showToastMessage(
 						'执行失败，内容不是有效的 JS、HTML 或 MD 格式。',
 						'error',
@@ -667,35 +615,25 @@ if (settingsBtn) {
 	const shortcuts = await loadShortcuts();
 	const platform = getPlatform();
 
-	// 移除 ACE 编辑器的默认绑定
 	editor.commands.removeCommand('gotoline');
-	// 不移除 find 命令，保留 Ace 编辑器的查找和替换功能
-	// editor.commands.removeCommand('find');
 
-	// 格式化代码快捷键
 	const formatKey = shortcuts.format[platform].replace(/\+/g, '-');
 	editor.commands.addCommand({
 		name: 'formatCode',
 		bindKey: { win: shortcuts.format.win.replace(/\+/g, '-'), mac: shortcuts.format.mac.replace(/\+/g, '-') },
 		exec: function(editor) {
-			// 检查快捷键设置模态框是否打开
 			if (window.keyboardShortcutsModalOpen) return;
 			formatEditorCode(editor);
 		},
 	});
 
-	// 全局快捷键监听
 	document.addEventListener('keydown', function(e) {
-		// 如果快捷键设置模态框打开，禁用所有快捷键
 		if (window.keyboardShortcutsModalOpen) return;
 
-		// 查找和替换 - 让 Ace 编辑器处理
 		if (matchesShortcut(e, shortcuts.find[platform]) || matchesShortcut(e, shortcuts.replace[platform])) {
-			// 不阻止默认行为，让 Ace 编辑器的查找/替换功能处理
 			return;
 		}
 
-		// 运行代码
 		if (matchesShortcut(e, shortcuts.run[platform])) {
 			e.preventDefault();
 			ACE_RunCode(editor);
@@ -703,22 +641,18 @@ if (settingsBtn) {
 			e.preventDefault();
 			saveCurrentProjectFile();
 		}
-		// 导入文件
 		else if (matchesShortcut(e, shortcuts.import[platform])) {
 			e.preventDefault();
 			ImportFile(editor);
 		}
-		// 导出文件
 		else if (matchesShortcut(e, shortcuts.export[platform])) {
 			e.preventDefault();
 			ExportFileForJs(editor.getValue(), Date() + '_script.js');
 		}
-		// 保存到列表
 		else if (matchesShortcut(e, shortcuts.saveToList[platform])) {
 			e.preventDefault();
 			Code_SaveToBtnList(editor);
 		}
-		// 保存为插件
 		else if (matchesShortcut(e, shortcuts.saveAsPlugin[platform])) {
 			e.preventDefault();
 			ExtStore_SavePlugin(editor);

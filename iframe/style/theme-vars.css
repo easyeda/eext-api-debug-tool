@@ -46,7 +46,8 @@
 
   /* ---- 交互态 ---- */
   --eext-hover-bg: #e6f7ff;
-  --eext-hover-bg-delete: rgba(245, 34, 45, 0.08);
+  --eext-hover-bg-delete: rgba(24, 144, 255, 0.08);
+  --eext-hover-bg-brand: rgba(24, 144, 255, 0.08);
   --eext-selected-bg: #e6f7ff;
 
   /* ---- 滚动条 ---- */

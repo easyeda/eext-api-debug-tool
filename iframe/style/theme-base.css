@@ -159,8 +159,8 @@ body {
 	justify-content: center;
 }
 .tab-close:hover {
-	background: var(--eext-error-bg);
-	color: var(--eext-error);
+	background: var(--eext-hover-bg-brand);
+	color: var(--eext-brand);
 }
 
 #main-content {

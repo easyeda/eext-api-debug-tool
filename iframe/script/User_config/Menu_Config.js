@@ -699,7 +699,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							// Delete button
 							var delBtn = document.createElement('button');
 							delBtn.textContent = '删除';
-							delBtn.style.cssText = 'height:24px;padding:0 8px;background:transparent;color:var(--eext-error);border:1px solid var(--eext-error);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							delBtn.style.cssText = 'height:24px;padding:0 8px;background:transparent;color:var(--eext-brand);border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
 							delBtn.onclick = async function() {
 								var confirmResult = await Swal.fire({
 									title: '确认删除',
@@ -708,7 +708,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 									showCancelButton: true,
 									confirmButtonText: '删除',
 									cancelButtonText: '取消',
-									confirmButtonColor: '#d33',
+									confirmButtonColor: '#1890ff',
 								});
 								if (!confirmResult.isConfirmed) return;
 								try {
