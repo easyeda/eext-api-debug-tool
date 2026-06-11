@@ -55,10 +55,8 @@ function _generateRandomVarName(editor) {
 
 function _buildCompletionInsertText(item, editor) {
 	var text = item.value;
-	// 随机变量模式自动联动异步补全 await
-	if (_shouldWrapWithVariable() && item._isAsync) {
-		text = "await " + text;
-	} else if (_shouldAutoAwait() && item._isAsync) {
+	// 仅当勾选"异步函数标识补全"时为异步方法添加 await
+	if (_shouldAutoAwait() && item._isAsync) {
 		text = "await " + text;
 	}
 	if (_shouldWrapWithVariable()) {
@@ -725,6 +723,8 @@ function createQuickButton(editor, name, code) {
 		const menuBg = isDark ? '#404040' : '#fff';
 		const menuBorder = isDark ? '#222' : '#d9d9d9';
 		const menuShadow = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)';
+		const textColor = isDark ? '#e5e5e5' : '#333';
+		const hoverBg = isDark ? '#6283a2' : '#e6f7ff';
 		const menu =
 			document.getElementById('ctx-menu') ||
 			(() => {
@@ -734,13 +734,11 @@ function createQuickButton(editor, name, code) {
 				document.addEventListener('click', () => (m.style.display = 'none'));
 				return m;
 			})();
-		menu.style.cssText = `position:fixed;z-index:10000;background:${menuBg};border:1px solid ${menuBorder};box-shadow:2px 2px 6px ${menuShadow};display:none;font-size:14px;min-width:80px;border-radius:4px`;
-		const showItem = (text, color, action) => {
+		menu.style.cssText = `position:fixed;z-index:10000;background:${menuBg};border:1px solid ${menuBorder};box-shadow:2px 2px 6px ${menuShadow};display:none;font-size:12px;min-width:120px;border-radius:4px;padding:4px 0`;
+		const showItem = (text, action) => {
 			const item = document.createElement('div');
 			item.textContent = text;
-			const defaultColor = isDark ? '#e5e5e5' : '#333';
-			item.style.cssText = `padding:6px 12px;cursor:pointer;color:${color || defaultColor};user-select:none`;
-			const hoverBg = isDark ? (color ? 'rgba(245,34,45,0.2)' : '#6283a2') : color ? 'rgba(245,34,45,0.08)' : '#e6f7ff';
+			item.style.cssText = `padding:8px 16px;cursor:pointer;color:${textColor};user-select:none;transition:background 0.2s;`;
 			item.onmouseenter = () => (item.style.backgroundColor = hoverBg);
 			item.onmouseleave = () => (item.style.backgroundColor = '');
 			item.onclick = () => {
@@ -750,12 +748,12 @@ function createQuickButton(editor, name, code) {
 			menu.appendChild(item);
 		};
 		menu.innerHTML = '';
-		showItem('加载', '', () => {
+		showItem('加载', () => {
 			editor.setValue(code, -1);
 			editor.clearSelection();
 			eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
 		});
-		showItem('删除', '#d32f2f', () => {
+		showItem('删除', () => {
 			deleteBtnFromDB(name)
 				.then(() => {
 					li.remove();
@@ -770,8 +768,8 @@ function createQuickButton(editor, name, code) {
 		const y = e.pageY;
 		const w = window.innerWidth;
 		const h = window.innerHeight;
-		const mw = 100;
-		const mh = 50;
+		const mw = 120;
+		const mh = 80;
 		menu.style.left = `${Math.min(x, w - mw - 5)}px`;
 		menu.style.top = `${Math.min(y, h - mh - 5)}px`;
 		menu.style.display = 'block';

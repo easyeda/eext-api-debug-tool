@@ -464,7 +464,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
 				cb.checked = (saved === true || saved === 'true');
 			} catch(e) { cb.checked = false; }
-			row.appendChild(label); row.appendChild(cb);
+			row.appendChild(cb); row.appendChild(label);
 			contentPane.appendChild(row);
 
 			// 随机分配变量
@@ -482,8 +482,25 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig("completion_random_var");
 				cb2.checked = (saved === true || saved === "true");
 			} catch(e) { cb2.checked = false; }
-			row2.appendChild(label2); row2.appendChild(cb2);
+			row2.appendChild(cb2); row2.appendChild(label2);
 			contentPane.appendChild(row2);
+
+			// 异步函数标识补全
+			var rowAwait = document.createElement("div");
+			rowAwait.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
+			var labelAwait = document.createElement("span"); labelAwait.textContent = "异步函数标识补全";
+			labelAwait.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			var cbAwait = document.createElement("input"); cbAwait.type = 'checkbox';
+			cbAwait.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
+			cbAwait.onchange = function() {
+				eda.sys_Storage.setExtensionUserConfig("completion_auto_await", cbAwait.checked);
+			};
+			try {
+				const saved = eda.sys_Storage.getExtensionUserConfig("completion_auto_await");
+				cbAwait.checked = (saved === true || saved === "true");
+			} catch(e) { cbAwait.checked = false; }
+			rowAwait.appendChild(cbAwait); rowAwait.appendChild(labelAwait);
+			contentPane.appendChild(rowAwait);
 
 			// 新建文件带文件名注释
 			var row3 = document.createElement("div");
@@ -500,8 +517,96 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				// 默认开启（保持原有行为）
 				cb3.checked = (saved === null || saved === undefined) ? true : (saved === true || saved === "true");
 			} catch(e) { cb3.checked = true; }
-			row3.appendChild(label3); row3.appendChild(cb3);
+			row3.appendChild(cb3); row3.appendChild(label3);
 			contentPane.appendChild(row3);
+
+			// ── 补全预览 ──
+			var previewWrap = document.createElement('div');
+			previewWrap.style.cssText = 'margin-top:14px;padding:10px 12px;border:1px solid var(--eext-border);border-radius:4px;background:var(--eext-bg-input);';
+			var previewTitle = document.createElement('div');
+			previewTitle.textContent = '预览';
+			previewTitle.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);margin-bottom:6px;';
+			previewWrap.appendChild(previewTitle);
+			var previewCode = document.createElement('pre');
+			previewCode.style.cssText = 'margin:0;padding:0;font-family:Consolas,Monaco,"Courier New",monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--eext-text-primary);';
+			previewWrap.appendChild(previewCode);
+			contentPane.appendChild(previewWrap);
+
+			var PREVIEW_DESC = '搜索器件';
+			var PREVIEW_PARAMS = 'key, libraryUuid, classification, symbolType, itemsOfPage, page';
+			var PREVIEW_CALL = 'eda.lib_Device.search(' + PREVIEW_PARAMS + ')';
+
+			function escapeHtml(s) {
+				return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			}
+
+			function renderCompletionPreview() {
+				var isDark = document.body.classList.contains('dark-theme');
+				var colKeyword = isDark ? '#c586c0' : '#9333ea';
+				var colComment = isDark ? '#6a9955' : '#16a34a';
+				var colFn = isDark ? '#dcdcaa' : '#b45309';
+				var colText = isDark ? '#e5e5e5' : '#333';
+
+				// 闪烁背景色（半透明，主题适配）
+				var flashComment = isDark ? 'rgba(106,153,85,0.35)' : 'rgba(22,163,74,0.22)';
+				var flashVar = isDark ? 'rgba(197,134,192,0.35)' : 'rgba(147,51,234,0.18)';
+				var flashAwait = isDark ? 'rgba(220,220,170,0.40)' : 'rgba(180,83,9,0.22)';
+
+				var state = {
+					withComment: cb.checked,
+					withVar: cb2.checked,
+					withAwait: cbAwait.checked,
+				};
+				var newComment = state.withComment && !previewPrevState.withComment;
+				var newVar = state.withVar && !previewPrevState.withVar;
+				var newAwait = state.withAwait && !previewPrevState.withAwait;
+
+				function wrapFlash(innerHtml, color, shouldFlash) {
+					if (!shouldFlash) return innerHtml;
+					return '<span data-flash="1" style="background-color:' + color + ';border-radius:2px;transition:background-color 1.2s ease-out;padding:1px 0;box-shadow:0 0 0 2px ' + color + ';">' + innerHtml + '</span>';
+				}
+
+				var html = '';
+				if (state.withComment) {
+					var commentInner = '<span style="color:' + colComment + '">// ' + escapeHtml(PREVIEW_DESC) + '</span>';
+					html += wrapFlash(commentInner, flashComment, newComment) + '\n';
+				}
+				var constPart = '';
+				var awaitPart = '';
+				if (state.withVar) {
+					constPart = '<span style="color:' + colKeyword + '">const</span> <span style="color:' + colText + '">a</span> = ';
+				}
+				if (state.withAwait) {
+					awaitPart = '<span style="color:' + colKeyword + '">await</span> ';
+				}
+				html += wrapFlash(constPart, flashVar, newVar);
+				html += wrapFlash(awaitPart, flashAwait, newAwait);
+				html += '<span style="color:' + colText + '">eda.lib_Device.<span style="color:' + colFn + '">search</span>(' + escapeHtml(PREVIEW_PARAMS) + ')</span>';
+
+				previewCode.innerHTML = html;
+				previewPrevState = state;
+
+				// 双 rAF 后清空背景色，触发 transition 渐变到透明
+				requestAnimationFrame(function() {
+					requestAnimationFrame(function() {
+						var flashes = previewCode.querySelectorAll('[data-flash]');
+						for (var i = 0; i < flashes.length; i++) {
+							flashes[i].style.backgroundColor = 'transparent';
+							flashes[i].style.boxShadow = 'none';
+						}
+					});
+				});
+			}
+			var previewPrevState = { withComment: cb.checked, withVar: cb2.checked, withAwait: cbAwait.checked };
+
+			[cb, cb2, cbAwait].forEach(function(box) {
+				var orig = box.onchange;
+				box.onchange = function() {
+					if (typeof orig === 'function') { try { orig.call(this); } catch(e){} }
+					renderCompletionPreview();
+				};
+			});
+			renderCompletionPreview();
 		} else if (activeMenu === 'shortcuts') {
 			section('快捷键');
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
