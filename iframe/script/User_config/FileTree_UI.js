@@ -605,7 +605,7 @@ class FileTreeUI {
 			cancelButtonText: '取消',
 			inputValidator: (value) => {
 				if (!value) return '请输入文件名';
-				if (!/\.[a-zA-Z0-9]+$/.test(value)) return '文件名必须包含扩展名';
+				if (!/.[a-zA-Z0-9]+$/.test(value)) return '文件名必须包含扩展名';
 				if (value === oldName) return '文件名未改变';
 				if (/[<>:"|?*]/.test(value)) return '文件名包含非法字符';
 				const exists = this.projectManager.currentProject.files.some((f) => f.fileName === value);
@@ -619,6 +619,15 @@ class FileTreeUI {
 				this.projectManager.currentFile = result.value;
 			}
 
+			// 更新 TabManager 中的文件名
+			if (typeof TabManager !== 'undefined' && this.projectManager.currentProject) {
+				TabManager.updateFileName(
+					this.projectManager.currentProject.id,
+					oldName,
+					result.value,
+					result.value.split('/').pop()
+				);
+			}
 			// 更新项目补全器
 			if (window.projectCompleter) {
 				window.projectCompleter.updateFiles();

@@ -339,6 +339,21 @@ var TabManager = {
 		var tab = this._tabs.find(function(t) { return t.key === key; });
 		if (tab) { this._activeKey = key; this.render(); }
 	},
+		updateFileName: function(projectId, oldFileName, newFileName, newLabel) {
+			var oldKey = this._makeKey(projectId, oldFileName);
+			var idx = this._tabs.findIndex(function(t) { return t.key === oldKey; });
+			if (idx >= 0) {
+				var newKey = this._makeKey(projectId, newFileName);
+				this._tabs[idx].fileName = newFileName;
+				this._tabs[idx].label = newLabel || newFileName.split("/").pop();
+				this._tabs[idx].key = newKey;
+				if (this._activeKey === oldKey) {
+					this._activeKey = newKey;
+				}
+				this.saveTabs();
+				this.render();
+			}
+			},
 
 	saveTabs: async function() {
 		var data = this._tabs.map(function(t) { return { projectId: t.projectId, fileName: t.fileName, label: t.label }; });
