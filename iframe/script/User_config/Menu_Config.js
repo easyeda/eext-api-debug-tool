@@ -331,11 +331,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	footer.style.cssText = 'padding:8px 16px;border-top:1px solid var(--eext-border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;';
 	const cancelBtn = document.createElement('button');
 	cancelBtn.textContent = '取消';
-	cancelBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-btn-bg);color:var(--eext-text-primary);border:1px solid var(--eext-btn-border);border-radius:2px;cursor:pointer;font-size:12px;';
+	cancelBtn.className = 'eext-modal-btn';
 	cancelBtn.onclick = () => overlay.remove();
 	const confirmBtn = document.createElement('button');
 	confirmBtn.textContent = '确认';
-	confirmBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:12px;';
+	confirmBtn.className = 'eext-modal-btn-primary';
 		confirmBtn.onclick = async () => {
 			var w = document.getElementById("ui-width-input"), h = document.getElementById("ui-height-input");
 			var newW = null, newH = null;
@@ -553,7 +553,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			var resetBtn = document.createElement('button');
 			resetBtn.textContent = '恢复默认';
-			resetBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-btn-bg);color:var(--eext-text-primary);border:1px solid var(--eext-btn-border);border-radius:2px;cursor:pointer;font-size:12px;';
+			resetBtn.className = 'eext-modal-btn';
 			resetBtn.onclick = async function() {
 				var result = await Swal.fire({
 					title: '确认恢复默认',
@@ -576,7 +576,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			var saveBtn = document.createElement('button');
 			saveBtn.textContent = '保存';
-			saveBtn.style.cssText = 'height:28px;padding:0 10px;min-width:96px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:12px;';
+			saveBtn.className = 'eext-modal-btn-primary';
 			saveBtn.onclick = async function() {
 				if (typeof saveShortcuts === 'function') {
 					var success = await saveShortcuts(shortcutsData);
@@ -646,7 +646,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							// Rename button
 							var renameBtn = document.createElement('button');
 							renameBtn.textContent = '重命名';
-							renameBtn.style.cssText = 'height:24px;padding:0 8px;background:var(--eext-btn-bg);color:var(--eext-text-primary);border:1px solid var(--eext-btn-border);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							renameBtn.className = 'eext-modal-btn';
 							renameBtn.onclick = async function() {
 								var result = await Swal.fire({
 									title: '重命名插件',
@@ -676,7 +676,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							// Load button
 							var loadBtn = document.createElement('button');
 							loadBtn.textContent = '加载';
-							loadBtn.style.cssText = 'height:24px;padding:0 8px;background:var(--eext-brand);color:#fff;border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							loadBtn.className = 'eext-modal-btn-primary';
 							loadBtn.onclick = async function() {
 								try {
 									var db = await ExtStore_Init();
@@ -699,7 +699,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							// Delete button
 							var delBtn = document.createElement('button');
 							delBtn.textContent = '删除';
-							delBtn.style.cssText = 'height:24px;padding:0 8px;background:transparent;color:var(--eext-brand);border:1px solid var(--eext-brand);border-radius:2px;cursor:pointer;font-size:11px;flex-shrink:0;';
+							delBtn.className = 'eext-modal-btn-delete';
 							delBtn.onclick = async function() {
 								var confirmResult = await Swal.fire({
 									title: '确认删除',
@@ -859,7 +859,7 @@ function _buildCompleterCard(rec, editor, reloadFn) {
 	actions.appendChild(editBtn);
 
 	const delBtn = document.createElement("button");
-	delBtn.className = "cs-btn cs-btn-delete";
+	delBtn.className = "eext-modal-btn-delete";
 	delBtn.textContent = "删除";
 	delBtn.onclick = function() {
 		eda.sys_Dialog.showConfirmationMessage(

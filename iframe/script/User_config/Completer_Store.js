@@ -28,7 +28,7 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 	headerRight.className = 'cs-header-right';
 
 	const clearBtn = document.createElement('button');
-	clearBtn.className = 'cs-btn cs-btn-danger';
+	clearBtn.className = 'eext-modal-btn-delete';
 	clearBtn.textContent = '清空全部';
 	clearBtn.onclick = () => {
 		eda.sys_Dialog.showConfirmationMessage('确定清空所有自定义补全项？此操作不可撤销。', '提示', '确认', '取消', async (confirmed) => {
@@ -170,7 +170,7 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 
 	// 删除按钮
 	const delBtn = document.createElement('button');
-	delBtn.className = 'cs-btn cs-btn-delete';
+	delBtn.className = 'eext-modal-btn-delete';
 	delBtn.textContent = '删除';
 	delBtn.onclick = async () => {
 		delBtn.textContent = '删除中...';

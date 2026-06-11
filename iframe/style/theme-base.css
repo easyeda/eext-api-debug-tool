@@ -507,32 +507,6 @@ body.dark-editor-theme #editor .ace_selection {
 	box-shadow: var(--eext-input-focus-ring);
 }
 
-.plugin-manager-btn {
-	width: 80px;
-	height: var(--eext-btn-height);
-	background: var(--eext-btn-bg);
-	color: var(--eext-btn-color);
-	border: 1px solid var(--eext-btn-border);
-	border-radius: var(--eext-btn-radius);
-	font-size: var(--eext-font-size);
-	cursor: pointer;
-	transition:
-		border-color 0.2s,
-		color 0.2s;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-.plugin-manager-btn.save:hover {
-	background: var(--eext-brand);
-	border-color: var(--eext-brand);
-	color: var(--eext-text-inverse);
-}
-.plugin-manager-btn.delete:hover {
-	background: var(--eext-brand);
-	border-color: var(--eext-brand);
-	color: var(--eext-text-inverse);
-}
 .plugin-manager-list-title {
 	margin: 16px 0 8px;
 	font-weight: bold;
@@ -1422,6 +1396,63 @@ input:checked + .ai-slider:before {
 .cs-btn-cancel:hover {
 	border-color: var(--eext-text-tertiary);
 	color: var(--eext-text-secondary);
+}
+
+/* ---- Modal / Settings unified buttons ---- */
+.eext-modal-btn {
+	height: var(--eext-btn-height);
+	padding: 0 10px;
+	min-width: 96px;
+	background: var(--eext-btn-bg);
+	color: var(--eext-text-primary);
+	border: 1px solid var(--eext-btn-border);
+	border-radius: var(--eext-btn-radius);
+	cursor: pointer;
+	font-size: var(--eext-font-size);
+	transition: border-color 0.2s, color 0.2s, background 0.2s;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+.eext-modal-btn:hover {
+	border-color: var(--eext-brand);
+	color: var(--eext-brand);
+}
+.eext-modal-btn-primary {
+	height: var(--eext-btn-height);
+	padding: 0 10px;
+	min-width: 96px;
+	background: var(--eext-brand);
+	color: var(--eext-text-inverse);
+	border: 1px solid var(--eext-brand);
+	border-radius: var(--eext-btn-radius);
+	cursor: pointer;
+	font-size: var(--eext-font-size);
+	font-weight: 500;
+	transition: background 0.2s, border-color 0.2s;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+.eext-modal-btn-primary:hover {
+	background: #40a9ff;
+	border-color: #40a9ff;
+}
+.eext-modal-btn-delete {
+	height: var(--eext-btn-height);
+	padding: 0 10px;
+	min-width: 96px;
+	background: transparent;
+	color: var(--eext-brand);
+	border: 1px solid var(--eext-brand);
+	border-radius: var(--eext-btn-radius);
+	cursor: pointer;
+	font-size: var(--eext-font-size);
+	transition: border-color 0.2s, color 0.2s, background 0.2s;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+.eext-modal-btn-delete:hover {
+	background: var(--eext-brand);
+	color: var(--eext-text-inverse);
 }
 .cs-edit-form {
 	margin-top: 8px;

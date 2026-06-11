@@ -1046,7 +1046,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	inputGroup.appendChild(nameInput);
 	const saveBtn = document.createElement('button');
 	saveBtn.textContent = '添加';
-	saveBtn.className = 'plugin-manager-btn save';
+	saveBtn.className = 'eext-modal-btn-primary';
 	saveBtn.onclick = async () => {
 		const originalText = saveBtn.textContent;
 		saveBtn.textContent = '添加中...';
@@ -1094,7 +1094,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					item.appendChild(nameSpan);
 					const renameBtn = document.createElement('button');
 					renameBtn.textContent = '重命名';
-					renameBtn.className = 'plugin-manager-btn';
+					renameBtn.className = 'eext-modal-btn';
 					renameBtn.onclick = async (e) => {
 						e.stopPropagation();
 						const result = await Swal.fire({
@@ -1123,7 +1123,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					item.appendChild(renameBtn);
 					const loadBtn = document.createElement('button');
 					loadBtn.textContent = '加载';
-					loadBtn.className = 'plugin-manager-btn';
+					loadBtn.className = 'eext-modal-btn-primary';
 					loadBtn.onclick = async (e) => {
 						e.stopPropagation();
 						try {
@@ -1145,7 +1145,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					item.appendChild(loadBtn);
 					const delBtn = document.createElement('button');
 					delBtn.textContent = '删除';
-					delBtn.className = 'plugin-manager-btn delete';
+					delBtn.className = 'eext-modal-btn-delete';
 					delBtn.onclick = async (e) => {
 						e.stopPropagation();
 						const confirmResult = await Swal.fire({
