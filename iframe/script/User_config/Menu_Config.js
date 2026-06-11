@@ -202,6 +202,15 @@ async function showNewScriptDialog(editor) {
 			var name = result.value.trim();
 			if (!name.endsWith(".js")) name += ".js";
 			var projectName = name.replace(/.js$/, "");
+			// 根据设置决定是否带文件名注释（默认开启）
+			var withComment = true;
+			try {
+				var saved = eda.sys_Storage.getExtensionUserConfig("new_file_with_comment");
+				if (saved !== null && saved !== undefined) {
+					withComment = (saved === true || saved === "true");
+				}
+			} catch(e) {}
+			var initialContent = withComment ? ("// " + name) : "";
 			var project = await window.projectManager.createProject(projectName);
 			if (project.files.length > 0) {
 				var tx = window.projectManager.db.transaction(["projects"], "readwrite");
@@ -213,9 +222,9 @@ async function showNewScriptDialog(editor) {
 						if (rec) {
 							rec.files[0].fileName = name;
 						rec.isScript = true;
-							rec.files[0].content = "// " + name;
+							rec.files[0].content = initialContent;
 							var putReq = store.put(rec);
-							putReq.onsuccess = function() { window.projectManager._savedContent = '// ' + name; window.projectManager.currentFile = name; if (typeof TabManager !== 'undefined') TabManager.open(project.id, name, name); editor.setValue("// " + name, -1); window.projectManager._dirty = false; if (window.fileTreeUI && window.fileTreeUI._registerDirtyListener) window.fileTreeUI._registerDirtyListener(); res(); };
+							putReq.onsuccess = function() { window.projectManager._savedContent = initialContent; window.projectManager.currentFile = name; if (typeof TabManager !== 'undefined') TabManager.open(project.id, name, name); editor.setValue(initialContent, -1); window.projectManager._dirty = false; if (window.fileTreeUI && window.fileTreeUI._registerDirtyListener) window.fileTreeUI._registerDirtyListener(); res(); };
 							putReq.onerror = rej;
 						} else { res(); }
 					};
@@ -475,6 +484,24 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			} catch(e) { cb2.checked = false; }
 			row2.appendChild(label2); row2.appendChild(cb2);
 			contentPane.appendChild(row2);
+
+			// 新建文件带文件名注释
+			var row3 = document.createElement("div");
+			row3.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
+			var label3 = document.createElement("span"); label3.textContent = "新建文件带文件名注释";
+			label3.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			var cb3 = document.createElement("input"); cb3.type = 'checkbox';
+			cb3.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
+			cb3.onchange = function() {
+				eda.sys_Storage.setExtensionUserConfig("new_file_with_comment", cb3.checked);
+			};
+			try {
+				const saved = eda.sys_Storage.getExtensionUserConfig("new_file_with_comment");
+				// 默认开启（保持原有行为）
+				cb3.checked = (saved === null || saved === undefined) ? true : (saved === true || saved === "true");
+			} catch(e) { cb3.checked = true; }
+			row3.appendChild(label3); row3.appendChild(cb3);
+			contentPane.appendChild(row3);
 		} else if (activeMenu === 'shortcuts') {
 			section('快捷键');
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
