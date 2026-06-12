@@ -724,7 +724,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 						list.innerHTML = '';
 						plugins.forEach(function(p) {
 							var item = document.createElement('div');
-							item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--eext-border);';
+							item.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px 0;border-bottom:1px solid var(--eext-border);';
+
+							// Row 1: toggle + name + buttons
+							var row1 = document.createElement('div');
+							row1.style.cssText = 'display:flex;align-items:center;gap:6px;';
 
 							// Enable toggle
 							var toggle = document.createElement('label');
@@ -752,14 +756,14 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 									eda.sys_Message.showToastMessage('操作失败: ' + err.message, 'error', 2);
 								}
 							};
-							item.appendChild(toggle);
+							row1.appendChild(toggle);
 
 							// Plugin name
 							var nameSpan = document.createElement('span');
 							nameSpan.textContent = p.name || '未命名';
 							nameSpan.title = p.name;
 							nameSpan.style.cssText = 'flex:1;font-size:12px;color:var(--eext-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
-							item.appendChild(nameSpan);
+							row1.appendChild(nameSpan);
 
 							// Rename button
 							var renameBtn = document.createElement('button');
@@ -789,7 +793,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 									}
 								}
 							};
-							item.appendChild(renameBtn);
+							row1.appendChild(renameBtn);
 
 							// Load button
 							var loadBtn = document.createElement('button');
@@ -812,7 +816,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 									eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
 								}
 							};
-							item.appendChild(loadBtn);
+							row1.appendChild(loadBtn);
 
 							// Delete button
 							var delBtn = document.createElement('button');
@@ -837,7 +841,85 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 									eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
 								}
 							};
-							item.appendChild(delBtn);
+							row1.appendChild(delBtn);
+
+							item.appendChild(row1);
+
+							// Row 2: startup timing radio + priority
+							var row2 = document.createElement('div');
+							row2.style.cssText = 'display:flex;align-items:center;gap:8px;padding-left:38px;font-size:12px;color:var(--eext-text-primary);';
+
+							var timingLabel = document.createElement('span');
+							timingLabel.textContent = '启动时机:';
+							timingLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
+							row2.appendChild(timingLabel);
+
+							var currentTiming = p.startupTiming || 'onPluginOpen';
+							var currentPriority = p.priority || 0;
+
+							var radioPlugin = document.createElement('label');
+							radioPlugin.style.cssText = 'display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
+							var rp = document.createElement('input');
+							rp.type = 'radio';
+							rp.name = 'timing_' + p.name;
+							rp.value = 'onPluginOpen';
+							rp.checked = currentTiming === 'onPluginOpen';
+							rp.style.cssText = 'margin:0;';
+							radioPlugin.appendChild(rp);
+							radioPlugin.appendChild(document.createTextNode('打开窗口'));
+							row2.appendChild(radioPlugin);
+
+							var radioEda = document.createElement('label');
+							radioEda.style.cssText = 'display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
+							var re = document.createElement('input');
+							re.type = 'radio';
+							re.name = 'timing_' + p.name;
+							re.value = 'onEdaStartup';
+							re.checked = currentTiming === 'onEdaStartup';
+							re.style.cssText = 'margin:0;';
+							radioEda.appendChild(re);
+							radioEda.appendChild(document.createTextNode('打开EDA'));
+							row2.appendChild(radioEda);
+
+							// Priority input (only visible for onEdaStartup)
+							var priorityLabel = document.createElement('span');
+							priorityLabel.textContent = '优先级:';
+							priorityLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
+							row2.appendChild(priorityLabel);
+
+							var priorityInput = document.createElement('input');
+							priorityInput.type = 'number';
+							priorityInput.value = currentPriority;
+							priorityInput.style.cssText = 'width:60px;height:24px;padding:0 6px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;color:var(--eext-text-primary);background:var(--eext-bg-input);text-align:center;';
+
+							var hidePriority = function() {
+								priorityLabel.style.display = re.checked ? '' : 'none';
+								priorityInput.style.display = re.checked ? '' : 'none';
+							};
+							hidePriority();
+							row2.appendChild(priorityInput);
+
+							// Apply timing change
+							var applyTiming = async function(newTiming, newPriority) {
+								if (typeof ExtStore_UpdateStartupConfig === 'function') {
+									try {
+										await ExtStore_UpdateStartupConfig(p.name, newTiming, newPriority);
+									} catch(e) {
+										eda.sys_Message.showToastMessage('保存启动配置失败: ' + e.message, 'error', 2);
+									}
+								}
+							};
+
+							rp.onchange = function() { if (rp.checked) { hidePriority(); applyTiming('onPluginOpen', priorityInput.value); } };
+							re.onchange = function() { if (re.checked) { hidePriority(); applyTiming('onEdaStartup', priorityInput.value); } };
+							priorityInput.onchange = function() {
+								var v = parseInt(priorityInput.value, 10);
+								if (isNaN(v) || v < 0) v = 0;
+								priorityInput.value = v;
+								applyTiming(re.checked ? 'onEdaStartup' : 'onPluginOpen', v);
+							};
+
+							item.appendChild(row2);
 
 							list.appendChild(item);
 						});

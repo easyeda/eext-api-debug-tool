@@ -905,7 +905,7 @@ async function ExtStore_SaveExt(name, code) {
 				record = { ...existing, code };
 			} else {
 				// 不存在：新建（id 由 autoIncrement 生成）
-				record = { name, code, enabled: true };
+				record = { name, code, enabled: true, startupTiming: 'onPluginOpen', priority: 0 };
 			}
 
 			const putRequest = store.put(record); // put 会根据 id 自动 insert 或 update
@@ -1002,6 +1002,8 @@ async function ExtStore_GetExtList() {
 					id: record.id,
 					name: record.name,
 				enabled: record.enabled !== false,
+				startupTiming: record.startupTiming || 'onPluginOpen',
+				priority: typeof record.priority === 'number' ? record.priority : 0,
 				});
 				cursor.continue();
 			} else {
@@ -1036,6 +1038,69 @@ async function ExtStore_GetExtList() {
 			};
 			getRequest.onerror = function(e) { reject(e.target.error); };
 		});
+	}
+
+	// 更新插件的启动时机和优先级配置
+	async function ExtStore_UpdateStartupConfig(name, startupTiming, priority) {
+		var db = await ExtStore_Init();
+		return new Promise(function(resolve, reject) {
+			var transaction = db.transaction(["ExtStore"], "readwrite");
+			var store = transaction.objectStore("ExtStore");
+			var getRequest = store.index("name").get(name);
+
+			getRequest.onsuccess = function(e) {
+				var record = e.target.result;
+				if (!record) {
+					reject(new Error("插件 \"" + name + "\" 不存在"));
+					return;
+				}
+				record.startupTiming = startupTiming;
+				record.priority = typeof priority === 'number' ? priority : 0;
+				var putRequest = store.put(record);
+				putRequest.onsuccess = function() {
+					ExtStore_SyncAutoStartPlugins();
+					resolve(true);
+				};
+				putRequest.onerror = function(ev) { reject(ev.target.error); };
+			};
+			getRequest.onerror = function(e) { reject(e.target.error); };
+		});
+	}
+
+	// 将所有"打开EDA"且已启用的插件同步到 sys_Storage 供主进程读取
+	async function ExtStore_SyncAutoStartPlugins() {
+		try {
+			var db = await ExtStore_Init();
+			var transaction = db.transaction(["ExtStore"], "readonly");
+			var store = transaction.objectStore("ExtStore");
+			var request = store.openCursor();
+			var plugins = [];
+
+			await new Promise(function(resolve, reject) {
+				request.onsuccess = function(e) {
+					var cursor = e.target.result;
+					if (cursor) {
+						var record = cursor.value;
+						if (record.startupTiming === 'onEdaStartup' && record.enabled !== false && record.code) {
+							plugins.push({
+								name: record.name,
+								priority: typeof record.priority === 'number' ? record.priority : 0,
+								code: record.code
+							});
+						}
+						cursor.continue();
+					} else {
+						resolve();
+					}
+				};
+				request.onerror = reject;
+			});
+
+			plugins.sort(function(a, b) { return a.priority - b.priority; });
+			await eda.sys_Storage.setExtensionUserConfig('autoStartPlugins', JSON.stringify(plugins));
+		} catch(e) {
+			console.error('SyncAutoStartPlugins failed:', e);
+		}
 	}
 
 // ==========================
@@ -1332,7 +1397,7 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 				const cursor = e.target.result;
 				if (cursor) {
 					const record = cursor.value;
-					if (record?.code && typeof record.code === 'string' && record.enabled !== false) {
+					if (record?.code && typeof record.code === 'string' && record.enabled !== false && record.startupTiming !== 'onEdaStartup') {
 						try {
 							// 直接使用 eval 执行插件代码
 							eval(record.code);

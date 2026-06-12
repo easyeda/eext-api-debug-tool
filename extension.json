@@ -20,7 +20,7 @@
 	},
 	"homepage": "https://github.com/easyeda",
 	"bugs": "https://github.com/easyeda/eext-api-debug-tool/issues",
-	"activationEvents": {},
+	"activationEvents": {"onStartupFinished": true},
 	"entry": "./dist/index",
 	"dependentExtensions": {},
 	"headerMenus": {

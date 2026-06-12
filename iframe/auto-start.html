@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html,body{margin:0;padding:0;width:1px;height:1px;overflow:hidden;}</style>
+</head>
+<body>
+<script>
+(async function() {
+	try {
+		var raw = await eda.sys_Storage.getExtensionUserConfig('__pending_autostart');
+		if (!raw || typeof raw !== 'string') return;
+
+		// Clean up pending key
+		await eda.sys_Storage.setExtensionUserConfig('__pending_autostart', '');
+
+		var plugins = JSON.parse(raw);
+		plugins.sort(function(a, b) { return (a.priority || 0) - (b.priority || 0); });
+
+		for (var i = 0; i < plugins.length; i++) {
+			var p = plugins[i];
+			if (!p.code) continue;
+			try {
+				eval(p.code);
+			} catch(e) {
+				console.error('[AutoStart] Plugin "' + p.name + '" error:', e);
+			}
+		}
+	} catch(e) {
+		console.error('[AutoStart] Failed:', e);
+	}
+})();
+</script>
+</body>
+</html>
