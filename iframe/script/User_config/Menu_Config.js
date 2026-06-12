@@ -610,12 +610,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		} else if (activeMenu === 'shortcuts') {
 			section('快捷键');
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
-			var platformLabel = platform === 'mac' ? 'macOS' : 'Windows';
-
-			var infoDiv = document.createElement('div');
-			infoDiv.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);margin-bottom:10px;';
-			infoDiv.textContent = '当前平台: ' + platformLabel + '，点击表格行可修改快捷键';
-			contentPane.appendChild(infoDiv);
 
 			var tableWrapper = document.createElement('div');
 			tableWrapper.className = 'shortcuts-table-wrapper';
