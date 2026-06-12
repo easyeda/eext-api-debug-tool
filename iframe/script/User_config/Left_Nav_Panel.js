@@ -365,6 +365,7 @@ class LeftNavPanel {
 				menuItems = [
 					{ text: '打开', action: () => this.openScriptProject(projectId) },
 					{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: '导出', action: () => this.exportScriptAsJs(projectId) },
 					{ text: '---', action: null },
 					{ text: '映射到顶部菜单', action: () => Project_SaveToBtnList(projectId) },
 					{ text: '保存为插件', action: () => ExtStore_SavePlugin(this.editor, true) },
@@ -1179,6 +1180,39 @@ class LeftNavPanel {
 			eda.sys_Message.showToastMessage('导出失败: ' + error.message, 'error', 3);
 		}
 	}
+	// 导出脚本为 JS 文件
+	async exportScriptAsJs(projectId) {
+		try {
+			const project = await window.projectManager.loadProjectById(projectId);
+			if (!project) {
+				eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+				return;
+			}
+			if (!project.isScript || project.files.length === 0) {
+				eda.sys_Message.showToastMessage('脚本文件不存在', 'warn', 2);
+				return;
+			}
+
+			const scriptFile = project.files[0];
+			const content = scriptFile.content || '';
+			const filename = project.projectName + '.js';
+
+			const blob = new Blob([content], { type: 'application/javascript;charset=utf-8' });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+
+			eda.sys_Message.showToastMessage('脚本 "' + project.projectName + '" 已导出', 'success', 2);
+		} catch (error) {
+			eda.sys_Message.showToastMessage('导出失败: ' + error.message, 'error', 3);
+		}
+	}
+
 
 	// HTML 转义
 	escapeHtml(text) {
