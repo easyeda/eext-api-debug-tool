@@ -151,12 +151,12 @@ class FileTreeUI {
 	attachEvents() {
 		// 文件夹展开/收起
 		this.container.querySelectorAll('.file-tree-folder').forEach((folder) => {
-			// 点击箭头切换展开状态
-			const toggle = folder.querySelector('.folder-toggle');
-			if (toggle) {
-				toggle.addEventListener('click', (e) => {
-					e.stopPropagation();
+				// 点击文件夹：选中并切换展开/折叠状态
+				folder.addEventListener('click', (e) => {
 					const path = folder.dataset.path;
+					// 选中文件夹
+					this.handleItemClick(e, path, 'folder');
+					// 同时切换展开/折叠状态
 					if (this.expandedFolders.has(path)) {
 						this.expandedFolders.delete(path);
 					} else {
@@ -164,27 +164,20 @@ class FileTreeUI {
 					}
 					this.render();
 				});
-			}
 
-			// 点击文件夹名称进行选择
-			folder.addEventListener('click', (e) => {
-				if (e.target.classList.contains('folder-toggle')) return;
-				this.handleItemClick(e, folder.dataset.path, 'folder');
+				// 文件夹右键菜单
+				folder.addEventListener('contextmenu', (e) => {
+					e.preventDefault();
+					const path = folder.dataset.path;
+					// 如果右键的项目未被选中，则只选中它
+					if (!this.selectedItems.has(path)) {
+						this.selectedItems.clear();
+						this.selectedItems.add(path);
+						this.render();
+					}
+					this.showContextMenu(e, path, 'folder');
+				});
 			});
-
-			// 文件夹右键菜单
-			folder.addEventListener('contextmenu', (e) => {
-				e.preventDefault();
-				const path = folder.dataset.path;
-				// 如果右键的项目未被选中，则只选中它
-				if (!this.selectedItems.has(path)) {
-					this.selectedItems.clear();
-					this.selectedItems.add(path);
-					this.render();
-				}
-				this.showContextMenu(e, path, 'folder');
-			});
-		});
 
 		// 文件项点击
 		this.container.querySelectorAll('.file-tree-item').forEach((item) => {

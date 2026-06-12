@@ -26,6 +26,7 @@
 .file-tree-folder:hover { background: var(--eext-hover-bg); }
 
 .folder-toggle { font-size: 10px; margin-right: 4px; color: var(--eext-text-secondary); width: 12px; display: inline-block; }
+.file-tree-folder.selected .folder-toggle { color: var(--eext-text-primary); font-weight: bold; }
 .folder-icon { font-size: 14px; margin-right: 4px; }
 .folder-name { flex: 1; font-size: var(--eext-font-size); color: var(--eext-text-primary); font-weight: 500; }
 
