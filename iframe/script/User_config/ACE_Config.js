@@ -476,111 +476,46 @@ function ACE_RunCode(editor) {
 }
 
 // ==========================
-// 初始化 BtnList 表
+// 在弹出窗口中预览 HTML
 // ==========================
-function BtnStore_Init() {
-	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('BtnStore', 2);
-
-		request.onupgradeneeded = (e) => {
-			const db = e.target.result;
-			const oldVersion = e.oldVersion;
-
-			if (oldVersion < 1) {
-				// 版本 1：旧结构（已废弃）
-				const store = db.createObjectStore('BtnList', { keyPath: 'id', autoIncrement: true });
-				store.createIndex('name', 'name', { unique: true });
-				store.createIndex('createdAt', 'createdAt', { unique: false });
-			}
-
-			if (oldVersion < 2) {
-				// 版本 2：新结构 - 使用 UUID + projectId
-				if (db.objectStoreNames.contains('BtnList')) {
-					db.deleteObjectStore('BtnList');
-				}
-				const store = db.createObjectStore('BtnList', { keyPath: 'uuid' });
-				store.createIndex('projectId', 'projectId', { unique: false });
-				store.createIndex('createdAt', 'createdAt', { unique: false });
-			}
-		};
-
-		request.onsuccess = (e) => resolve(e.target.result);
-		request.onerror = (e) => reject(e.target.error);
-	});
-}
-
-// 生成 UUID
-// ==========================
-function generateUUID() {
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-		const r = (Math.random() * 16) | 0;
-		const v = c === 'x' ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
-}
-
-// ==========================
-// 删除 BtnList 中的按钮记录
-// ==========================
-async function deleteBtnFromDB(uuid) {
-	const db = await BtnStore_Init();
-	const tx = db.transaction(['BtnList'], 'readwrite');
-	const store = tx.objectStore('BtnList');
-
-	await new Promise((resolve, reject) => {
-		const req = store.delete(uuid);
-		req.onsuccess = () => resolve();
-		req.onerror = () => reject(req.error);
-	});
-}
-
-// ==========================
-// 项目快捷按钮：保存项目快照到快捷按钮
-// ==========================
-const PROJECT_BTN_PREFIX = '__PROJECT_BTN__';
-
-function isProjectBtn(code) {
-	return typeof code === 'string' && code.startsWith(PROJECT_BTN_PREFIX);
-}
-
-function parseProjectBtnData(code) {
+async function previewHtmlInPopupWindow(data) {
 	try {
-		return JSON.parse(code.slice(PROJECT_BTN_PREFIX.length));
-	} catch (e) {
-		return null;
+		const htmlContent = data.content;
+		if (!htmlContent) {
+			eda.sys_Message.showToastMessage('HTML内容为空', 'error', 2);
+			return;
+		}
+
+		// 将 HTML 内容保存到 storage
+		await eda.sys_Storage.setExtensionUserConfig('__preview_html', htmlContent);
+
+		// 生成唯一的窗口 ID
+		const windowId = 'html-preview-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+
+		// 打开弹出窗口
+		await eda.sys_IFrame.openIFrame(
+			'iframe/preview.html',
+			1024,
+			768,
+			windowId,
+			{
+				title: (data.projectName || 'Preview') + ' - ' + (data.entryFile || 'index.html'),
+				maximizeButton: true,
+				minimizeButton: true,
+				onBeforeCloseCallFn: async () => {
+					// 清理临时存储
+					try {
+						await eda.sys_Storage.setExtensionUserConfig('__preview_html', '');
+					} catch(e) {}
+					return true;
+				}
+			}
+		);
+
+		eda.sys_Message.showToastMessage('预览窗口已打开', 'success', 2);
+	} catch (error) {
+		eda.sys_Message.showToastMessage('打开预览窗口失败: ' + error.message, 'error', 2);
 	}
-}
-
-function buildProjectBtnCode(data) {
-	return PROJECT_BTN_PREFIX + JSON.stringify(data);
-}
-
-function runProjectBtn(data) {
-	const renderer = new HTMLRenderer();
-	const fakeProject = { files: data.files };
-	const entryFile = data.files.find((f) => f.fileName === data.entryFile);
-	if (!entryFile) {
-		eda.sys_Message.showToastMessage('入口文件不存在', 'error', 2);
-		return;
-	}
-	const htmlContent = renderer.buildHTMLContent(entryFile, { currentProject: fakeProject });
-	const finalContent = typeof injectEdaBridge === 'function' ? injectEdaBridge(htmlContent) : htmlContent;
-
-	const editorDiv = document.getElementById('editor');
-	const previewContainer = document.getElementById('html-preview-container');
-	const previewFrame = document.getElementById('html-preview-frame');
-	const runBtn = document.getElementById('run-btn');
-
-	const blob = new Blob([finalContent], { type: 'text/html' });
-	const url = URL.createObjectURL(blob);
-
-	previewFrame.src = url;
-	editorDiv.style.display = 'none';
-	previewContainer.classList.add('active');
-	runBtn.textContent = '停止';
-
-	previewFrame.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
-	eda.sys_Message.showToastMessage(`正在预览：${data.projectName} / ${data.entryFile}`, 'success', 2);
 }
 
 // ==========================
@@ -698,6 +633,26 @@ function createQuickButton(editor, name, uuid, projectId) {
 	return li;
 }
 
+// ==========================
+// 初始化快捷按钮数据库
+// ==========================
+function BtnStore_Init() {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open('BtnStore', 2);
+		request.onupgradeneeded = (e) => {
+			const db = e.target.result;
+			if (!db.objectStoreNames.contains('BtnList')) {
+				const store = db.createObjectStore('BtnList', { keyPath: 'id', autoIncrement: true });
+				store.createIndex('uuid', 'uuid', { unique: true });
+				store.createIndex('projectId', 'projectId', { unique: false });
+			}
+		};
+		request.onsuccess = () => resolve(request.result);
+		request.onerror = () => reject(request.error);
+	});
+}
+
+// 映射项目到顶部菜单
 async function Project_SaveToBtnList(projectId) {
 	const project = await window.projectManager.loadProjectById(projectId);
 	if (!project) {

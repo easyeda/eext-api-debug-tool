@@ -450,6 +450,11 @@ class FileTreeUI {
 					{ text: '重命名', action: () => this.showRenameDialog(target) },
 					{ text: '删除', action: () => this.showDeleteConfirm(target) },
 				];
+				const fileExt = target.split(".").pop().toLowerCase();
+				if (fileExt === "html") {
+					menuItems.push({ text: "---", action: null });
+					menuItems.push({ text: "弹出预览", action: () => this.popupPreviewHtml(target) });
+				}
 			}
 		} else if (type === 'folder') {
 			// 文件夹右键菜单
@@ -665,6 +670,50 @@ class FileTreeUI {
 			await this.render();
 			eda.sys_Message.showToastMessage('文件删除成功', 'success', 2);
 		}
+	}
+
+	// 弹出预览HTML文件
+	async popupPreviewHtml(fileName) {
+		const project = this.projectManager.currentProject;
+		if (!project) {
+			eda.sys_Message.showToastMessage('没有打开的项目', 'warn', 2);
+			return;
+		}
+		if (project.isBuiltIn) {
+			eda.sys_Message.showToastMessage('内置项目不支持弹出预览', 'warn', 2);
+			return;
+		}
+		if (!project.files || !Array.isArray(project.files)) {
+			eda.sys_Message.showToastMessage('项目文件列表无效', 'warn', 2);
+			return;
+		}
+		let htmlFile = project.files.find(f => f.fileName === fileName);
+		if (!htmlFile) {
+			eda.sys_Message.showToastMessage('未找到文件', 'warn', 2);
+			return;
+		}
+		let content;
+		const currentFile = this.projectManager.currentFile;
+		if (currentFile === fileName) {
+			const rawContent = this.editor.getValue();
+			content = (window.htmlRenderer) ?
+				window.htmlRenderer.buildHTMLContent({ ...htmlFile, content: rawContent }, project) :
+				rawContent;
+		} else {
+			content = (window.htmlRenderer) ?
+				window.htmlRenderer.buildHTMLContent(htmlFile, project) :
+				(htmlFile.content || '');
+		}
+		if (!content || content === undefined) {
+			content = htmlFile.content || '';
+		}
+		const finalContent = (typeof injectEdaBridge === 'function') ? injectEdaBridge(content) : content;
+		const data = {
+			projectName: project.projectName,
+			entryFile: fileName,
+			content: finalContent
+		};
+		previewHtmlInPopupWindow(data);
 	}
 
 	// 显示删除文件夹确认
