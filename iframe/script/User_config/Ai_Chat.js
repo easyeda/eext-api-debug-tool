@@ -183,14 +183,18 @@ function initAiChat() {
 					<input type="number" id="cfg-temperature" class="ai-form-input" min="0" max="2" step="0.05" value="${cfg.temperature ?? 0.7}">
 				</div>
 				<hr style="border:0;border-top:1px solid var(--eext-border-light);margin:4px 0;">
-				<div class="ai-toggle-row">
-					<span class="ai-toggle-label">多轮对话</span>
-					<label class="ai-switch"><input type="checkbox" id="cfg-multi-turn" ${cfg.multiTurn ? 'checked' : ''}><span class="ai-slider"></span></label>
-				</div>
-				<div class="ai-toggle-row">
-					<span class="ai-toggle-label">流式输出</span>
-					<label class="ai-switch"><input type="checkbox" id="cfg-stream" ${cfg.stream ? 'checked' : ''}><span class="ai-slider"></span></label>
-				</div>
+					<div class="ai-checkbox-row">
+						<label class="ai-checkbox-label">
+							<input type="checkbox" id="cfg-multi-turn" ${cfg.multiTurn ? 'checked' : ''}>
+							<span class="ai-checkbox"></span>
+							<span class="ai-checkbox-text">多轮对话</span>
+						</label>
+						<label class="ai-checkbox-label">
+							<input type="checkbox" id="cfg-stream" ${cfg.stream ? 'checked' : ''}>
+							<span class="ai-checkbox"></span>
+							<span class="ai-checkbox-text">流式输出</span>
+						</label>
+					</div>
 				</div>
 			<div class="ai-modal-footer">
 				<button class="ai-btn ai-btn-cancel" id="ai-modal-cancel-btn">取消</button>
@@ -198,7 +202,13 @@ function initAiChat() {
 			</div></div>`;
 
 		const style = document.createElement('style');
-		style.textContent = `.api-key-eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:#666;transition:color 0.2s;border-radius:4px;}.api-key-eye-btn:hover{color:#1890ff;background:rgba(24,144,255,0.1);}.api-key-eye-btn svg{display:block;}`;
+		style.textContent = `.api-key-eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:#666;transition:color 0.2s;border-radius:4px;}.api-key-eye-btn:hover{color:#1890ff;background:rgba(24,144,255,0.1);}.api-key-eye-btn svg{display:block;}
+			.ai-checkbox-row{display:flex;gap:16px;padding:4px 0;}
+			.ai-checkbox-label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);}
+			.ai-checkbox-label input[type=checkbox]{position:absolute;opacity:0;pointer-events:none;}
+			.ai-checkbox{width:14px;height:14px;border:1px solid #d9d9d9;border-radius:2px;background:#fff;flex-shrink:0;position:relative;transition:all 0.2s;}
+			.ai-checkbox-label input:checked~.ai-checkbox{background:#1890ff;border-color:#1890ff;}
+			.ai-checkbox-label input:checked~.ai-checkbox::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);}`;
 		document.head.appendChild(style);
 		document.body.appendChild(overlay);
 		return overlay;

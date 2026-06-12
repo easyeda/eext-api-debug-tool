@@ -134,72 +134,77 @@ async function migrateCodeStoreToProjects() {
 /**
  * 显示新建项目对话框
  */
-async function showNewProjectDialog(editor) {
-	var result = await Swal.fire({
-		title: "新建项目",
-		input: "text",
-		inputLabel: "项目名称",
-		inputPlaceholder: "例如: MyProject",
-		showCancelButton: true,
-		confirmButtonText: "创建",
-		cancelButtonText: "取消",
-		inputValidator: function(value) {
-			if (!value) return "请输入项目名称";
-			if (value.length < 2) return "项目名称至少2个字符";
-		},
-	});
+function showNewProjectDialog(editor) {
+	eda.sys_Dialog.showInputDialog(
+		"请输入项目名称", // beforeContent
+		"项目名称至少2个字符", // afterContent
+		"新建项目", // title
+		"text", // type
+		"", // value
+		{ placeholder: "例如: MyProject", minlength: 2, maxlength: 50 }, // otherProperty
+		async function(value) {
+			// 用户点击确认后的回调
+			// 用户点击取消时不执行任何操作
+			if (typeof value !== "string") return;
 
-	if (result.isConfirmed) {
-		try {
-			var project = await window.projectManager.createProject(result.value);
-			window.fileTreeUI = new FileTreeUI("file-tree", editor);
-			await window.fileTreeUI.render();
-
-			if (window.projectCompleter) {
-				window.projectCompleter.clear();
-				window.projectCompleter.updateFiles();
+			// 用户点击确定但输入为空或太短
+			if (!value || value.length < 2) {
+				eda.sys_Message.showToastMessage("项目名称至少2个字符", "warn", 2);
+				return;
 			}
 
-			if (window.leftNavPanel) {
-				await window.leftNavPanel.loadProjectList();
-				window.leftNavPanel.switchView("project-design");
-			}
+			try {
+				var project = await window.projectManager.createProject(value);
+				window.fileTreeUI = new FileTreeUI("file-tree", editor);
+				await window.fileTreeUI.render();
 
-			if (project.files.length > 0) {
-				var firstFile = project.files[0];
-				editor.setValue(firstFile.content, -1);
-				window.projectManager.currentFile = firstFile.fileName;
-			}
+				if (window.projectCompleter) {
+					window.projectCompleter.clear();
+					window.projectCompleter.updateFiles();
+				}
 
-			eda.sys_Message.showToastMessage("项目创建成功", "success", 2);
-		} catch (error) {
-			eda.sys_Message.showToastMessage("项目创建失败: " + error.message, "error", 3);
+				if (window.leftNavPanel) {
+					await window.leftNavPanel.loadProjectList();
+					window.leftNavPanel.switchView("project-design");
+				}
+
+				if (project.files.length > 0) {
+					var firstFile = project.files[0];
+					editor.setValue(firstFile.content, -1);
+					window.projectManager.currentFile = firstFile.fileName;
+				}
+
+				eda.sys_Message.showToastMessage("项目创建成功", "success", 2);
+			} catch (error) {
+				eda.sys_Message.showToastMessage("项目创建失败: " + error.message, "error", 3);
+			}
 		}
-	}
+	);
 }
 
 /**
  * 显示新建脚本对话框
  */
-async function showNewScriptDialog(editor) {
-	var result = await Swal.fire({
-		title: "新建脚本",
-		input: "text",
-		inputLabel: "脚本名称",
-		inputPlaceholder: "例如: my-script.js",
-		inputValue: "untitled.js",
-		showCancelButton: true,
-		confirmButtonText: "创建",
-		cancelButtonText: "取消",
-		inputValidator: function(value) {
-			if (!value) return "请输入脚本名称";
-			if (value.length < 2) return "脚本名称至少2个字符";
-		},
-	});
+function showNewScriptDialog(editor) {
+	eda.sys_Dialog.showInputDialog(
+		"请输入脚本名称", // beforeContent
+		"脚本名称至少2个字符", // afterContent
+		"新建脚本", // title
+		"text", // type
+		"", // value
+		{ placeholder: "例如: my-script", minlength: 2, maxlength: 50 }, // otherProperty
+		async function(value) {
+			// 用户点击取消时不执行任何操作
+			if (typeof value !== "string") return;
 
-	if (result.isConfirmed) {
+			// 用户点击确定但输入为空或太短
+			if (!value || value.length < 2) {
+				eda.sys_Message.showToastMessage("脚本名称至少2个字符", "warn", 2);
+				return;
+			}
+
 		try {
-			var name = result.value.trim();
+			var name = value.trim();
 			if (!name.endsWith(".js")) name += ".js";
 			var projectName = name.replace(/.js$/, "");
 			// 根据设置决定是否带文件名注释（默认开启）
@@ -249,8 +254,9 @@ async function showNewScriptDialog(editor) {
 		} catch (error) {
 			eda.sys_Message.showToastMessage("脚本创建失败: " + error.message, "error", 3);
 		}
+		}
+		);
 	}
-}
 
 /* ============================================
    设置模态框 — EDA 系统设置风格
@@ -726,37 +732,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							var item = document.createElement('div');
 							item.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px 0;border-bottom:1px solid var(--eext-border);';
 
-							// Row 1: toggle + name + buttons
+							// Row 1: plugin name + buttons
 							var row1 = document.createElement('div');
-							row1.style.cssText = 'display:flex;align-items:center;gap:6px;';
-
-							// Enable toggle
-							var toggle = document.createElement('label');
-							toggle.style.cssText = 'position:relative;display:inline-block;width:32px;height:18px;flex-shrink:0;';
-							var cb = document.createElement('input');
-							cb.type = 'checkbox';
-							cb.checked = p.enabled !== false;
-							cb.style.cssText = 'opacity:0;width:0;height:0;';
-							var sl = document.createElement('span');
-							sl.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:' + (cb.checked ? 'var(--eext-brand)' : 'var(--eext-border)') + ';border-radius:18px;cursor:pointer;transition:background 0.2s;';
-							sl.innerHTML = '<span style="position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform 0.2s;' + (cb.checked ? 'transform:translateX(14px)' : '') + ';"></span>';
-							toggle.appendChild(cb);
-							toggle.appendChild(sl);
-							cb.onchange = async function() {
-								var newState = cb.checked;
-								sl.style.background = newState ? 'var(--eext-brand)' : 'var(--eext-border)';
-								sl.querySelector('span').style.transform = newState ? 'translateX(14px)' : '';
-								try {
-									await ExtStore_TogglePlugin(p.name, newState);
-									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已' + (newState ? '启用' : '禁用'), 'success', 1);
-								} catch(err) {
-									cb.checked = !newState;
-									sl.style.background = cb.checked ? 'var(--eext-brand)' : 'var(--eext-border)';
-									sl.querySelector('span').style.transform = cb.checked ? 'translateX(14px)' : '';
-									eda.sys_Message.showToastMessage('操作失败: ' + err.message, 'error', 2);
-								}
-							};
-							row1.appendChild(toggle);
+							row1.style.cssText = 'display:flex;align-items:flex-end;gap:6px;';
 
 							// Plugin name
 							var nameSpan = document.createElement('span');
@@ -845,9 +823,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 							item.appendChild(row1);
 
-							// Row 2: startup timing radio + priority
+							// Row 2: startup timing radio + priority + enable checkbox
 							var row2 = document.createElement('div');
-							row2.style.cssText = 'display:flex;align-items:center;gap:8px;padding-left:38px;font-size:12px;color:var(--eext-text-primary);';
+							row2.style.cssText = 'display:flex;align-items:center;gap:8px;padding-left:0;font-size:12px;color:var(--eext-text-primary);';
 
 							var timingLabel = document.createElement('span');
 							timingLabel.textContent = '启动时机:';
@@ -881,45 +859,74 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							radioEda.appendChild(document.createTextNode('打开EDA'));
 							row2.appendChild(radioEda);
 
-							// Priority input (only visible for onEdaStartup)
-							var priorityLabel = document.createElement('span');
-							priorityLabel.textContent = '优先级:';
-							priorityLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
-							row2.appendChild(priorityLabel);
+							// Enable checkbox (same style as AI settings)
+							var checkboxLabel = document.createElement('label');
+							checkboxLabel.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);margin-left:16px;';
+							var cb = document.createElement('input');
+							cb.type = 'checkbox';
+							cb.checked = p.enabled !== false;
+							cb.style.cssText = 'position:absolute;opacity:0;pointer-events:none;';
+							checkboxLabel.appendChild(cb);
 
-							var priorityInput = document.createElement('input');
-							priorityInput.type = 'number';
-							priorityInput.value = currentPriority;
-							priorityInput.style.cssText = 'width:60px;height:24px;padding:0 6px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;color:var(--eext-text-primary);background:var(--eext-bg-input);text-align:center;';
+							// Create custom checkbox element
+							var customCheckbox = document.createElement('span');
+							customCheckbox.style.cssText = 'width:14px;height:14px;border:1px solid #d9d9d9;border-radius:2px;background:#fff;flex-shrink:0;position:relative;transition:all 0.2s;';
+							// Add checkmark
+							var checkmark = document.createElement('span');
+							checkmark.style.cssText = 'position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);opacity:0;transition:opacity 0.2s;';
+							customCheckbox.appendChild(checkmark);
 
-							var hidePriority = function() {
-								priorityLabel.style.display = re.checked ? '' : 'none';
-								priorityInput.style.display = re.checked ? '' : 'none';
-							};
-							hidePriority();
-							row2.appendChild(priorityInput);
+							if (cb.checked) {
+								customCheckbox.style.background = '#1890ff';
+								customCheckbox.style.borderColor = '#1890ff';
+								checkmark.style.opacity = '1';
+							}
+							checkboxLabel.appendChild(customCheckbox);
 
-							// Apply timing change
-							var applyTiming = async function(newTiming, newPriority) {
-								if (typeof ExtStore_UpdateStartupConfig === 'function') {
-									try {
-										await ExtStore_UpdateStartupConfig(p.name, newTiming, newPriority);
-									} catch(e) {
-										eda.sys_Message.showToastMessage('保存启动配置失败: ' + e.message, 'error', 2);
-									}
+							checkboxLabel.onchange = async function() {
+								var newState = cb.checked;
+								if (newState) {
+									customCheckbox.style.background = '#1890ff';
+									customCheckbox.style.borderColor = '#1890ff';
+									checkmark.style.opacity = '1';
+								} else {
+									customCheckbox.style.background = '#fff';
+									customCheckbox.style.borderColor = '#d9d9d9';
+									checkmark.style.opacity = '0';
+								}
+								try {
+									await ExtStore_TogglePlugin(p.name, newState);
+									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已' + (newState ? '启用' : '禁用'), 'success', 1);
+								} catch(err) {
+									cb.checked = !newState;
+									customCheckbox.style.background = cb.checked ? '#1890ff' : '#fff';
+									customCheckbox.style.borderColor = cb.checked ? '#1890ff' : '#d9d9d9';
+									checkmark.style.opacity = cb.checked ? '1' : '0';
+									eda.sys_Message.showToastMessage('操作失败: ' + err.message, 'error', 2);
 								}
 							};
+							var checkboxText = document.createElement('span');
+							checkboxText.textContent = '启用';
+							checkboxText.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
+							checkboxLabel.appendChild(checkboxText);
+							row2.appendChild(checkboxLabel);
 
-							rp.onchange = function() { if (rp.checked) { hidePriority(); applyTiming('onPluginOpen', priorityInput.value); } };
-							re.onchange = function() { if (re.checked) { hidePriority(); applyTiming('onEdaStartup', priorityInput.value); } };
-							priorityInput.onchange = function() {
-								var v = parseInt(priorityInput.value, 10);
-								if (isNaN(v) || v < 0) v = 0;
-								priorityInput.value = v;
-								applyTiming(re.checked ? 'onEdaStartup' : 'onPluginOpen', v);
-							};
 
-							item.appendChild(row2);
+								// Apply timing change
+								var applyTiming = async function(newTiming) {
+									if (typeof ExtStore_UpdateStartupConfig === 'function') {
+										try {
+											await ExtStore_UpdateStartupConfig(p.name, newTiming);
+										} catch(e) {
+											eda.sys_Message.showToastMessage('保存启动配置失败: ' + e.message, 'error', 2);
+										}
+									}
+								};
+
+								rp.onchange = function() { if (rp.checked) { applyTiming('onPluginOpen'); } };
+								re.onchange = function() { if (re.checked) { applyTiming('onEdaStartup'); } };
+
+								item.appendChild(row2);
 
 							list.appendChild(item);
 						});
