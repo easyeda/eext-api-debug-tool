@@ -756,43 +756,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 							// Row 2: startup timing radio + priority + enable checkbox
 							var row2 = document.createElement('div');
-							row2.style.cssText = 'display:flex;align-items:center;gap:8px;padding-left:0;font-size:12px;color:var(--eext-text-primary);';
-
-							var timingLabel = document.createElement('span');
-							timingLabel.textContent = '启动时机:';
-							timingLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
-							row2.appendChild(timingLabel);
-
-							var currentTiming = p.startupTiming || 'onPluginOpen';
-							var currentPriority = p.priority || 0;
-
-							var radioPlugin = document.createElement('label');
-							radioPlugin.style.cssText = 'display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
-							var rp = document.createElement('input');
-							rp.type = 'radio';
-							rp.name = 'timing_' + p.name;
-							rp.value = 'onPluginOpen';
-							rp.checked = currentTiming === 'onPluginOpen';
-							rp.style.cssText = 'margin:0;';
-							radioPlugin.appendChild(rp);
-							radioPlugin.appendChild(document.createTextNode('打开窗口'));
-							row2.appendChild(radioPlugin);
-
-							var radioEda = document.createElement('label');
-							radioEda.style.cssText = 'display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
-							var re = document.createElement('input');
-							re.type = 'radio';
-							re.name = 'timing_' + p.name;
-							re.value = 'onEdaStartup';
-							re.checked = currentTiming === 'onEdaStartup';
-							re.style.cssText = 'margin:0;';
-							radioEda.appendChild(re);
-							radioEda.appendChild(document.createTextNode('打开EDA'));
-							row2.appendChild(radioEda);
+							row2.style.cssText = 'display:flex;align-items:center;gap:16px;padding-left:0;font-size:12px;color:var(--eext-text-primary);';
 
 							// Enable checkbox (same style as AI settings)
 							var checkboxLabel = document.createElement('label');
-							checkboxLabel.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);margin-left:16px;';
+							checkboxLabel.style.cssText = 'display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
 							var cb = document.createElement('input');
 							cb.type = 'checkbox';
 							cb.checked = p.enabled !== false;
@@ -841,6 +809,38 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							checkboxText.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
 							checkboxLabel.appendChild(checkboxText);
 							row2.appendChild(checkboxLabel);
+							var timingLabel = document.createElement('span');
+							timingLabel.textContent = '启动时机:';
+							timingLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
+							row2.appendChild(timingLabel);
+
+							var currentTiming = p.startupTiming || 'onPluginOpen';
+							var currentPriority = p.priority || 0;
+
+							var radioPlugin = document.createElement('label');
+							radioPlugin.style.cssText = 'display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
+							var rp = document.createElement('input');
+							rp.type = 'radio';
+							rp.name = 'timing_' + p.name;
+							rp.value = 'onPluginOpen';
+							rp.checked = currentTiming === 'onPluginOpen';
+							rp.style.cssText = 'margin:0;';
+							radioPlugin.appendChild(rp);
+							radioPlugin.appendChild(document.createTextNode('打开窗口'));
+							row2.appendChild(radioPlugin);
+
+							var radioEda = document.createElement('label');
+							radioEda.style.cssText = 'display:inline-flex;align-items:center;gap:3px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
+							var re = document.createElement('input');
+							re.type = 'radio';
+							re.name = 'timing_' + p.name;
+							re.value = 'onEdaStartup';
+							re.checked = currentTiming === 'onEdaStartup';
+							re.style.cssText = 'margin:0;';
+							radioEda.appendChild(re);
+							radioEda.appendChild(document.createTextNode('打开EDA'));
+							row2.appendChild(radioEda);
+
 
 						// Buttons: rename, load, delete
 							// Rename button
@@ -848,28 +848,32 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							renameBtn.textContent = '重命名';
 							renameBtn.className = 'eext-modal-btn';
 							renameBtn.onclick = async function() {
-								var result = await Swal.fire({
-									title: '重命名插件',
-									input: 'text',
-									inputValue: p.name,
-									inputLabel: '新名称',
-									showCancelButton: true,
-									confirmButtonText: '确定',
-									cancelButtonText: '取消',
-									inputValidator: function(value) {
-										if (!value || !value.trim()) return '请输入名称';
-										if (value.trim() === p.name) return '名称未改变';
-									},
-								});
-								if (result.isConfirmed) {
-									try {
-										await ExtStore_RenameExt(p.name, result.value.trim());
-										await loadPluginList();
-										eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
-									} catch(err) {
-										eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+								eda.sys_Dialog.showInputDialog(
+									'请输入新名称',
+									'插件名称',
+									'重命名插件',
+									'text',
+									p.name,
+									{ minlength: 1, maxlength: 50 },
+									async function(value) {
+										if (typeof value !== 'string') return;
+										if (!value || !value.trim()) {
+											eda.sys_Message.showToastMessage('请输入名称', 'warn', 2);
+											return;
+										}
+										if (value.trim() === p.name) {
+											eda.sys_Message.showToastMessage('名称未改变', 'warn', 2);
+											return;
+										}
+										try {
+											await ExtStore_RenameExt(p.name, value.trim());
+											await loadPluginList();
+											eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
+										} catch(err) {
+											eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+										}
 									}
-								}
+								);
 							};
 							row2.appendChild(renameBtn);
 
@@ -901,23 +905,22 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							delBtn.textContent = '删除';
 							delBtn.className = 'eext-modal-btn-delete';
 							delBtn.onclick = async function() {
-								var confirmResult = await Swal.fire({
-									title: '确认删除',
-									html: '确定删除插件 "<strong>' + p.name + '</strong>"？',
-									icon: 'warning',
-									showCancelButton: true,
-									confirmButtonText: '删除',
-									cancelButtonText: '取消',
-									confirmButtonColor: '#1890ff',
-								});
-								if (!confirmResult.isConfirmed) return;
-								try {
-									await ExtStore_DeleteExt(p.name);
-									await loadPluginList();
-									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已删除', 'info', 1);
-								} catch(err) {
-									eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
-								}
+								eda.sys_Dialog.showConfirmationMessage(
+									'确定删除插件 "' + p.name + '"？',
+									'确认删除',
+									'删除',
+									'取消',
+									async function(confirmed) {
+										if (!confirmed) return;
+										try {
+											await ExtStore_DeleteExt(p.name);
+											await loadPluginList();
+											eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已删除', 'info', 1);
+										} catch(err) {
+											eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
+										}
+									}
+								);
 							};
 							row2.appendChild(delBtn);
 

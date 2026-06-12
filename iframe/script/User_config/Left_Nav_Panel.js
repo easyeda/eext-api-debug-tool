@@ -461,35 +461,35 @@ class LeftNavPanel {
 		const project = this.projects.find((p) => p.id === projectId);
 		if (!project) return;
 
-		const result = await Swal.fire({
-			title: '确认删除',
-			html: `确定要删除项目 "<strong>${this.escapeHtml(project.projectName)}</strong>" 吗？<br><br>这将删除项目中的 <strong>${project.files.length}</strong> 个文件。<br><br>此操作不可恢复！`,
-			icon: 'warning',
-			showCancelButton: true,
-			confirmButtonText: '确认删除',
-			cancelButtonText: '取消',
-			confirmButtonColor: '#1890ff',
-		});
+		const message = `确定要删除项目 "${project.projectName}" 吗？\n\n这将删除项目中的 ${project.files.length} 个文件。\n\n此操作不可恢复！`;
 
-		if (result.isConfirmed) {
-			try {
-				await window.projectManager.deleteProject(projectId);
+		eda.sys_Dialog.showConfirmationMessage(
+			message,
+			'确认删除',
+			'确认删除',
+			'取消',
+			async (confirmed) => {
+				if (!confirmed) return;
 
-				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
-					window.projectManager.currentProject = null;
-					window.projectManager.currentFile = null;
-					this.editor.setValue('', -1);
+				try {
+					await window.projectManager.deleteProject(projectId);
 
-					if (window.projectCompleter) window.projectCompleter.clear();
-					if (window.fileTreeUI) await window.fileTreeUI.render();
+					if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
+						window.projectManager.currentProject = null;
+						window.projectManager.currentFile = null;
+						this.editor.setValue('', -1);
+
+						if (window.projectCompleter) window.projectCompleter.clear();
+						if (window.fileTreeUI) await window.fileTreeUI.render();
+					}
+
+					await this.loadProjectList();
+					eda.sys_Message.showToastMessage('项目删除成功', 'success', 2);
+				} catch (error) {
+					eda.sys_Message.showToastMessage('删除失败: ' + error.message, 'error', 3);
 				}
-
-				await this.loadProjectList();
-				eda.sys_Message.showToastMessage('项目删除成功', 'success', 2);
-			} catch (error) {
-				eda.sys_Message.showToastMessage('删除失败: ' + error.message, 'error', 3);
 			}
-		}
+		);
 	}
 
 	// 选中项目
