@@ -383,7 +383,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const row = document.createElement('div');
 			row.textContent = item.label;
 			const active = activeMenu === item.id;
-			row.style.cssText = `padding:6px 16px;cursor:pointer;font-size:12px;color:${active ? 'var(--eext-brand)' : 'var(--eext-text-primary)'};background:${active ? 'var(--eext-hover-bg)' : 'transparent'};border-right:${active ? '2px solid var(--eext-brand)' : '2px solid transparent'};transition:background 0.15s;`;
+			row.style.cssText = `padding:6px 16px;cursor:pointer;font-size:12px;color:${active && !isDark() ? 'var(--eext-brand)' : 'var(--eext-text-primary)'};background:${active ? 'var(--eext-hover-bg)' : 'transparent'};border-right:${active ? '2px solid var(--eext-brand)' : '2px solid transparent'};transition:background 0.15s;`;
 			row.onmouseenter = () => { if (!active) row.style.background = 'var(--eext-hover-bg)'; };
 			row.onmouseleave = () => { if (!active) row.style.background = 'transparent'; };
 			row.onclick = () => { activeMenu = item.id; renderMenu(); renderContent(); };
