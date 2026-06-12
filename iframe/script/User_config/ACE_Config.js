@@ -480,13 +480,26 @@ function ACE_RunCode(editor) {
 // ==========================
 function BtnStore_Init() {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open('BtnStore', 1);
+		const request = indexedDB.open('BtnStore', 2);
 
 		request.onupgradeneeded = (e) => {
 			const db = e.target.result;
-			if (!db.objectStoreNames.contains('BtnList')) {
+			const oldVersion = e.oldVersion;
+
+			if (oldVersion < 1) {
+				// 版本 1：旧结构（已废弃）
 				const store = db.createObjectStore('BtnList', { keyPath: 'id', autoIncrement: true });
 				store.createIndex('name', 'name', { unique: true });
+				store.createIndex('createdAt', 'createdAt', { unique: false });
+			}
+
+			if (oldVersion < 2) {
+				// 版本 2：新结构 - 使用 UUID + projectId
+				if (db.objectStoreNames.contains('BtnList')) {
+					db.deleteObjectStore('BtnList');
+				}
+				const store = db.createObjectStore('BtnList', { keyPath: 'uuid' });
+				store.createIndex('projectId', 'projectId', { unique: false });
 				store.createIndex('createdAt', 'createdAt', { unique: false });
 			}
 		};
@@ -496,26 +509,26 @@ function BtnStore_Init() {
 	});
 }
 
+// 生成 UUID
+// ==========================
+function generateUUID() {
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+		const r = (Math.random() * 16) | 0;
+		const v = c === 'x' ? r : (r & 0x3) | 0x8;
+		return v.toString(16);
+	});
+}
+
 // ==========================
 // 删除 BtnList 中的按钮记录
 // ==========================
-async function deleteBtnFromDB(name) {
+async function deleteBtnFromDB(uuid) {
 	const db = await BtnStore_Init();
 	const tx = db.transaction(['BtnList'], 'readwrite');
 	const store = tx.objectStore('BtnList');
-	const index = store.index('name');
 
-	const key = await new Promise((resolve, reject) => {
-		const req = index.getKey(name);
-		req.onsuccess = () => resolve(req.result);
-		req.onerror = () => reject(req.error);
-	});
-
-	if (key === undefined) {
-		throw new Error('按钮不存在');
-	}
 	await new Promise((resolve, reject) => {
-		const req = store.delete(key);
+		const req = store.delete(uuid);
 		req.onsuccess = () => resolve();
 		req.onerror = () => reject(req.error);
 	});
@@ -570,149 +583,56 @@ function runProjectBtn(data) {
 	eda.sys_Message.showToastMessage(`正在预览：${data.projectName} / ${data.entryFile}`, 'success', 2);
 }
 
-async function Project_SaveToBtnList(projectId) {
-	const project = await window.projectManager.loadProjectById(projectId);
-	if (!project) {
-		eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
-		return;
-	}
-
-	// 脚本：直接执行内容
-	var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith('.js')));
-	if (isScript) {
-		var scriptCode = project.files[0].content;
-		if (!scriptCode || !scriptCode.trim()) {
-			eda.sys_Message.showToastMessage('脚本内容为空', 'warn', 2);
-			return;
-		}
-		var sRes = await Swal.fire({
-			title: '映射到顶部菜单',
-			input: 'text',
-			inputLabel: '按钮名称',
-			inputValue: project.projectName,
-			inputPlaceholder: '例如：我的脚本',
-			showCancelButton: true,
-			confirmButtonText: '保存',
-			cancelButtonText: '取消',
-			inputValidator: function(value) {
-				if (!value || !value.trim()) return '请输入按钮名称';
-			},
-		});
-		if (!scriptNameResult.isConfirmed) return;
-		var sBtnName = scriptNameResult.value.trim();
-		try {
-			var db = await BtnStore_Init();
-			await new Promise(function(res, rej) {
-				var tx = db.transaction(['BtnList'], 'readwrite');
-				tx.objectStore('BtnList').add({ name: sBtnName, code: scriptCode, createdAt: new Date().toISOString() });
-				tx.oncomplete = res;
-				tx.onerror = rej;
-			});
-			document.getElementById('quick-btn-list')?.appendChild(createQuickButton(window.editor, sBtnName, scriptCode));
-			eda.sys_Message.showToastMessage('已映射到顶部菜单', 'success', 2);
-		} catch(e) {
-			eda.sys_Message.showToastMessage('保存失败: ' + e.message, 'error', 2);
-		}
-		return;
-	}
-
-	const htmlFiles = project.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
-	if (htmlFiles.length === 0) {
-		eda.sys_Message.showToastMessage('项目中没有 HTML 文件', 'warn', 2);
-		return;
-	}
-
-	let entryFileName;
-	if (htmlFiles.length === 1) {
-		entryFileName = htmlFiles[0].fileName;
-	} else {
-		const options = {};
-		htmlFiles.forEach((f) => {
-			options[f.fileName] = f.fileName;
-		});
-		const result = await Swal.fire({
-			title: '选择入口 HTML 文件',
-			input: 'select',
-			inputOptions: options,
-			showCancelButton: true,
-			confirmButtonText: '确定',
-			cancelButtonText: '取消',
-			inputValidator: (value) => {
-				if (!value) return '请选择一个 HTML 文件';
-			},
-		});
-		if (!result.isConfirmed) return;
-		entryFileName = result.value;
-	}
-
-	const nameResult = await Swal.fire({
-		title: '保存到快捷按钮',
-		input: 'text',
-		inputLabel: '按钮名称',
-		inputValue: project.projectName,
-		inputPlaceholder: '例如：我的工具',
-		showCancelButton: true,
-		confirmButtonText: '保存',
-		cancelButtonText: '取消',
-		inputValidator: (value) => {
-			if (!value || !value.trim()) return '请输入按钮名称';
-		},
-	});
-	if (!nameResult.isConfirmed) return;
-	const btnName = nameResult.value.trim();
-
-	const data = {
-		projectName: project.projectName,
-		entryFile: entryFileName,
-		files: project.files.map((f) => ({ fileName: f.fileName, content: f.content })),
-	};
-	const code = buildProjectBtnCode(data);
-
-	try {
-		const db = await BtnStore_Init();
-		const tx = db.transaction(['BtnList'], 'readwrite');
-		const store = tx.objectStore('BtnList');
-
-		const existing = await new Promise((res) => {
-			const req = store.index('name').get(btnName);
-			req.onsuccess = () => res(!!req.result);
-		});
-		if (existing) {
-			eda.sys_Message.showToastMessage(`按钮名称 "${btnName}" 已存在`, 'warn', 2);
-			return;
-		}
-
-		await new Promise((resolve, reject) => {
-			const req = store.add({ name: btnName, code, createdAt: new Date().toISOString() });
-			req.onsuccess = resolve;
-			req.onerror = reject;
-		});
-
-		const li = createQuickButton(window.editor, btnName, code);
-		document.getElementById('quick-btn-list')?.appendChild(li);
-		eda.sys_Message.showToastMessage(`快捷按钮 "${btnName}" 已添加`, 'success', 2);
-	} catch (error) {
-		eda.sys_Message.showToastMessage(`保存失败: ${error.message}`, 'error', 2);
-	}
-}
-
 // ==========================
-// 创建一个快捷按钮元素（含右键删除）
+// 创建一个快捷按钮元素（含右键菜单）
 // ==========================
-function createQuickButton(editor, name, code) {
+function createQuickButton(editor, name, uuid, projectId) {
 	const li = document.createElement('li');
 	const btn = document.createElement('button');
 	btn.textContent = name;
-	btn.setAttribute('data-btn-name', name);
+	btn.setAttribute('data-btn-uuid', uuid);
+	btn.setAttribute('data-btn-project-id', projectId);
 
-	// 左键：项目按钮打开 HTML 预览，普通按钮执行代码
-	btn.onclick = () => {
-		if (isProjectBtn(code)) {
-			const data = parseProjectBtnData(code);
-			if (data) runProjectBtn(data);
-			else eda.sys_Message.showToastMessage('快捷按钮数据损坏', 'error', 2);
-		} else {
-			eval(code);
+	// 点击按钮：加载项目并执行
+	btn.onclick = async () => {
+		try {
+			const project = await window.projectManager.loadProjectById(projectId);
+			if (!project) {
+				eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+				return;
+			}
+
+			// 脚本：直接执行
+			const isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith('.js')));
+			if (isScript) {
+				const code = project.files[0].content;
+				if (code && code.trim()) {
+					try {
+						eval(code);
+					} catch(e) {
+						eda.sys_Message.showToastMessage('执行失败: ' + e.message, 'error', 2);
+					}
+				} else {
+					eda.sys_Message.showToastMessage('脚本内容为空', 'warn', 2);
+				}
+				return;
+			}
+
+			// HTML 项目：预览
+			const htmlFiles = project.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
+			if (htmlFiles.length > 0) {
+				const entryFile = htmlFiles.length === 1 ? htmlFiles[0].fileName : (project.entryFile || htmlFiles[0].fileName);
+				const data = {
+					projectName: project.projectName,
+					entryFile: entryFile,
+					files: project.files.map((f) => ({ fileName: f.fileName, content: f.content })),
+				};
+				runProjectBtn(data);
+			} else {
+				eda.sys_Message.showToastMessage('项目中没有可运行的文件', 'warn', 2);
+			}
+		} catch(e) {
+			eda.sys_Message.showToastMessage('加载失败: ' + e.message, 'error', 2);
 		}
 	};
 
@@ -734,11 +654,11 @@ function createQuickButton(editor, name, code) {
 				document.addEventListener('click', () => (m.style.display = 'none'));
 				return m;
 			})();
-		menu.style.cssText = `position:fixed;z-index:10000;background:${menuBg};border:1px solid ${menuBorder};box-shadow:2px 2px 6px ${menuShadow};display:none;font-size:12px;min-width:120px;border-radius:4px;padding:4px 0`;
+		menu.style.cssText = 'position:fixed;z-index:10000;background:' + menuBg + ';border:1px solid ' + menuBorder + ';box-shadow:2px 2px 6px ' + menuShadow + ';display:none;font-size:12px;min-width:120px;border-radius:4px;padding:4px 0';
 		const showItem = (text, action) => {
 			const item = document.createElement('div');
 			item.textContent = text;
-			item.style.cssText = `padding:8px 16px;cursor:pointer;color:${textColor};user-select:none;transition:background 0.2s;`;
+			item.style.cssText = 'padding:8px 16px;cursor:pointer;color:' + textColor + ';user-select:none;transition:background 0.2s;';
 			item.onmouseenter = () => (item.style.backgroundColor = hoverBg);
 			item.onmouseleave = () => (item.style.backgroundColor = '');
 			item.onclick = () => {
@@ -748,20 +668,19 @@ function createQuickButton(editor, name, code) {
 			menu.appendChild(item);
 		};
 		menu.innerHTML = '';
-		showItem('加载', () => {
-			editor.setValue(code, -1);
-			editor.clearSelection();
-			eda.sys_Message.showToastMessage(`已加载：${name}`, 'info', 1);
+		showItem('加载项目', () => {
+			window.projectManager.openProject(projectId);
+			eda.sys_Message.showToastMessage('已加载项目：' + name, 'info', 1);
 		});
 		showItem('删除', () => {
-			deleteBtnFromDB(name)
+			deleteBtnFromDB(uuid)
 				.then(() => {
 					li.remove();
-					eda.sys_Message.showToastMessage(`已删除快捷按钮 "${name}"`, 'info', 1);
+					eda.sys_Message.showToastMessage('已删除快捷按钮 "' + name + '"', 'info', 1);
 				})
 				.catch((err) => {
 					console.error('删除失败:', err);
-					eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 1);
+					eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 1);
 				});
 		});
 		const x = e.pageX;
@@ -770,8 +689,8 @@ function createQuickButton(editor, name, code) {
 		const h = window.innerHeight;
 		const mw = 120;
 		const mh = 80;
-		menu.style.left = `${Math.min(x, w - mw - 5)}px`;
-		menu.style.top = `${Math.min(y, h - mh - 5)}px`;
+		menu.style.left = Math.min(x, w - mw - 5) + 'px';
+		menu.style.top = Math.min(y, h - mh - 5) + 'px';
 		menu.style.display = 'block';
 	};
 
@@ -779,65 +698,88 @@ function createQuickButton(editor, name, code) {
 	return li;
 }
 
-// ==========================
-// 保存为快捷按钮
-// ==========================
-async function Code_SaveToBtnList(editor) {
-	const currentCode = editor.getValue();
-	if (!currentCode.trim()) {
-		eda.sys_Message.showToastMessage('当前没有可保存的代码内容。', 'info', 1);
+async function Project_SaveToBtnList(projectId) {
+	const project = await window.projectManager.loadProjectById(projectId);
+	if (!project) {
+		eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
 		return;
 	}
 
-	eda.sys_Dialog.showInputDialog(
-		'请输入按钮名称：',
-		'该名称将作为左侧工具栏的新按钮，不可重复。',
-		'保存为快捷按钮',
-		'text',
-		'',
-		{
-			placeholder: '例如：自动布线脚本',
-			minlength: 1,
-			maxlength: 50,
-		},
-		async (inputValue) => {
-			if (inputValue == null || !inputValue.trim()) return;
-			const name = inputValue.trim();
+	try {
+		const db = await BtnStore_Init();
 
-			try {
-				const db = await BtnStore_Init();
-				const tx = db.transaction(['BtnList'], 'readwrite');
-				const store = tx.objectStore('BtnList');
+		// 检查是否已存在相同 projectId 的映射
+		const allRecords = await new Promise((resolve, reject) => {
+			const tx = db.transaction(['BtnList'], 'readonly');
+			const req = tx.objectStore('BtnList').getAll();
+			req.onsuccess = () => resolve(req.result || []);
+			req.onerror = reject;
+		});
 
-				// 检查重名
-				const existing = await new Promise((res) => {
-					const req = store.index('name').get(name);
-					req.onsuccess = () => res(!!req.result);
-				});
-				if (existing) {
-					eda.sys_Message.showToastMessage(`按钮名称 "${name}" 已存在`, 'warn', 2);
-					return;
+		const existing = allRecords.find(r => r.projectId === projectId);
+		if (existing) {
+			eda.sys_Message.showToastMessage('当前脚本已经映射为顶部菜单：' + existing.name, 'info', 2);
+			return;
+		}
+
+		// 获取按钮名称
+		const nameResult = await Swal.fire({
+			title: '映射到顶部菜单',
+			input: 'text',
+			inputLabel: '按钮名称',
+			inputValue: project.projectName,
+			inputPlaceholder: '例如：我的脚本',
+			showCancelButton: true,
+			confirmButtonText: '保存',
+			cancelButtonText: '取消',
+			inputValidator: (value) => {
+				if (!value || !value.trim()) return '请输入按钮名称';
+			},
+		});
+		if (!nameResult.isConfirmed) return;
+		const btnName = nameResult.value.trim();
+
+		const uuid = generateUUID();
+
+		await new Promise((resolve, reject) => {
+			const tx = db.transaction(['BtnList'], 'readwrite');
+			const store = tx.objectStore('BtnList');
+			const req = store.add({
+				uuid: uuid,
+				projectId: projectId,
+				name: btnName,
+				createdAt: new Date().toISOString()
+			});
+			req.onsuccess = resolve;
+			req.onerror = reject;
+		});
+
+		const li = createQuickButton(window.editor, btnName, uuid, projectId);
+		document.getElementById('quick-btn-list')?.appendChild(li);
+		eda.sys_Message.showToastMessage('已映射到顶部菜单', 'success', 2);
+	} catch(e) {
+		eda.sys_Message.showToastMessage('保存失败: ' + e.message, 'error', 2);
+	}
+}
+async function Code_SaveToBtnList(editor) {
+	// 新架构：提示用户先创建项目
+	eda.sys_Dialog.showConfirmationMessage(
+		'请先将当前代码保存为项目，然后使用项目的映射到顶部菜单功能。\n\n这样可以确保修改代码后按钮效果实时同步。',
+		'提示',
+		'去创建项目',
+		'取消',
+		(confirmed) => {
+			if (confirmed) {
+				// 提示用户创建新项目
+				if (window.fileTreeUI) {
+					window.fileTreeUI.createNewProject();
+				} else {
+					eda.sys_Message.showToastMessage('请先创建一个项目', 'info', 2);
 				}
-
-				// 保存
-				await new Promise((resolve, reject) => {
-					const req = store.add({ name, code: currentCode, createdAt: new Date().toISOString() });
-					req.onsuccess = resolve;
-					req.onerror = reject;
-				});
-
-				// 创建并追加按钮
-				const li = createQuickButton(editor, name, currentCode);
-				document.getElementById('quick-btn-list')?.appendChild(li);
-
-				eda.sys_Message.showToastMessage(`快捷按钮 "${name}" 已添加`, 'success', 1);
-			} catch (error) {
-				eda.sys_Message.showToastMessage(`保存失败: ${error.message}`, 'error', 2);
 			}
-		},
+		}
 	);
 }
-
 // ==========================
 // 加载所有快捷按钮
 // ==========================
@@ -855,7 +797,7 @@ async function Code_LoadBtnListFromDB(editor) {
 		if (!ul) return;
 
 		records.forEach((record) => {
-			const li = createQuickButton(editor, record.name, record.code);
+			const li = createQuickButton(editor, record.name, record.uuid, record.projectId);
 			ul.appendChild(li);
 		});
 	} catch (error) {
