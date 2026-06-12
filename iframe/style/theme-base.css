@@ -1508,3 +1508,138 @@ input[type='number']::-webkit-outer-spin-button {
 input[type='number'] {
 	-moz-appearance: textfield;
 }
+
+/* ===== 快捷键表格 ===== */
+.shortcuts-table-wrapper {
+	border: 1px solid var(--eext-border);
+	border-radius: 2px;
+	overflow: hidden;
+	background: var(--eext-bg-modal);
+}
+.shortcuts-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+.shortcuts-table td {
+	border: 1px solid var(--eext-border-light);
+	padding: 7px 12px;
+	color: var(--eext-text-primary);
+	font-size: var(--eext-font-size);
+	height: 32px;
+}
+.shortcuts-table td:first-child {
+	width: 70%;
+}
+.shortcuts-table tbody tr {
+	cursor: pointer;
+	transition: background 0.15s;
+}
+.shortcuts-table tbody tr:hover {
+	background: var(--eext-hover-bg);
+}
+
+/* ===== 快捷键编辑弹窗 ===== */
+.shortcut-edit-overlay {
+	position: fixed;
+	inset: 0;
+	background: var(--eext-bg-overlay);
+	z-index: 10001;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.shortcut-edit-modal {
+	background: var(--eext-bg-modal);
+	border: 1px solid var(--eext-border);
+	border-radius: var(--eext-modal-radius);
+	width: 400px;
+	max-width: 92%;
+	box-shadow: var(--eext-shadow-lg);
+	overflow: hidden;
+	animation: fadeIn 0.2s ease-out;
+}
+.shortcut-edit-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 10px 15px;
+	background: var(--eext-bg-modal-header);
+	border-bottom: 1px solid var(--eext-border-light);
+}
+.shortcut-edit-title {
+	font-size: var(--eext-font-size-lg);
+	color: var(--eext-text-primary);
+}
+.shortcut-edit-close {
+	cursor: pointer;
+	font-size: 18px;
+	color: var(--eext-text-tertiary);
+	line-height: 1;
+	background: transparent;
+	border: none;
+	padding: 0;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 2px;
+}
+.shortcut-edit-close:hover {
+	color: var(--eext-text-primary);
+	background: var(--eext-border-light);
+}
+.shortcut-edit-body {
+	padding: 20px 25px;
+}
+.shortcut-edit-field {
+	display: flex;
+	align-items: center;
+	margin-bottom: 15px;
+}
+.shortcut-edit-field:last-child {
+	margin-bottom: 0;
+}
+.shortcut-edit-label {
+	width: 56px;
+	font-size: var(--eext-font-size);
+	color: var(--eext-text-primary);
+	text-align: left;
+	margin-right: 12px;
+	flex-shrink: 0;
+}
+.shortcut-edit-input {
+	flex: 1;
+	height: var(--eext-input-height);
+	padding: 0 10px;
+	border: 1px solid var(--eext-border);
+	border-radius: var(--eext-input-radius);
+	font-size: var(--eext-font-size);
+	color: var(--eext-text-primary);
+	background: var(--eext-bg-input);
+	outline: none;
+	font-family: var(--eext-font-family);
+	transition: border-color 0.15s;
+}
+.shortcut-edit-input:focus {
+	border-color: var(--eext-brand);
+	box-shadow: var(--eext-input-focus-ring);
+}
+.shortcut-edit-input[readonly] {
+	background: var(--eext-bg-input-disabled);
+	color: var(--eext-text-tertiary);
+	cursor: default;
+}
+.shortcut-edit-input.shortcut-key-input {
+	height: 28px;
+	cursor: default;
+	caret-color: transparent;
+	user-select: none;
+}
+.shortcut-edit-footer {
+	padding: 15px 25px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+}

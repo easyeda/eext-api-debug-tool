@@ -614,68 +614,58 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			var infoDiv = document.createElement('div');
 			infoDiv.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);margin-bottom:10px;';
-			infoDiv.textContent = '当前平台: ' + platformLabel + '，点击快捷键输入框后按下新组合键即可修改';
+			infoDiv.textContent = '当前平台: ' + platformLabel + '，点击表格行可修改快捷键';
 			contentPane.appendChild(infoDiv);
 
-			var list = document.createElement('div');
-			list.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
-			contentPane.appendChild(list);
+			var tableWrapper = document.createElement('div');
+			tableWrapper.className = 'shortcuts-table-wrapper';
+			contentPane.appendChild(tableWrapper);
+
+			var table = document.createElement('table');
+			table.className = 'shortcuts-table';
+			var tbody = document.createElement('tbody');
+			table.appendChild(tbody);
+			tableWrapper.appendChild(table);
 
 			var shortcutsData = null;
 
 			async function renderShortcuts() {
-				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">加载中...</div>';
+				tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">加载中...</td></tr>';
 				try {
 					shortcutsData = typeof loadShortcuts === 'function' ? await loadShortcuts() : null;
 					if (!shortcutsData) {
-						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">无法加载快捷键配置</div>';
+						tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">无法加载快捷键配置</td></tr>';
 						return;
 					}
-					list.innerHTML = '';
+					tbody.innerHTML = '';
 					Object.entries(shortcutsData).forEach(function(entry) {
 						var key = entry[0];
 						var cfg = entry[1];
-						var row = document.createElement('div');
-						row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--eext-bg-item);border:1px solid var(--eext-border);border-radius:2px;';
+						var currentShortcut = cfg[platform] || '';
 
-						var desc = document.createElement('span');
-						desc.textContent = cfg.description;
-						desc.style.cssText = 'font-size:12px;color:var(--eext-text-primary);flex:1;';
+						var tr = document.createElement('tr');
+						tr.setAttribute('data-key', key);
 
-						var input = document.createElement('input');
-						input.type = 'text';
-						input.value = cfg[platform] || key;
-						input.readOnly = true;
-						input.style.cssText = 'width:155px;height:24px;padding:0 8px;background:var(--eext-bg-input);color:var(--eext-text-primary);border:1px solid var(--eext-border);border-radius:2px;font-size:11px;font-family:monospace;text-align:center;cursor:pointer;user-select:none;';
+						var tdDesc = document.createElement('td');
+						tdDesc.textContent = cfg.description;
 
-					input.addEventListener('focus', function() { window.keyboardShortcutsModalOpen = true; });
-						input.addEventListener('blur', function() { window.keyboardShortcutsModalOpen = false; });
-						input.addEventListener('keydown', function(e) {
-							e.preventDefault();
-							e.stopPropagation();
-							var keys = [];
-							if (e.ctrlKey) keys.push('Ctrl');
-							if (e.shiftKey) keys.push('Shift');
-							if (e.altKey) keys.push('Alt');
-							if (e.metaKey) keys.push(platform === 'mac' ? 'Command' : 'Meta');
-							var keyName = e.key;
-							if (keyName && !['Control','Shift','Alt','Meta'].includes(keyName)) {
-								if (keyName === ' ') keyName = 'Space';
-								else if (keyName.length === 1) keyName = keyName.toUpperCase();
-								keys.push(keyName);
-							}
-							if (keys.length > 0 && keys[keys.length - 1] !== 'Control' && keys[keys.length - 1] !== 'Shift' && keys[keys.length - 1] !== 'Alt' && keys[keys.length - 1] !== 'Meta' && keys[keys.length - 1] !== 'Command') {
-								input.value = keys.join('+');
-								shortcutsData[key][platform] = input.value;
-							}
+						var tdKey = document.createElement('td');
+						tdKey.textContent = currentShortcut;
+
+						tr.appendChild(tdDesc);
+						tr.appendChild(tdKey);
+
+						tr.addEventListener('click', function() {
+							_showShortcutEditDialog(cfg.description, currentShortcut, platform, function(newShortcut) {
+								shortcutsData[key][platform] = newShortcut;
+								renderShortcuts();
+							});
 						});
 
-						row.appendChild(desc);
-						row.appendChild(input);
-						list.appendChild(row);
+						tbody.appendChild(tr);
 					});
 				} catch(e) {
-					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">加载失败: ' + e.message + '</div>';
+					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-error);font-size:12px;padding:24px;">加载失败: ' + e.message + '</td></tr>';
 				}
 			}
 			renderShortcuts();
@@ -702,7 +692,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 					shortcutsData = null;
 				}
 				await renderShortcuts();
-				eda.sys_Message.showToastMessage('已恢复默认快捷键', 'success', 1);
+				var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
+				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('已恢复默认快捷键', 'success', 1);
 			};
 			btnRow.appendChild(resetBtn);
 
@@ -712,10 +703,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			saveBtn.onclick = async function() {
 				if (typeof saveShortcuts === 'function') {
 					var success = await saveShortcuts(shortcutsData);
+					var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
 					if (success) {
-						eda.sys_Message.showToastMessage('快捷键设置已保存，请重新打开窗口以应用更改', 'success', 3);
+						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('快捷键设置已保存，请重新打开窗口以应用更改', 'success', 3);
 					} else {
-						eda.sys_Message.showToastMessage('保存失败', 'error', 2);
+						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('保存失败', 'error', 2);
 					}
 				}
 			};
@@ -959,6 +951,146 @@ var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}
 	/* Initial render */
 	renderMenu();
 	renderContent();
+}
+
+/**
+ * 快捷键编辑弹窗
+ * @param {string} name - 功能名称
+ * @param {string} currentShortcut - 当前快捷键
+ * @param {string} platform - 平台标识 'win' | 'mac'
+ * @param {Function} onSave - 保存回调，接收新的快捷键字符串
+ */
+function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
+	var oldOverlay = document.getElementById('shortcut-edit-overlay');
+	if (oldOverlay) oldOverlay.remove();
+
+	window.keyboardShortcutsModalOpen = true;
+
+	var overlay = document.createElement('div');
+	overlay.id = 'shortcut-edit-overlay';
+	overlay.className = 'shortcut-edit-overlay';
+
+	var modal = document.createElement('div');
+	modal.className = 'shortcut-edit-modal';
+
+	var header = document.createElement('div');
+	header.className = 'shortcut-edit-header';
+	var title = document.createElement('span');
+	title.className = 'shortcut-edit-title';
+	title.textContent = '设置';
+	header.appendChild(title);
+	var closeBtn = document.createElement('button');
+	closeBtn.className = 'shortcut-edit-close';
+	closeBtn.innerHTML = '&times;';
+	closeBtn.onclick = closeDialog;
+	header.appendChild(closeBtn);
+	modal.appendChild(header);
+
+	var body = document.createElement('div');
+	body.className = 'shortcut-edit-body';
+
+	function buildField(labelText, inputId, value, isReadonly) {
+		var field = document.createElement('div');
+		field.className = 'shortcut-edit-field';
+		var label = document.createElement('label');
+		label.className = 'shortcut-edit-label';
+		label.textContent = labelText + ':';
+		label.setAttribute('for', inputId);
+		field.appendChild(label);
+		var input = document.createElement('input');
+		input.type = 'text';
+		input.className = 'shortcut-edit-input';
+		input.id = inputId;
+		input.value = value || '';
+		if (isReadonly) {
+			input.readOnly = true;
+		}
+		field.appendChild(input);
+		body.appendChild(field);
+		return input;
+	}
+
+	var nameInput = buildField('功能', 'shortcut-edit-name', name, true);
+	var keyInput = buildField('快捷键', 'shortcut-edit-key', currentShortcut, false);
+
+	keyInput.classList.add('shortcut-key-input');
+	keyInput.placeholder = '点击此处后按下组合键';
+	keyInput.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
+	keyInput.style.textAlign = 'center';
+
+	keyInput.addEventListener('focus', function() {
+		keyInput.style.borderColor = 'var(--eext-brand)';
+		keyInput.placeholder = '按下组合键...';
+	});
+	keyInput.addEventListener('blur', function() {
+		keyInput.style.borderColor = 'var(--eext-border)';
+		keyInput.placeholder = '点击此处后按下组合键';
+	});
+	keyInput.addEventListener('keydown', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		var keys = [];
+		if (e.ctrlKey) keys.push('Ctrl');
+		if (e.shiftKey) keys.push('Shift');
+		if (e.altKey) keys.push('Alt');
+		if (e.metaKey) keys.push(platform === 'mac' ? 'Command' : 'Meta');
+		var keyName = e.key;
+		if (keyName && !['Control', 'Shift', 'Alt', 'Meta'].includes(keyName)) {
+			if (keyName === ' ') keyName = 'Space';
+			else if (keyName.length === 1) keyName = keyName.toUpperCase();
+			keys.push(keyName);
+		}
+		if (keys.length > 0 && keys[keys.length - 1] !== 'Control' && keys[keys.length - 1] !== 'Shift' && keys[keys.length - 1] !== 'Alt' && keys[keys.length - 1] !== 'Meta' && keys[keys.length - 1] !== 'Command') {
+			keyInput.value = keys.join('+');
+		}
+	});
+
+	modal.appendChild(body);
+
+	var footer = document.createElement('div');
+	footer.className = 'shortcut-edit-footer';
+
+	var confirmBtn = document.createElement('button');
+	confirmBtn.textContent = '确认';
+	confirmBtn.className = 'eext-modal-btn-primary';
+	confirmBtn.onclick = function() {
+		var newShortcut = keyInput.value.trim();
+		if (onSave) onSave(newShortcut);
+		closeDialog();
+	};
+
+	var cancelBtn = document.createElement('button');
+	cancelBtn.textContent = '取消';
+	cancelBtn.className = 'eext-modal-btn';
+	cancelBtn.onclick = closeDialog;
+
+	footer.appendChild(confirmBtn);
+	footer.appendChild(cancelBtn);
+	modal.appendChild(footer);
+
+	overlay.appendChild(modal);
+	document.body.appendChild(overlay);
+
+	setTimeout(function() { keyInput.focus(); }, 100);
+
+	function closeDialog() {
+		window.keyboardShortcutsModalOpen = false;
+		document.removeEventListener('keydown', escHandler, true);
+		if (overlay.parentNode) overlay.remove();
+	}
+
+	overlay.addEventListener('click', function(e) {
+		if (e.target === overlay) closeDialog();
+	});
+
+	function escHandler(e) {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			closeDialog();
+		}
+	}
+	document.addEventListener('keydown', escHandler, true);
 }
 
 /* ============================================
