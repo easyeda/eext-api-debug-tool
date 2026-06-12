@@ -697,11 +697,11 @@ class FileTreeUI {
 		if (currentFile === fileName) {
 			const rawContent = this.editor.getValue();
 			content = (window.htmlRenderer) ?
-				window.htmlRenderer.buildHTMLContent({ ...htmlFile, content: rawContent }, project) :
+				window.htmlRenderer.buildHTMLContent({ ...htmlFile, content: rawContent }, this.projectManager) :
 				rawContent;
 		} else {
 			content = (window.htmlRenderer) ?
-				window.htmlRenderer.buildHTMLContent(htmlFile, project) :
+				window.htmlRenderer.buildHTMLContent(htmlFile, this.projectManager) :
 				(htmlFile.content || '');
 		}
 		if (!content || content === undefined) {
