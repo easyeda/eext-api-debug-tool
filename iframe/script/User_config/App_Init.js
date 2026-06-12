@@ -448,11 +448,8 @@ async function _updateDirtyFlag() {
 const methodList = edcode.map((item) => item.methodPath);
 injectContextMenuJumpToDocs(editor, methodList);
 
-// 按钮事件绑定
-document.getElementById('SaveinLeft-btn')?.addEventListener('click', () => {
-	Code_SaveToBtnList(editor);
-});
-document.getElementById('run-btn').addEventListener('click', async () => {
+// 运行/预览统一入口（运行按钮和快捷键共用）
+async function handleRunAction() {
 	const runBtn = document.getElementById('run-btn');
 	const editorDiv = document.getElementById('editor');
 	const previewContainer = document.getElementById('html-preview-container');
@@ -591,7 +588,13 @@ document.getElementById('run-btn').addEventListener('click', async () => {
 			}
 		}
 	}
+}
+
+// 按钮事件绑定
+document.getElementById('SaveinLeft-btn')?.addEventListener('click', () => {
+	Code_SaveToBtnList(editor);
 });
+	document.getElementById('run-btn').addEventListener('click', handleRunAction);
 document.getElementById('ai-btn').addEventListener('click', () => {
 	SetVibeCodingConfig();
 });
@@ -651,7 +654,7 @@ if (settingsBtn) {
 
 		if (matchesShortcut(e, shortcuts.run[platform])) {
 			e.preventDefault();
-			ACE_RunCode(editor);
+			handleRunAction();
 		} else if (matchesShortcut(e, shortcuts.saveFile[platform])) {
 			e.preventDefault();
 			saveCurrentProjectFile();

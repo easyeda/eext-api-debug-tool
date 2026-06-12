@@ -224,7 +224,7 @@ async function showNewScriptDialog(editor) {
 						rec.isScript = true;
 							rec.files[0].content = initialContent;
 							var putReq = store.put(rec);
-							putReq.onsuccess = function() { window.projectManager._savedContent = initialContent; window.projectManager.currentFile = name; if (typeof TabManager !== 'undefined') TabManager.open(project.id, name, name); editor.setValue(initialContent, -1); window.projectManager._dirty = false; if (window.fileTreeUI && window.fileTreeUI._registerDirtyListener) window.fileTreeUI._registerDirtyListener(); res(); };
+							putReq.onsuccess = function() { window.projectManager._savedContent = initialContent; window.projectManager.currentFile = name; if (typeof TabManager !== 'undefined') TabManager.open(project.id, name, name); editor.setValue(initialContent, -1); editor.session.setMode('ace/mode/javascript'); window.projectManager._dirty = false; if (window.fileTreeUI && window.fileTreeUI._registerDirtyListener) window.fileTreeUI._registerDirtyListener(); res(); };
 							putReq.onerror = rej;
 						} else { res(); }
 					};
