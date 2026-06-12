@@ -541,6 +541,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var PREVIEW_DESC = '搜索器件';
 			var PREVIEW_PARAMS = 'key, libraryUuid, classification, symbolType, itemsOfPage, page';
 			var PREVIEW_CALL = 'eda.lib_Device.search(' + PREVIEW_PARAMS + ')';
+			var PREVIEW_FILENAME = 'myScript.js';
 
 			function escapeHtml(s) {
 				return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -554,15 +555,18 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				var colText = isDark ? '#e5e5e5' : '#333';
 
 				// 闪烁背景色（半透明，主题适配）
+				var flashFilename = isDark ? 'rgba(103,150,234,0.35)' : 'rgba(24,144,255,0.18)';
 				var flashComment = isDark ? 'rgba(106,153,85,0.35)' : 'rgba(22,163,74,0.22)';
 				var flashVar = isDark ? 'rgba(197,134,192,0.35)' : 'rgba(147,51,234,0.18)';
 				var flashAwait = isDark ? 'rgba(220,220,170,0.40)' : 'rgba(180,83,9,0.22)';
 
 				var state = {
+					withFilenameComment: cb3.checked,
 					withComment: cb.checked,
 					withVar: cb2.checked,
 					withAwait: cbAwait.checked,
 				};
+				var newFilename = state.withFilenameComment && !previewPrevState.withFilenameComment;
 				var newComment = state.withComment && !previewPrevState.withComment;
 				var newVar = state.withVar && !previewPrevState.withVar;
 				var newAwait = state.withAwait && !previewPrevState.withAwait;
@@ -573,6 +577,10 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				}
 
 				var html = '';
+				if (state.withFilenameComment) {
+					var filenameInner = '<span style="color:' + colComment + '">// ' + escapeHtml(PREVIEW_FILENAME) + '</span>';
+					html += wrapFlash(filenameInner, flashFilename, newFilename) + '\n';
+					}
 				if (state.withComment) {
 					var commentInner = '<span style="color:' + colComment + '">// ' + escapeHtml(PREVIEW_DESC) + '</span>';
 					html += wrapFlash(commentInner, flashComment, newComment) + '\n';
@@ -603,9 +611,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 					});
 				});
 			}
-			var previewPrevState = { withComment: cb.checked, withVar: cb2.checked, withAwait: cbAwait.checked };
+			var previewPrevState = { withFilenameComment: cb3.checked, withComment: cb.checked, withVar: cb2.checked, withAwait: cbAwait.checked };
 
-			[cb, cb2, cbAwait].forEach(function(box) {
+			[cb, cb2, cbAwait, cb3].forEach(function(box) {
 				var orig = box.onchange;
 				box.onchange = function() {
 					if (typeof orig === 'function') { try { orig.call(this); } catch(e){} }
@@ -732,9 +740,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							var item = document.createElement('div');
 							item.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px 0;border-bottom:1px solid var(--eext-border);';
 
-							// Row 1: plugin name + buttons
+							// Row 1: plugin name only
 							var row1 = document.createElement('div');
-							row1.style.cssText = 'display:flex;align-items:flex-end;gap:6px;';
+							row1.style.cssText = 'display:flex;align-items:center;';
 
 							// Plugin name
 							var nameSpan = document.createElement('span');
@@ -743,83 +751,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							nameSpan.style.cssText = 'flex:1;font-size:12px;color:var(--eext-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
 							row1.appendChild(nameSpan);
 
-							// Rename button
-							var renameBtn = document.createElement('button');
-							renameBtn.textContent = '重命名';
-							renameBtn.className = 'eext-modal-btn';
-							renameBtn.onclick = async function() {
-								var result = await Swal.fire({
-									title: '重命名插件',
-									input: 'text',
-									inputValue: p.name,
-									inputLabel: '新名称',
-									showCancelButton: true,
-									confirmButtonText: '确定',
-									cancelButtonText: '取消',
-									inputValidator: function(value) {
-										if (!value || !value.trim()) return '请输入名称';
-										if (value.trim() === p.name) return '名称未改变';
-									},
-								});
-								if (result.isConfirmed) {
-									try {
-										await ExtStore_RenameExt(p.name, result.value.trim());
-										await loadPluginList();
-										eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
-									} catch(err) {
-										eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
-									}
-								}
-							};
-							row1.appendChild(renameBtn);
-
-							// Load button
-							var loadBtn = document.createElement('button');
-							loadBtn.textContent = '加载';
-							loadBtn.className = 'eext-modal-btn-primary';
-							loadBtn.onclick = async function() {
-								try {
-									var db = await ExtStore_Init();
-									var tx = db.transaction(['ExtStore'], 'readonly');
-									var store = tx.objectStore('ExtStore');
-									var req = store.index('name').get(p.name);
-									req.onsuccess = function() {
-										if (req.result && req.result.code) {
-											editor.setValue(req.result.code, -1);
-											editor.clearSelection();
-											eda.sys_Message.showToastMessage('已加载：' + p.name, 'success', 1);
-										}
-									};
-								} catch(err) {
-									eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
-								}
-							};
-							row1.appendChild(loadBtn);
-
-							// Delete button
-							var delBtn = document.createElement('button');
-							delBtn.textContent = '删除';
-							delBtn.className = 'eext-modal-btn-delete';
-							delBtn.onclick = async function() {
-								var confirmResult = await Swal.fire({
-									title: '确认删除',
-									html: '确定删除插件 "<strong>' + p.name + '</strong>"？',
-									icon: 'warning',
-									showCancelButton: true,
-									confirmButtonText: '删除',
-									cancelButtonText: '取消',
-									confirmButtonColor: '#1890ff',
-								});
-								if (!confirmResult.isConfirmed) return;
-								try {
-									await ExtStore_DeleteExt(p.name);
-									await loadPluginList();
-									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已删除', 'info', 1);
-								} catch(err) {
-									eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
-								}
-							};
-							row1.appendChild(delBtn);
 
 							item.appendChild(row1);
 
@@ -910,6 +841,85 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							checkboxText.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
 							checkboxLabel.appendChild(checkboxText);
 							row2.appendChild(checkboxLabel);
+
+						// Buttons: rename, load, delete
+							// Rename button
+							var renameBtn = document.createElement('button');
+							renameBtn.textContent = '重命名';
+							renameBtn.className = 'eext-modal-btn';
+							renameBtn.onclick = async function() {
+								var result = await Swal.fire({
+									title: '重命名插件',
+									input: 'text',
+									inputValue: p.name,
+									inputLabel: '新名称',
+									showCancelButton: true,
+									confirmButtonText: '确定',
+									cancelButtonText: '取消',
+									inputValidator: function(value) {
+										if (!value || !value.trim()) return '请输入名称';
+										if (value.trim() === p.name) return '名称未改变';
+									},
+								});
+								if (result.isConfirmed) {
+									try {
+										await ExtStore_RenameExt(p.name, result.value.trim());
+										await loadPluginList();
+										eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
+									} catch(err) {
+										eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+									}
+								}
+							};
+							row2.appendChild(renameBtn);
+
+							// Load button
+							var loadBtn = document.createElement('button');
+							loadBtn.textContent = '加载';
+							loadBtn.className = 'eext-modal-btn-primary';
+							loadBtn.onclick = async function() {
+								try {
+									var db = await ExtStore_Init();
+									var tx = db.transaction(['ExtStore'], 'readonly');
+									var store = tx.objectStore('ExtStore');
+									var req = store.index('name').get(p.name);
+									req.onsuccess = function() {
+										if (req.result && req.result.code) {
+											editor.setValue(req.result.code, -1);
+											editor.clearSelection();
+											eda.sys_Message.showToastMessage('已加载：' + p.name, 'success', 1);
+										}
+									};
+								} catch(err) {
+									eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
+								}
+							};
+							row2.appendChild(loadBtn);
+
+							// Delete button
+							var delBtn = document.createElement('button');
+							delBtn.textContent = '删除';
+							delBtn.className = 'eext-modal-btn-delete';
+							delBtn.onclick = async function() {
+								var confirmResult = await Swal.fire({
+									title: '确认删除',
+									html: '确定删除插件 "<strong>' + p.name + '</strong>"？',
+									icon: 'warning',
+									showCancelButton: true,
+									confirmButtonText: '删除',
+									cancelButtonText: '取消',
+									confirmButtonColor: '#1890ff',
+								});
+								if (!confirmResult.isConfirmed) return;
+								try {
+									await ExtStore_DeleteExt(p.name);
+									await loadPluginList();
+									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已删除', 'info', 1);
+								} catch(err) {
+									eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
+								}
+							};
+							row2.appendChild(delBtn);
 
 
 								// Apply timing change
