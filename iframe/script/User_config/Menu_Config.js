@@ -458,9 +458,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 带注释补全
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;align-items:center;gap:12px;';
-			const label = document.createElement('span'); label.textContent = '带注释补全';
-			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;';
-			label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
 			const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'completion-checkbox';
 			// 标准复选框样式
 			cb.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
@@ -471,6 +468,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
 				cb.checked = (saved === true || saved === 'true');
 			} catch(e) { cb.checked = false; }
+			const label = document.createElement('span'); label.textContent = '带注释补全';
+			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;';
+			label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
 			row.appendChild(cb); row.appendChild(label);
 			contentPane.appendChild(row);
 
