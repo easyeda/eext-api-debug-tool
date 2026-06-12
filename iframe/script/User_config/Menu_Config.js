@@ -459,7 +459,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;align-items:center;gap:12px;';
 			const label = document.createElement('span'); label.textContent = '带注释补全';
-			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
+			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;';
+			label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
 			const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'completion-checkbox';
 			// 标准复选框样式
 			cb.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
@@ -477,7 +478,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var row2 = document.createElement("div");
 			row2.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
 			var label2 = document.createElement("span"); label2.textContent = "随机分配变量";
-			label2.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			label2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
+			label2.onclick = function() { cb2.checked = !cb2.checked; cb2.onchange(); };
 			var cb2 = document.createElement("input"); cb2.type = 'checkbox';
 			// 标准复选框样式
 			cb2.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
@@ -495,7 +497,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var rowAwait = document.createElement("div");
 			rowAwait.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
 			var labelAwait = document.createElement("span"); labelAwait.textContent = "异步函数标识补全";
-			labelAwait.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			labelAwait.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
+			labelAwait.onclick = function() { cbAwait.checked = !cbAwait.checked; cbAwait.onchange(); };
 			var cbAwait = document.createElement("input"); cbAwait.type = 'checkbox';
 			cbAwait.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cbAwait.onchange = function() {
@@ -512,7 +515,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var row3 = document.createElement("div");
 			row3.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
 			var label3 = document.createElement("span"); label3.textContent = "新建文件带文件名注释";
-			label3.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			label3.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
+			label3.onclick = function() { cb3.checked = !cb3.checked; cb3.onchange(); };
 			var cb3 = document.createElement("input"); cb3.type = 'checkbox';
 			cb3.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cb3.onchange = function() {
