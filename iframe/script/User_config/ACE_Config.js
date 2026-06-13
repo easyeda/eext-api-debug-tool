@@ -841,6 +841,7 @@ async function ExtStore_DeleteExt(name) {
 			}
 			const deleteRequest = store.delete(id);
 			deleteRequest.onsuccess = () => {
+				ExtStore_SyncAutoStartPlugins();
 				console.log(`成功删除插件 "${name}" (ID: ${id})`);
 				resolve(true);
 			};
@@ -930,7 +931,7 @@ async function ExtStore_GetExtList() {
 				}
 				record.enabled = !!enabled;
 				var putRequest = store.put(record);
-				putRequest.onsuccess = function() { resolve(true); };
+				putRequest.onsuccess = function() { ExtStore_SyncAutoStartPlugins(); resolve(true); };
 				putRequest.onerror = function(ev) { reject(ev.target.error); };
 			};
 			getRequest.onerror = function(e) { reject(e.target.error); };

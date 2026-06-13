@@ -182,6 +182,8 @@ Code_LoadBtnListFromDB(editor);
 
 	// 初始化项目文件补全器
 	window.projectCompleter = new ProjectCompleter(editor);
+	// 初始化弹出面板管理器
+	PopoutManager.init();
 
 	// 等待 TabManager 定义完成后恢复标签页
 	Promise.resolve().then(function() {
@@ -203,7 +205,8 @@ if (typeof migrateCodeStoreToProjects === "function") {
 }
 
 // 在 iframe 关闭前保存标签页状态（使用 localStorage 同步备份）
-window.addEventListener('beforeunload', function() {
+window.addEventListener("beforeunload", function() {
+	try { if (typeof PopoutManager !== "undefined") PopoutManager.closeAll(); } catch(e) {}
 	if (typeof TabManager !== "undefined" && TabManager._tabs) {
 		try {
 			var data = TabManager._tabs.map(function(t) { return { projectId: t.projectId, fileName: t.fileName, label: t.label }; });
@@ -454,6 +457,7 @@ async function handleRunAction() {
 	const editorDiv = document.getElementById('editor');
 	const previewContainer = document.getElementById('html-preview-container');
 	const previewFrame = document.getElementById('html-preview-frame');
+
 
 	// 检查是否正在预览模式
 	if (previewContainer.classList.contains('active')) {

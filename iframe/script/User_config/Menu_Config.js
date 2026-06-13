@@ -452,6 +452,25 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				cr.appendChild(sw); cr.appendChild(hi); cr.appendChild(lb);
 				contentPane.appendChild(cr);
 			});
+
+			/* Close panel on render */
+			const sec4 = section("渲染行为");
+			const cbRow = document.createElement("div");
+			cbRow.style.cssText = "display:flex;align-items:center;gap:12px;";
+			const cbPanel = document.createElement("input"); cbPanel.type = "checkbox"; cbPanel.id = "close-panel-on-render-checkbox";
+			cbPanel.style.cssText = "width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);";
+			cbPanel.onchange = function() {
+				try { eda.sys_Storage.setExtensionUserConfig("close_panel_on_render", cbPanel.checked); } catch(e) {}
+			};
+			try {
+				const saved = eda.sys_Storage.getExtensionUserConfig("close_panel_on_render");
+				cbPanel.checked = (saved === true || saved === "true");
+			} catch(e) { cbPanel.checked = true; }
+			const cbLabel = document.createElement("span"); cbLabel.textContent = "渲染页面时关闭面板";
+			cbLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
+			cbLabel.onclick = function() { cbPanel.checked = !cbPanel.checked; cbPanel.onchange(); };
+			cbRow.appendChild(cbPanel); cbRow.appendChild(cbLabel);
+			contentPane.appendChild(cbRow);
 		} else if (activeMenu === 'editor') {
 			const sec = section('补全模式');
 

@@ -38,7 +38,7 @@ class ProjectManager {
 
 	// 创建新项目
 	async createProject(projectName) {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 
 		const project = {
 			projectName,
@@ -63,7 +63,7 @@ class ProjectManager {
 
 	// 获取所有项目
 	async getAllProjects() {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readonly');
@@ -77,7 +77,7 @@ class ProjectManager {
 
 	// 加载项目
 	async loadProject(projectId) {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readonly');
@@ -94,7 +94,7 @@ class ProjectManager {
 
 	// 按 ID 读取项目（不改变 currentProject）
 	async loadProjectById(projectId) {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readonly');
@@ -108,7 +108,7 @@ class ProjectManager {
 
 	// 保存项目
 	async saveProject(project) {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 		project.updatedAt = new Date().toISOString().split('T')[0];
 
 		return new Promise((resolve, reject) => {
@@ -123,7 +123,7 @@ class ProjectManager {
 
 	// 重命名项目
 	async renameProject(projectId, newName) {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 
 		const project = await this.loadProject(projectId);
 		if (project) {
@@ -135,7 +135,7 @@ class ProjectManager {
 
 	// 删除项目
 	async deleteProject(projectId) {
-		if (!this.db) await this.initDB();
+		if (!this.db || this.db.closed) await this.initDB();
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readwrite');

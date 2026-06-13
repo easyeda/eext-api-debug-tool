@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<title>Pop-out Panel</title>
+	<link rel="stylesheet" href="/iframe/style/theme-vars.css" />
+	<link rel="stylesheet" href="/iframe/style/theme-base.css" />
+	<link rel="stylesheet" href="/iframe/style/left-nav.css" />
+	<link rel="stylesheet" href="/iframe/style/file-tree.css" />
+	<link rel="stylesheet" href="/iframe/script/SweetAlert2/sweetalert2.min.css" />
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			background: var(--eext-bg-panel);
+			color: var(--eext-text-primary);
+			font-family: var(--eext-font-family);
+			font-size: var(--eext-font-size);
+			overflow: hidden;
+		}
+		#popout-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 6px 10px;
+			background: var(--eext-bg-panel);
+			border-bottom: 1px solid var(--eext-border);
+			flex-shrink: 0;
+		}
+		#popout-title {
+			font-weight: 600;
+			color: var(--eext-text-primary);
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		#popout-restore-btn {
+			padding: 2px 10px;
+			background: var(--eext-brand);
+			color: #fff;
+			border: none;
+			border-radius: 2px;
+			cursor: pointer;
+			font-size: var(--eext-font-size);
+			font-family: var(--eext-font-family);
+		}
+		#popout-restore-btn:hover {
+			background: var(--eext-brand-hover);
+		}
+		#popout-content {
+			flex: 1;
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+		}
+		/* 弹出面板中 left-content-area 需要全宽 */
+		#left-content-area {
+			width: 100% !important;
+			border-right: none !important;
+		}
+	</style>
+</head>
+<body>
+	<div id="popout-header">
+		<span id="popout-title">Panel</span>
+		<button id="popout-restore-btn">收回</button>
+	</div>
+	<div id="popout-content">
+		<div id="left-content-area">
+			<!-- 项目列表视图 -->
+			<div id="project-list-view" style="display: none">
+				<div class="project-list-header">
+					<input type="text" class="project-search-box" id="project-search-input" placeholder="搜索项目..." />
+					<button class="import-project-btn" id="import-project-btn" title="导入项目">导入</button>
+				</div>
+				<div class="project-list-content" id="project-list-content"></div>
+			</div>
+			<!-- 文件树视图 -->
+			<div id="file-tree" style="display: none">
+				<button id="close-project-btn" class="close-project-btn" title="关闭项目" style="display: none">
+					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+				</button>
+			</div>
+			<!-- 补全仓库视图 -->
+			<div id="completer-store-view" style="display: none">
+				<div class="completer-list-header">
+					<div class="completer-header-title">常用代码</div>
+					<input type="text" class="completer-search-box" id="completer-search-input" placeholder="搜索代码..." />
+				</div>
+				<div class="completer-list-content" id="completer-list-content"></div>
+			</div>
+		</div>
+	</div>
+
+	<script src="/iframe/script/SweetAlert2/sweetalert2@11.js"></script>
+	<script src="/iframe/script/eext_tool/jszip.min.js"></script>
+	<script src="/iframe/script/eext_tool/highlight.min.js"></script>
+	<script src="/iframe/script/eext_tool/marked.min.js"></script>
+	<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
+	<script src="/iframe/script/ext_manifest.js"></script>
+	<script src="/iframe/script/Ace_Editor/ace.js"></script>
+	<script src="/iframe/script/Ace_Editor/ext-language_tools.js"></script>
+	<script src="/iframe/script/Ace_Editor/mode-javascript.js"></script>
+	<script src="/iframe/script/Ace_Editor/mode-html.js"></script>
+	<script src="/iframe/script/Ace_Editor/mode-css.js"></script>
+	<script src="/iframe/script/Ace_Editor/mode-json.js"></script>
+	<script src="/iframe/script/Ace_Editor/mode-markdown.js"></script>
+	<script src="/iframe/script/Ace_Editor/mode-typescript.js"></script>
+	<script src="/iframe/script/Js_beautify/beautify.min.js"></script>
+
+	<script src="/iframe/script/User_config/Theme_Engine.js"></script>
+	<script src="/iframe/script/User_config/Project_Manager.js"></script>
+	<script src="/iframe/script/User_config/Completer_Store.js"></script>
+	<script src="/iframe/script/User_config/FileTree_UI.js"></script>
+	<script src="/iframe/script/User_config/Left_Nav_Panel.js"></script>
+	<script src="/iframe/script/User_config/Popout_Panel_Init.js"></script>
+</body>
+</html>

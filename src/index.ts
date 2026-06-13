@@ -65,6 +65,9 @@ export async function openScriptTool(): void {
 						eda.sys_Dialog.showConfirmationMessage('有未保存的文件，确定关闭窗口？', '关闭确认', '确定', '取消', (confirmed: boolean) => {
 							if (confirmed) {
 								_closing = true;
+								try { eda.sys_IFrame.closeIFrame('popout-all-projects'); } catch (e) {}
+								try { eda.sys_IFrame.closeIFrame('popout-project-design'); } catch (e) {}
+								try { eda.sys_IFrame.closeIFrame('popout-common-code'); } catch (e) {}
 								eda.sys_IFrame.closeIFrame('ScriptTool');
 							}
 						});
@@ -72,6 +75,9 @@ export async function openScriptTool(): void {
 					}
 				} catch (e) {}
 				_closing = true;
+				try { eda.sys_IFrame.closeIFrame('popout-all-projects'); } catch (e) {}
+				try { eda.sys_IFrame.closeIFrame('popout-project-design'); } catch (e) {}
+				try { eda.sys_IFrame.closeIFrame('popout-common-code'); } catch (e) {}
 				eda.sys_IFrame.closeIFrame('ScriptTool');
 			}, 50);
 			return false;

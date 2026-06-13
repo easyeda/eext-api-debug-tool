@@ -121,3 +121,44 @@
 .completer-item-value { font-size: 11px; color: var(--eext-text-secondary); font-family: 'Consolas', 'Courier New', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .project-section-title { font-size: 11px; font-weight: 600; color: var(--eext-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 4px 6px; margin-top: 4px; }
 .project-builtin-badge { display: inline-block; font-size: 10px; font-weight: 600; color: #fff; background: var(--eext-brand); border-radius: 2px; padding: 1px 5px; margin-right: 4px; vertical-align: middle; line-height: 16px; }
+
+/* 内置项目运行状态指示 */
+.project-item.builtin-running { background: var(--eext-selected-bg); border-color: #52c41a; }
+.builtin-running-label { display: none; }
+.project-item.builtin-running .builtin-running-label { display: inline-block; font-size: 10px; font-weight: 600; color: #fff; background: #52c41a; border-radius: 2px; padding: 1px 5px; margin-right: 4px; vertical-align: middle; line-height: 16px; }
+.project-item.builtin-running .builtin-running-label::after { content: '渲染中'; }
+
+/* 弹出面板样式 */
+.nav-button.popped-out {
+	display: none;
+}
+
+#project-list-view.popped-out,
+#file-tree.popped-out,
+#completer-store-view.popped-out {
+	display: none !important;
+}
+
+/* Drag Ghost — 仅用于 setDragImage 截图 */
+.popout-drag-ghost {
+	position: fixed;
+	top: -9999px;
+	left: -9999px;
+	opacity: 0.8;
+	width: 40px;
+	height: 80px;
+	background: var(--eext-bg-panel);
+	border: 2px solid var(--eext-brand);
+	border-radius: 2px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--eext-brand);
+	font-size: var(--eext-font-size);
+	letter-spacing: 2px;
+}
+
+.popout-drag-ghost-text {
+	writing-mode: vertical-rl;
+	text-orientation: mixed;
+}

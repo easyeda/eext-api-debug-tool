@@ -10,8 +10,16 @@ class LeftNavPanel {
 		this.projects = [];
 		this.selectedProjectId = null;
 		this.sidebarExpanded = false;
+		this._activeBuiltInProjectId = null;
 		this.init();
 	}
+
+		_shouldClosePanelOnRender() {
+			try {
+				var v = eda.sys_Storage.getExtensionUserConfig("close_panel_on_render");
+				return v === true || v === "true";
+			} catch (e) { return true; }
+		}
 
 	// 初始化
 	init() {
@@ -20,6 +28,7 @@ class LeftNavPanel {
 		this.attachSearchEvent();
 		this.attachCompleterSearchEvent();
 		this.attachImportProjectEvent();
+		this.attachCloseProjectEvent();
 		this.loadProjectList();
 	}
 
@@ -51,6 +60,13 @@ class LeftNavPanel {
 		const btn = document.getElementById('import-project-btn');
 		if (btn) {
 			btn.addEventListener('click', () => this.importProject());
+		}
+	}
+
+	attachCloseProjectEvent() {
+		const btn = document.getElementById("close-project-btn");
+		if (btn) {
+			btn.addEventListener("click", () => this.closeCurrentProject());
 		}
 	}
 
@@ -169,13 +185,20 @@ class LeftNavPanel {
 
 	// 切换视图
 	switchView(viewName) {
+		// 跳过已弹出的面板
+		if (typeof PopoutManager !== "undefined" && PopoutManager._poppedOutPanels[viewName] && PopoutManager._poppedOutPanels[viewName].isOpen) {
+			// Still update close button state even when view is popped out
+			this._updateCloseProjectButton();
+			return;
+		}
 		this.currentView = viewName;
 
 		// 更新按钮状态
 		document.querySelectorAll('.nav-button').forEach((btn) => {
 			btn.classList.remove('active');
 		});
-		document.getElementById(`nav-${viewName}`).classList.add('active');
+		const activeBtn = document.getElementById(`nav-${viewName}`);
+		if (activeBtn) activeBtn.classList.add('active');
 
 		// 显示/隐藏对应视图
 		document.getElementById('project-list-view').style.display = viewName === 'all-projects' ? 'flex' : 'none';
@@ -185,9 +208,68 @@ class LeftNavPanel {
 		// 加载对应视图的内容
 		if (viewName === 'all-projects') {
 			this.loadProjectList();
+			// Notify popout panels to refresh
+			if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects");
 		} else if (viewName === 'common-code') {
 			this.loadCompleterStore();
 		}
+		this._updateCloseProjectButton();
+	}
+
+	_updateCloseProjectButton() {
+		const btn = document.getElementById("close-project-btn");
+		if (!btn) return;
+		btn.style.display = (window.projectManager.currentProject && !window.projectManager.currentProject.isBuiltIn) ? "flex" : "none";
+	}
+
+	closeCurrentProject() {
+		if (!window.projectManager.currentProject) return;
+
+		// Dirty check
+		if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
+			Swal.fire({
+				title: "未保存的更改",
+				html: "当前文件 <strong>" + (window.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+				icon: "warning",
+				showDenyButton: true,
+				showCancelButton: true,
+				confirmButtonText: "保存",
+				denyButtonText: "不保存",
+				cancelButtonText: "取消",
+			}).then(async (result) => {
+				if (result.isConfirmed) {
+					await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
+					window.projectManager._savedContent = this.editor.getValue();
+					if (window.fileTreeUI) window.fileTreeUI._dirty = false;
+					this._doCloseProject();
+				} else if (result.isDenied) {
+					this._doCloseProject();
+				}
+			});
+			return;
+		}
+		this._doCloseProject();
+	}
+
+	_doCloseProject() {
+		window.projectManager.currentProject = null;
+		window.projectManager.currentFile = null;
+		this.editor.setValue("", -1);
+
+		// Close project-design popout if it belongs to this project
+		if (typeof PopoutManager !== "undefined" && PopoutManager._poppedOutPanels["project-design"]) {
+			try { eda.sys_MessageBus.publishPublic("popout-close-project", {}); } catch (e) {}
+			try { eda.sys_IFrame.closeIFrame("popout-project-design"); } catch (e) {}
+			PopoutManager.restorePanel("project-design");
+		}
+
+		if (this._activeBuiltInProjectId) this.closeBuiltInProject();
+		if (window.projectCompleter) window.projectCompleter.clear();
+		if (typeof TabManager !== "undefined") { try { TabManager.closeAll(); } catch (e) {} }
+
+		this._updateCloseProjectButton();
+		this.switchView("project-design");
+		eda.sys_Message.showToastMessage("项目已关闭", "success", 1);
 	}
 
 	// 获取内置项目列表
@@ -247,10 +329,12 @@ class LeftNavPanel {
 			html += '<div class="project-section-title">内置项目</div>';
 			builtInProjects.forEach((project) => {
 				const isSelected = this.selectedProjectId === project.id;
+				const isRunning = this._activeBuiltInProjectId === project.id;
 				html += `
-					<div class="project-item ${isSelected ? 'selected' : ''}" data-project-id="${project.id}" data-is-builtin="true">
+					<div class="project-item ${isSelected ? 'selected' : ''} ${isRunning ? 'builtin-running' : ''}" data-project-id="${project.id}" data-is-builtin="true">
 						<div class="project-item-name">
 							<span class="project-builtin-badge">内置</span>
+								<span class="builtin-running-label"></span>
 							${this.escapeHtml(project.projectName)}
 						</div>
 						<div class="project-item-info">
@@ -294,21 +378,16 @@ class LeftNavPanel {
 			const isBuiltIn = item.dataset.isBuiltin === 'true';
 			const projectId = isBuiltIn ? rawId : parseInt(rawId);
 
-			// 单击：内置项目直接加载，用户项目选中
-			item.addEventListener('click', async () => {
+			// 单击：内置项目切换渲染，用户项目选中
+			item.addEventListener("click", async () => {
 				if (isBuiltIn) {
-					const previewContainer = document.getElementById('html-preview-container');
-					if (previewContainer && previewContainer.classList.contains('active')) {
-						previewContainer.classList.remove('active');
-						const editorDiv = document.getElementById('editor');
-						if (editorDiv) editorDiv.style.display = 'block';
-						const previewFrame = document.getElementById('html-preview-frame');
-						if (previewFrame) previewFrame.src = 'about:blank';
-						if (!this.sidebarExpanded) this.toggleSidebar();
-						return;
+					if (this._activeBuiltInProjectId === projectId) {
+						this.closeBuiltInProject();
+					} else {
+						var shouldClose = this._shouldClosePanelOnRender();
+						if (shouldClose && this.sidebarExpanded) this.toggleSidebar();
+						await this.openBuiltInProject(projectId);
 					}
-					if (this.sidebarExpanded) this.toggleSidebar();
-					await this.openBuiltInProject(projectId);
 				} else if (item.dataset.isScript === "true") {
 					if (this.sidebarExpanded) this.toggleSidebar();
 					await this.openScriptProject(projectId);
@@ -506,6 +585,7 @@ class LeftNavPanel {
 
 		// 打开项目 — 仅显示文件树，由用户选择文件
 		async openProject(projectId) {
+			if (this._activeBuiltInProjectId) this.closeBuiltInProject();
 			try {
 				// 脏检查：当前文件未保存则提示
 				if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
@@ -548,14 +628,20 @@ class LeftNavPanel {
 
 				if (window.projectCompleter) window.projectCompleter.updateFiles();
 				this.switchView("project-design");
+				// Notify popout panels to refresh
+				if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("project-design", { projectId: projectId });
 				eda.sys_Message.showToastMessage("项目已打开，请在文件树中选择文件", "success", 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage("项目加载失败: " + error.message, "error", 3);
+				// IDB 连接关闭错误来自残留 iframe 实例的重复调用，不可操作，静默忽略
+				if (!error.message || !error.message.includes('database connection is closed')) {
+					eda.sys_Message.showToastMessage("项目加载失败: " + error.message, "error", 3);
+				}
 			}
 		}
 
 		// 打开脚本项目 — 直接加载唯一 JS 文件
 		async openScriptProject(projectId) {
+			if (this._activeBuiltInProjectId) this.closeBuiltInProject();
 			try {
 				// 如果是当前已打开的项目，直接返回
 				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
@@ -601,56 +687,77 @@ class LeftNavPanel {
 				if (window.fileTreeUI) await window.fileTreeUI.render();
 				eda.sys_Message.showToastMessage("脚本已打开", "success", 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage("打开脚本失败: " + error.message, "error", 3);
+				if (!error.message || !error.message.includes("database connection is closed")) { eda.sys_Message.showToastMessage("打开脚本失败: " + error.message, "error", 3); }
 			}
 		}
 
+	// 关闭内置项目渲染
+	closeBuiltInProject() {
+		if (!this._activeBuiltInProjectId) return;
+
+		const previewContainer = document.getElementById("html-preview-container");
+		const editorDiv = document.getElementById("editor");
+		const previewFrame = document.getElementById("html-preview-frame");
+
+		if (previewContainer) previewContainer.classList.remove("active");
+		if (editorDiv) editorDiv.style.display = "block";
+		if (previewFrame) previewFrame.src = "about:blank";
+
+		this._activeBuiltInProjectId = null;
+		try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {}
+		this.editor.setValue("", -1);
+		this.loadProjectList();
+	}
+
 	// 打开内置项目 — 在编辑器区域直接渲染 index.html
 	async openBuiltInProject(builtInId) {
+		if (this._activeBuiltInProjectId) this.closeBuiltInProject();
 		try {
 			const project = this.projects.find((p) => p.id === builtInId);
 			if (!project) {
-				eda.sys_Message.showToastMessage('内置项目不存在', 'error', 2);
+				eda.sys_Message.showToastMessage("内置项目不存在", "error", 2);
 				return;
 			}
 
 			const entryFileName = project.entryFile || (project.files[0] && project.files[0].fileName);
 			const entryFile = project.files.find(f => f.fileName === entryFileName);
 			if (!entryFile) {
-				eda.sys_Message.showToastMessage('未找到可打开的页面', 'warn', 2);
+				eda.sys_Message.showToastMessage("未找到可打开的页面", "warn", 2);
 				return;
 			}
 
 			window.projectManager.currentProject = project;
 			window.projectManager.currentFile = entryFile.fileName;
 
-			// 与运行按钮完全一致的 HTML 渲染流程
+			// HTML 渲染流程
 			const builtHTML = window.htmlRenderer
 				? window.htmlRenderer.buildHTMLContent(entryFile, window.projectManager)
 				: entryFile.content;
-			const finalHTML = typeof injectEdaBridge === 'function' ? injectEdaBridge(builtHTML) : builtHTML;
-			const blob = new Blob([finalHTML], { type: 'text/html' });
+			const finalHTML = typeof injectEdaBridge === "function" ? injectEdaBridge(builtHTML) : builtHTML;
+			const blob = new Blob([finalHTML], { type: "text/html" });
 			const url = URL.createObjectURL(blob);
 
-			const editorDiv = document.getElementById('editor');
-			const previewContainer = document.getElementById('html-preview-container');
-			const previewFrame = document.getElementById('html-preview-frame');
-			const runBtn = document.getElementById('run-btn');
+			const editorDiv = document.getElementById("editor");
+			const previewContainer = document.getElementById("html-preview-container");
+			const previewFrame = document.getElementById("html-preview-frame");
 
-			if (editorDiv) editorDiv.style.display = 'none';
-			if (previewContainer) previewContainer.classList.add('active');
+			if (editorDiv) editorDiv.style.display = "none";
+			if (previewContainer) previewContainer.classList.add("active");
 			if (previewFrame) {
 				previewFrame.src = url;
-				previewFrame.addEventListener('load', () => URL.revokeObjectURL(url), { once: true });
+				previewFrame.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
 			}
-			if (runBtn) runBtn.textContent = '停止';
 
-			eda.sys_Message.showToastMessage(`内置项目 "${project.projectName}" 已打开`, 'success', 2);
+			this._activeBuiltInProjectId = builtInId;
+			try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", builtInId); } catch (e) {}
+			this.loadProjectList();
+			// Notify popout panels to refresh
+			if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects");
+			eda.sys_Message.showToastMessage("内置项目 " + project.projectName + " 已打开", "success", 2);
 		} catch (error) {
-			eda.sys_Message.showToastMessage('打开内置项目失败: ' + error.message, 'error', 3);
+			if (!error.message || !error.message.includes("database connection is closed")) { eda.sys_Message.showToastMessage("打开内置项目失败: " + error.message, "error", 3); }
 		}
 	}
-
 	// 内置项目右键菜单
 	showBuiltInProjectContextMenu(event, builtInId) {
 		const existingMenu = document.getElementById('project-context-menu');
