@@ -490,7 +490,7 @@ async function previewHtmlInPopupWindow(data) {
 		await eda.sys_Storage.setExtensionUserConfig('__preview_html', htmlContent);
 
 		// 生成唯一的窗口 ID
-		const windowId = 'html-preview-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+		const windowId = data.windowId || ("html-preview-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9));
 
 		// 打开弹出窗口
 		await eda.sys_IFrame.openIFrame(
@@ -503,10 +503,12 @@ async function previewHtmlInPopupWindow(data) {
 				maximizeButton: true,
 				minimizeButton: true,
 				onBeforeCloseCallFn: async () => {
-					// 清理临时存储
 					try {
 						await eda.sys_Storage.setExtensionUserConfig('__preview_html', '');
 					} catch(e) {}
+					if (typeof data.onClose === 'function') {
+						try { data.onClose(); } catch(e) {}
+					}
 					return true;
 				}
 			}

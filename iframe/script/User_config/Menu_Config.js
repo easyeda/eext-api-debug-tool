@@ -471,6 +471,24 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			cbLabel.onclick = function() { cbPanel.checked = !cbPanel.checked; cbPanel.onchange(); };
 			cbRow.appendChild(cbPanel); cbRow.appendChild(cbLabel);
 			contentPane.appendChild(cbRow);
+
+			/* BuiltIn separate render */
+			const cbRow2 = document.createElement("div");
+			cbRow2.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
+			const cbSep = document.createElement("input"); cbSep.type = "checkbox"; cbSep.id = "builtin-separate-render-checkbox";
+			cbSep.style.cssText = "width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);";
+			cbSep.onchange = function() {
+				try { eda.sys_Storage.setExtensionUserConfig("builtin_separate_render", cbSep.checked); } catch(e) {}
+			};
+			try {
+				const saved = eda.sys_Storage.getExtensionUserConfig("builtin_separate_render");
+				cbSep.checked = (saved === true || saved === "true");
+			} catch(e) { cbSep.checked = false; }
+			const cbLabel2 = document.createElement("span"); cbLabel2.textContent = "内置项目单独渲染";
+			cbLabel2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
+			cbLabel2.onclick = function() { cbSep.checked = !cbSep.checked; cbSep.onchange(); };
+			cbRow2.appendChild(cbSep); cbRow2.appendChild(cbLabel2);
+			contentPane.appendChild(cbRow2);
 		} else if (activeMenu === 'editor') {
 			const sec = section('补全模式');
 

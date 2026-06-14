@@ -50,7 +50,7 @@ const PopoutManager = {
 				document.body.appendChild(ghost);
 
 				e.dataTransfer.effectAllowed = 'move';
-				e.dataTransfer.setData('text/plain', viewName);
+				e.dataTransfer.setData('text/plain', '');
 				e.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
 
 				setTimeout(() => ghost.remove(), 0);

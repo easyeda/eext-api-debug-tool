@@ -21,6 +21,12 @@ class LeftNavPanel {
 			} catch (e) { return true; }
 		}
 
+	_shouldRenderBuiltInSeparately() {
+		try {
+			var v = eda.sys_Storage.getExtensionUserConfig("builtin_separate_render");
+			return v === true || v === "true";
+		} catch (e) { return false; }
+	}
 	// 初始化
 	init() {
 		this.restoreSidebarState();
@@ -585,7 +591,7 @@ class LeftNavPanel {
 
 		// 打开项目 — 仅显示文件树，由用户选择文件
 		async openProject(projectId) {
-			if (this._activeBuiltInProjectId) this.closeBuiltInProject();
+			if (this._activeBuiltInProjectId && !this._shouldRenderBuiltInSeparately()) this.closeBuiltInProject();
 			try {
 				// 脏检查：当前文件未保存则提示
 				if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
@@ -641,7 +647,7 @@ class LeftNavPanel {
 
 		// 打开脚本项目 — 直接加载唯一 JS 文件
 		async openScriptProject(projectId) {
-			if (this._activeBuiltInProjectId) this.closeBuiltInProject();
+			if (this._activeBuiltInProjectId && !this._shouldRenderBuiltInSeparately()) this.closeBuiltInProject();
 			try {
 				// 如果是当前已打开的项目，直接返回
 				if (window.projectManager.currentProject && window.projectManager.currentProject.id === projectId) {
@@ -695,6 +701,11 @@ class LeftNavPanel {
 	closeBuiltInProject() {
 		if (!this._activeBuiltInProjectId) return;
 
+		if (this._builtInPopupId) {
+			try { eda.sys_IFrame.closeIFrame(this._builtInPopupId); } catch (e) {}
+			this._builtInPopupId = null;
+		}
+
 		const previewContainer = document.getElementById("html-preview-container");
 		const editorDiv = document.getElementById("editor");
 		const previewFrame = document.getElementById("html-preview-frame");
@@ -705,14 +716,10 @@ class LeftNavPanel {
 
 		this._activeBuiltInProjectId = null;
 		try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {}
-		this.editor.setValue("", -1);
-		this.editor.setValue("", -1);
-		window.projectManager.currentProject = null;
-		window.projectManager.currentFile = null;
 		this.loadProjectList();
 	}
 
-	// 打开内置项目 — 在编辑器区域直接渲染 index.html
+	// 打开内置项目 — 单独渲染，不影响项目设计
 	async openBuiltInProject(builtInId) {
 		if (this._activeBuiltInProjectId) this.closeBuiltInProject();
 		try {
@@ -729,32 +736,44 @@ class LeftNavPanel {
 				return;
 			}
 
+			// Build HTML — temporarily set project for file resolution
+			var prevProject = window.projectManager.currentProject;
+			var prevFile = window.projectManager.currentFile;
 			window.projectManager.currentProject = project;
 			window.projectManager.currentFile = entryFile.fileName;
-
-			// HTML 渲染流程
 			const builtHTML = window.htmlRenderer
 				? window.htmlRenderer.buildHTMLContent(entryFile, window.projectManager)
 				: entryFile.content;
+			window.projectManager.currentProject = prevProject;
+			window.projectManager.currentFile = prevFile;
 			const finalHTML = typeof injectEdaBridge === "function" ? injectEdaBridge(builtHTML) : builtHTML;
 			const blob = new Blob([finalHTML], { type: "text/html" });
 			const url = URL.createObjectURL(blob);
 
-			const editorDiv = document.getElementById("editor");
-			const previewContainer = document.getElementById("html-preview-container");
-			const previewFrame = document.getElementById("html-preview-frame");
-
-			if (editorDiv) editorDiv.style.display = "none";
-			if (previewContainer) previewContainer.classList.add("active");
-			if (previewFrame) {
-				previewFrame.src = url;
-				previewFrame.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
+			if (this._shouldRenderBuiltInSeparately()) {
+				URL.revokeObjectURL(url);
+				this._builtInPopupId = "builtin-render-" + Date.now();
+				if (typeof previewHtmlInPopupWindow === "function") {
+					await previewHtmlInPopupWindow({ projectName: project.projectName, entryFile: entryFile.fileName, content: finalHTML, windowId: this._builtInPopupId, onClose: function() { if (window.leftNavPanel) { window.leftNavPanel._activeBuiltInProjectId = null; try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {} window.leftNavPanel.loadProjectList(); if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects"); } } });
+				} else {
+					eda.sys_Message.showToastMessage("previewHtmlInPopupWindow 未定义", "error", 2);
+					return;
+				}
+			} else {
+				const editorDiv = document.getElementById("editor");
+				const previewContainer = document.getElementById("html-preview-container");
+				const previewFrame = document.getElementById("html-preview-frame");
+				if (editorDiv) editorDiv.style.display = "none";
+				if (previewContainer) previewContainer.classList.add("active");
+				if (previewFrame) {
+					previewFrame.src = url;
+					previewFrame.addEventListener("load", () => URL.revokeObjectURL(url), { once: true });
+				}
 			}
 
 			this._activeBuiltInProjectId = builtInId;
 			try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", builtInId); } catch (e) {}
 			this.loadProjectList();
-			// Notify popout panels to refresh
 			if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects");
 			eda.sys_Message.showToastMessage("内置项目 " + project.projectName + " 已打开", "success", 2);
 		} catch (error) {
