@@ -332,7 +332,6 @@ var TabManager = {
 			} else {
 				editor.setValue("", -1);
 				window.projectManager.currentFile = null;
-				window.projectManager.currentProject = null;
 			}
 		}
 		this.render();

@@ -3,6 +3,13 @@
  * 管理三个视图：所有项目、项目设计、常用代码
  */
 
+function generateUUID() {
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0;
+		return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+	});
+}
+
 class LeftNavPanel {
 	constructor(editor) {
 		this.editor = editor;
@@ -717,6 +724,7 @@ class LeftNavPanel {
 		this._activeBuiltInProjectId = null;
 		try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {}
 		this.loadProjectList();
+		if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects");
 	}
 
 	// 打开内置项目 — 单独渲染，不影响项目设计
@@ -754,7 +762,7 @@ class LeftNavPanel {
 
 			if (this._shouldRenderBuiltInSeparately()) {
 				URL.revokeObjectURL(url);
-				this._builtInPopupId = "builtin-render-" + Date.now();
+				this._builtInPopupId = "builtin-render-" + builtInId;
 				if (typeof previewHtmlInPopupWindow === "function") {
 					await previewHtmlInPopupWindow({ projectName: project.projectName, entryFile: entryFile.fileName, content: finalHTML, windowId: this._builtInPopupId, onClose: function() { if (window.leftNavPanel) { window.leftNavPanel._activeBuiltInProjectId = null; try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {} window.leftNavPanel.loadProjectList(); if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects"); } } });
 				} else {

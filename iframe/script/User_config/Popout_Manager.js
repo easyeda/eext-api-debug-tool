@@ -20,14 +20,15 @@ const PopoutManager = {
 	_dragViewName: null,
 	_mouseLeftIframe: false,
 	_poppedOutPanels: {},
-	_subscriptionsAttached: false,
+	_msgBusGen: 0,
 
 	init() {
+		// 自增世代计数器，旧 handler 检测到不匹配自动跳过
+		var gen = (parseInt(eda.sys_Storage.getExtensionUserConfig("__msg_bus_gen") || "0") || 0) + 1;
+		eda.sys_Storage.setExtensionUserConfig("__msg_bus_gen", gen);
+		this._msgBusGen = gen;
 		this.attachDragHandlers();
-		if (!this._subscriptionsAttached) {
-			this.attachMessageBusSubscriptions();
-			this._subscriptionsAttached = true;
-		}
+		this.attachMessageBusSubscriptions();
 	},
 
 	attachDragHandlers() {
@@ -92,17 +93,22 @@ const PopoutManager = {
 		if (this._poppedOutPanels[viewName] && this._poppedOutPanels[viewName].isOpen) return;
 
 		const cfg = POPOUT_VIEW_MAP[viewName];
+		const iframeId = 'popout-' + viewName;
+
+		// Set isOpen BEFORE await to prevent race conditions from stale subscription handlers
+		this._poppedOutPanels[viewName] = { iframeId: null, isOpen: true };
+
 		const config = {
 			panelType: viewName,
 			theme: document.body.classList.contains("dark-theme") ? "dark" : "light",
 			currentProjectId: window.projectManager.currentProject ? window.projectManager.currentProject.id : null,
 			activeBuiltInProjectId: window.leftNavPanel && window.leftNavPanel._activeBuiltInProjectId ? window.leftNavPanel._activeBuiltInProjectId : null,
+			_popoutGen: (parseInt(eda.sys_Storage.getExtensionUserConfig('__popout_gen') || '0') || 0) + 1,
 		};
 		await eda.sys_Storage.setExtensionUserConfig('__popout_panel_config', JSON.stringify(config));
+		await eda.sys_Storage.setExtensionUserConfig('__popout_gen', config._popoutGen);
 
 		this.hidePanelInMain(viewName);
-
-		const iframeId = 'popout-' + viewName;
 
 		try {
 			await eda.sys_IFrame.openIFrame(
@@ -120,7 +126,7 @@ const PopoutManager = {
 					},
 				}
 			);
-			this._poppedOutPanels[viewName] = { iframeId: iframeId, isOpen: true };
+			this._poppedOutPanels[viewName].iframeId = iframeId;
 			eda.sys_Message.showToastMessage(cfg.title + ' 已弹出', 'success', 2);
 		} catch (e) {
 			this.restorePanel(viewName);
@@ -154,62 +160,90 @@ const PopoutManager = {
 	},
 
 	// 主 iframe 侧 MessageBus
+	// 每次 init 递增世代计数器，handler 比对世代号，旧订阅自动失效
 	attachMessageBusSubscriptions() {
+		var gen = this._msgBusGen;
+		var self = this;
+
+		function isStale() {
+			try {
+				var current = eda.sys_Storage.getExtensionUserConfig("__msg_bus_gen");
+				if (current === null || current === undefined) return false;
+				return String(current) !== String(gen);
+			} catch(e) { return false; }
+		}
+
 		try {
-			var flag = eda.sys_Storage.getExtensionUserConfig("__msg_bus_subs_ready");
-			if (flag === true || flag === "true") return;
-			eda.sys_Storage.setExtensionUserConfig("__msg_bus_subs_ready", true);
-			eda.sys_MessageBus.subscribePublic('popout-panel-close', (msg) => {
-				if (msg && msg.panelType) this.restorePanel(msg.panelType);
+			eda.sys_MessageBus.subscribePublic('popout-panel-close', function(msg) {
+				if (isStale()) return;
+				if (msg && msg.panelType) self.restorePanel(msg.panelType);
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-select-project', (msg) => {
+			eda.sys_MessageBus.subscribePublic('popout-select-project', function(msg) {
+				if (isStale()) return;
 				if (msg && msg.projectId && window.leftNavPanel) {
 					window.leftNavPanel.selectProject(msg.projectId);
 				}
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-open-project', async (msg) => {
+			eda.sys_MessageBus.subscribePublic('popout-open-project', async function(msg) {
+				if (isStale()) return;
 				if (!msg || !msg.projectId || !window.leftNavPanel) return;
 				if (!window.projectManager.db || window.projectManager.db.closed) {
 					await window.projectManager.initDB();
 				}
 				await window.leftNavPanel.openProject(msg.projectId);
-				this.notifyRefresh('project-design', { projectId: msg.projectId });
+				self.notifyRefresh('project-design', { projectId: msg.projectId });
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-open-builtin-project', async (msg) => {
+			eda.sys_MessageBus.subscribePublic('popout-open-script-project', async function(msg) {
+				if (isStale()) return;
+				if (!msg || !msg.projectId || !window.leftNavPanel) return;
+				if (!window.projectManager.db || window.projectManager.db.closed) {
+					await window.projectManager.initDB();
+				}
+				await window.leftNavPanel.openScriptProject(msg.projectId);
+			});
+
+			eda.sys_MessageBus.subscribePublic('popout-open-builtin-project', async function(msg) {
+				if (isStale()) return;
 				if (!msg || !msg.projectId || !window.leftNavPanel) return;
 				if (!window.projectManager.db || window.projectManager.db.closed) {
 					await window.projectManager.initDB();
 				}
 				await window.leftNavPanel.openBuiltInProject(msg.projectId);
-				this.notifyRefresh('all-projects');
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-close-builtin-project', () => {
+			eda.sys_MessageBus.subscribePublic('popout-close-builtin-project', function(msg) {
+				if (isStale()) return;
 				if (window.leftNavPanel) window.leftNavPanel.closeBuiltInProject();
-				this.notifyRefresh('all-projects');
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-load-file', async (msg) => {
+			eda.sys_MessageBus.subscribePublic('popout-load-file', async function(msg) {
+				if (isStale()) return;
 				if (msg && msg.fileName && window.fileTreeUI) {
 					await window.fileTreeUI.loadFile(msg.fileName);
 				}
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-popup-preview', (msg) => {
+			eda.sys_MessageBus.subscribePublic('popout-popup-preview', function(msg) {
+				if (isStale()) return;
 				if (msg && msg.fileName && window.fileTreeUI) {
 					window.fileTreeUI.popupPreviewHtml(msg.fileName);
 				}
 			});
 
-			eda.sys_MessageBus.subscribePublic('popout-insert-code', (msg) => {
+			eda.sys_MessageBus.subscribePublic('popout-insert-code', function(msg) {
+				if (isStale()) return;
 				if (msg && msg.methodPath && window.editor) {
-					const cursor = window.editor.getCursorPosition();
+					var cursor = window.editor.getCursorPosition();
 					window.editor.session.insert(cursor, msg.methodPath);
-					
 				}
+			});
+
+			eda.sys_MessageBus.subscribePublic('popout-request-close-project', function(msg) {
+				if (isStale()) return;
+				if (window.leftNavPanel) window.leftNavPanel.closeCurrentProject();
 			});
 		} catch (e) {}
 	},

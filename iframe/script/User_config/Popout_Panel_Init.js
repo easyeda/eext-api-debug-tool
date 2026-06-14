@@ -10,6 +10,7 @@
 	let editor = null;
 	let currentProjectId = null;
 
+	var popoutGen = null;
 	let config = null;
 	try {
 		const rawConfig = eda.sys_Storage.getExtensionUserConfig('__popout_panel_config');
@@ -21,6 +22,7 @@
 		panelType = config.panelType;
 		currentProjectId = config.currentProjectId;
 		var activeBuiltInProjectId = config.activeBuiltInProjectId || null;
+		popoutGen = config._popoutGen || null;
 	} catch (e) {
 		document.getElementById('popout-content').innerHTML = '<div style="padding:20px;color:red;">Error: ' + e.message + '</div>';
 		return;
@@ -110,6 +112,9 @@ if (activeBuiltInProjectId) {
 		popoutPanel.openProject = function(projectId) {
 			try { eda.sys_MessageBus.publishPublic('popout-open-project', { projectId: projectId }); } catch (e) {}
 		};
+		popoutPanel.openScriptProject = function(projectId) {
+			try { eda.sys_MessageBus.publishPublic('popout-open-script-project', { projectId: projectId }); } catch (e) {}
+		};
 		popoutPanel.openBuiltInProject = function(projectId) {
 			try { eda.sys_MessageBus.publishPublic('popout-open-builtin-project', { projectId: projectId }); } catch (e) {}
 		};
@@ -117,7 +122,7 @@ if (activeBuiltInProjectId) {
 			try { eda.sys_MessageBus.publishPublic('popout-close-builtin-project', {}); } catch (e) {}
 		};
 		popoutPanel.closeCurrentProject = function() {
-			try { eda.sys_MessageBus.publishPublic('popout-close-project', {}); } catch (e) {}
+			try { eda.sys_MessageBus.publishPublic('popout-request-close-project', {}); } catch (e) {}
 		};
 	}
 
@@ -129,7 +134,7 @@ if (activeBuiltInProjectId) {
 			try { eda.sys_MessageBus.publishPublic('popout-popup-preview', { fileName: fileName }); } catch (e) {}
 		};
 		popoutPanel.closeCurrentProject = function() {
-			try { eda.sys_MessageBus.publishPublic('popout-close-project', {}); } catch (e) {}
+			try { eda.sys_MessageBus.publishPublic('popout-request-close-project', {}); } catch (e) {}
 		};
 	}
 
@@ -142,8 +147,10 @@ if (activeBuiltInProjectId) {
 
 	// 只订阅刷新通知类 topic — 主 iframe 操作完成后发布这些通知
 	// 不订阅操作类 topic（popout-select-project 等），那些只由主 iframe 处理
+	// 每个 handler 检查 popoutGen 避免已关闭面板的残留订阅执行
 	try {
 		eda.sys_MessageBus.subscribePublic('popout-refresh-projects', function(msg) {
+			try { var cur = eda.sys_Storage.getExtensionUserConfig("__popout_gen"); if (cur != null && String(cur) !== String(popoutGen)) return; } catch(e) {}
 			if (panelType === 'all-projects' && popoutPanel) {
 				try { popoutPanel._activeBuiltInProjectId = eda.sys_Storage.getExtensionUserConfig('__active_builtin_project') || null; } catch (e) {}
 				popoutPanel.loadProjectList();
@@ -151,6 +158,7 @@ if (activeBuiltInProjectId) {
 		});
 
 		eda.sys_MessageBus.subscribePublic('popout-refresh-filetree', async function(msg) {
+			try { var cur = eda.sys_Storage.getExtensionUserConfig("__popout_gen"); if (cur != null && String(cur) !== String(popoutGen)) return; } catch(e) {}
 			if (panelType === 'project-design') {
 				if (msg && msg.projectId) {
 					currentProjectId = msg.projectId;
@@ -167,7 +175,6 @@ if (activeBuiltInProjectId) {
 				}
 				window.fileTreeUI = new FileTreeUI('file-tree', editor);
 				await window.fileTreeUI.render();
-				// Reapply RPC overrides after recreation
 				if (window.fileTreeUI) {
 					window.fileTreeUI.loadFile = function(fileName) {
 						try { eda.sys_MessageBus.publishPublic('popout-load-file', { fileName: fileName }); } catch (e) {}
@@ -177,12 +184,14 @@ if (activeBuiltInProjectId) {
 		});
 
 		eda.sys_MessageBus.subscribePublic('popout-refresh-completers', function(msg) {
+			try { var cur = eda.sys_Storage.getExtensionUserConfig("__popout_gen"); if (cur != null && String(cur) !== String(popoutGen)) return; } catch(e) {}
 			if (panelType === 'common-code' && popoutPanel) {
 				popoutPanel.loadCompleterStore();
 			}
 		});
 
 		eda.sys_MessageBus.subscribePublic('popout-close-project', async function(msg) {
+			try { var cur = eda.sys_Storage.getExtensionUserConfig("__popout_gen"); if (cur != null && String(cur) !== String(popoutGen)) return; } catch(e) {}
 			if (panelType === 'project-design') {
 				currentProjectId = null;
 				window.projectManager.currentProject = null;
@@ -191,12 +200,11 @@ if (activeBuiltInProjectId) {
 				if (window.fileTreeUI) {
 					window.fileTreeUI = new FileTreeUI('file-tree', editor);
 					await window.fileTreeUI.render();
-						// Reapply RPC overrides after recreation
-						if (window.fileTreeUI) {
-							window.fileTreeUI.loadFile = function(fileName) {
-								try { eda.sys_MessageBus.publishPublic('popout-load-file', { fileName: fileName }); } catch (e) {}
-							};
-						}
+					if (window.fileTreeUI) {
+						window.fileTreeUI.loadFile = function(fileName) {
+							try { eda.sys_MessageBus.publishPublic('popout-load-file', { fileName: fileName }); } catch (e) {}
+						};
+					}
 				}
 			}
 		});
