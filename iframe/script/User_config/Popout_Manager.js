@@ -156,6 +156,9 @@ const PopoutManager = {
 	// 主 iframe 侧 MessageBus
 	attachMessageBusSubscriptions() {
 		try {
+			var flag = eda.sys_Storage.getExtensionUserConfig("__msg_bus_subs_ready");
+			if (flag === true || flag === "true") return;
+			eda.sys_Storage.setExtensionUserConfig("__msg_bus_subs_ready", true);
 			eda.sys_MessageBus.subscribePublic('popout-panel-close', (msg) => {
 				if (msg && msg.panelType) this.restorePanel(msg.panelType);
 			});

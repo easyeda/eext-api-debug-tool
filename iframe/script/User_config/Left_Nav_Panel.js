@@ -750,6 +750,8 @@ class LeftNavPanel {
 			const blob = new Blob([finalHTML], { type: "text/html" });
 			const url = URL.createObjectURL(blob);
 
+			this._activeBuiltInProjectId = builtInId;
+
 			if (this._shouldRenderBuiltInSeparately()) {
 				URL.revokeObjectURL(url);
 				this._builtInPopupId = "builtin-render-" + Date.now();
@@ -771,7 +773,6 @@ class LeftNavPanel {
 				}
 			}
 
-			this._activeBuiltInProjectId = builtInId;
 			try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", builtInId); } catch (e) {}
 			this.loadProjectList();
 			if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects");

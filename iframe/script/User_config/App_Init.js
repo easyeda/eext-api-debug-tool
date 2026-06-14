@@ -206,6 +206,7 @@ if (typeof migrateCodeStoreToProjects === "function") {
 
 // 在 iframe 关闭前保存标签页状态（使用 localStorage 同步备份）
 window.addEventListener("beforeunload", function() {
+	try { eda.sys_Storage.setExtensionUserConfig("__msg_bus_subs_ready", false); } catch(e) {}
 	try { if (typeof PopoutManager !== "undefined") PopoutManager.closeAll(); } catch(e) {}
 	if (typeof TabManager !== "undefined" && TabManager._tabs) {
 		try {
