@@ -706,6 +706,9 @@ class LeftNavPanel {
 		this._activeBuiltInProjectId = null;
 		try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {}
 		this.editor.setValue("", -1);
+		this.editor.setValue("", -1);
+		window.projectManager.currentProject = null;
+		window.projectManager.currentFile = null;
 		this.loadProjectList();
 	}
 
