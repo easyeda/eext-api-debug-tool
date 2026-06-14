@@ -3,8 +3,42 @@
  * 使用 IndexedDB 存储项目文件
  */
 
+function generateUUID() {
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0;
+		return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+	});
+}
+
+// 同步删除快捷键映射
+async function _syncDeleteBtnList(projectIdOrUuid) {
+	try {
+		var db = await new Promise(function(resolve, reject) {
+			var req = indexedDB.open('BtnStore', 2);
+			req.onsuccess = function() { resolve(req.result); };
+			req.onerror = reject;
+		});
+		var records = await new Promise(function(resolve, reject) {
+			var tx = db.transaction(['BtnList'], 'readonly');
+			var r = tx.objectStore('BtnList').getAll();
+			r.onsuccess = function() { resolve(r.result || []); };
+			r.onerror = reject;
+		});
+		var target = records.find(function(r) { return r.projectId === projectIdOrUuid || r.uuid === projectIdOrUuid; });
+		if (target && target.uuid) {
+			await new Promise(function(resolve, reject) {
+				var tx = db.transaction(['BtnList'], 'readwrite');
+				var req = tx.objectStore('BtnList').delete(target.uuid);
+				req.onsuccess = resolve;
+				req.onerror = reject;
+			});
+		}
+		db.close();
+	} catch(e) {}
+}
+
 const DB_NAME = 'EDA_Projects';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'projects';
 
 class ProjectManager {
@@ -32,6 +66,13 @@ class ProjectManager {
 					store.createIndex('projectName', 'projectName', { unique: false });
 					store.createIndex('fileName', 'fileName', { unique: false });
 				}
+				if (event.oldVersion < 2) {
+					var tx = event.target.transaction;
+					var store = tx.objectStore(STORE_NAME);
+					if (!store.indexNames.contains('uuid')) {
+						store.createIndex('uuid', 'uuid', { unique: false });
+					}
+				}
 			};
 		});
 	}
@@ -41,6 +82,7 @@ class ProjectManager {
 		if (!this.db || this.db.closed) await this.initDB();
 
 		const project = {
+			uuid: generateUUID(),
 			projectName,
 			files: [{ fileName: 'main.js', content: '', createdAt: new Date().toISOString().split('T')[0] }],
 			createdAt: new Date().toISOString().split('T')[0],
@@ -106,6 +148,21 @@ class ProjectManager {
 		});
 	}
 
+	// 按 UUID 读取项目
+	async loadProjectByUuid(uuid) {
+		if (!this.db || this.db.closed) await this.initDB();
+
+		return new Promise((resolve, reject) => {
+			const transaction = this.db.transaction([STORE_NAME], 'readonly');
+			const store = transaction.objectStore(STORE_NAME);
+			const index = store.index('uuid');
+			const request = index.get(uuid);
+
+			request.onsuccess = () => resolve(request.result || null);
+			request.onerror = () => reject(request.error);
+		});
+	}
+
 	// 保存项目
 	async saveProject(project) {
 		if (!this.db || this.db.closed) await this.initDB();
@@ -136,6 +193,14 @@ class ProjectManager {
 	// 删除项目
 	async deleteProject(projectId) {
 		if (!this.db || this.db.closed) await this.initDB();
+
+		// 同步删除顶部快捷键映射
+		var project = await this.loadProjectById(projectId);
+		if (project && project.uuid) {
+			await _syncDeleteBtnList(project.uuid);
+		} else {
+			await _syncDeleteBtnList(projectId);
+		}
 
 		return new Promise((resolve, reject) => {
 			const transaction = this.db.transaction([STORE_NAME], 'readwrite');

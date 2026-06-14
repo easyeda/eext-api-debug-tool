@@ -521,121 +521,159 @@ async function previewHtmlInPopupWindow(data) {
 }
 
 // ==========================
+// ==========================
+// ==========================
+// 删除 BtnList 中的按钮记录
+// ==========================
+async function deleteBtnFromDB(uuid) {
+	var db = await BtnStore_Init();
+	await new Promise(function(resolve, reject) {
+		var tx = db.transaction(['BtnList'], 'readwrite');
+		var req = tx.objectStore('BtnList').delete(uuid);
+		req.onsuccess = resolve;
+		req.onerror = reject;
+	});
+	db.close();
+}
+
+// ==========================
 // 创建一个快捷按钮元素（含右键菜单）
 // ==========================
-function createQuickButton(editor, name, uuid, projectId) {
-	const li = document.createElement('li');
-	const btn = document.createElement('button');
+function createQuickButton(editor, name, uuid, projectId, startupFile) {
+	var li = document.createElement("li");
+	var btn = document.createElement("button");
 	btn.textContent = name;
-	btn.setAttribute('data-btn-uuid', uuid);
-	btn.setAttribute('data-btn-project-id', projectId);
+	btn.setAttribute("data-btn-uuid", uuid);
+	btn.setAttribute("data-btn-project-id", projectId);
+	if (startupFile) btn.setAttribute("data-startup-file", startupFile);
 
-	// 点击按钮：加载项目并执行
-	btn.onclick = async () => {
+	// 点击：根据启动文件类型执行 JS 或预览 HTML
+	btn.onclick = async function() {
 		try {
-			const project = await window.projectManager.loadProjectById(projectId);
+			var project = await window.projectManager.loadProjectById(projectId);
+			if (!project) { project = await window.projectManager.loadProjectByUuid(uuid); }
 			if (!project) {
-				eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+				eda.sys_Message.showToastMessage("项目不存在", "error", 2);
 				return;
 			}
+			var sf = startupFile || btn.getAttribute("data-startup-file");
+			var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith(".js")));
+			var ext = sf ? sf.split(".").pop().toLowerCase() : null;
 
-			// 脚本：直接执行
-			const isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith('.js')));
-			if (isScript) {
-				const code = project.files[0].content;
+			// JS 启动文件 → 执行脚本
+			if (ext === "js" || (!ext && isScript)) {
+				var code = project.files[0].content;
 				if (code && code.trim()) {
-					try {
-						eval(code);
-					} catch(e) {
-						eda.sys_Message.showToastMessage('执行失败: ' + e.message, 'error', 2);
-					}
+					try { eval(code); } catch(e) { eda.sys_Message.showToastMessage("执行失败: " + e.message, "error", 2); }
 				} else {
-					eda.sys_Message.showToastMessage('脚本内容为空', 'warn', 2);
+					eda.sys_Message.showToastMessage("脚本内容为空", "warn", 2);
 				}
 				return;
 			}
 
-			// HTML 项目：预览
-			const htmlFiles = project.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
-			if (htmlFiles.length > 0) {
-				const entryFile = htmlFiles.length === 1 ? htmlFiles[0].fileName : (project.entryFile || htmlFiles[0].fileName);
-				const data = {
+			// HTML 启动文件 → 内联渲染预览
+			var htmlFiles = project.files.filter(function(f) { return f.fileName.toLowerCase().endsWith(".html"); });
+			var entryFileName = sf || (htmlFiles.length > 0 ? htmlFiles[0].fileName : null);
+			if (!entryFileName) {
+				eda.sys_Message.showToastMessage("项目中没有可运行的文件", "warn", 2);
+				return;
+			}
+			var entryFile = project.files.find(function(f) { return f.fileName === entryFileName; });
+			if (!entryFile) {
+				eda.sys_Message.showToastMessage("启动文件不存在", "error", 2);
+				return;
+			}
+
+			var prevProject = window.projectManager.currentProject;
+			var prevFile = window.projectManager.currentFile;
+			window.projectManager.currentProject = project;
+			window.projectManager.currentFile = entryFileName;
+
+			var builtHTML = window.htmlRenderer
+				? window.htmlRenderer.buildHTMLContent(entryFile, window.projectManager)
+				: entryFile.content;
+
+			window.projectManager.currentProject = prevProject;
+			window.projectManager.currentFile = prevFile;
+
+			var finalHTML = typeof injectEdaBridge === "function" ? injectEdaBridge(builtHTML) : builtHTML;
+
+			if (typeof previewHtmlInPopupWindow === "function") {
+				previewHtmlInPopupWindow({
 					projectName: project.projectName,
-					entryFile: entryFile,
-					files: project.files.map((f) => ({ fileName: f.fileName, content: f.content })),
-				};
-				runProjectBtn(data);
+					entryFile: entryFileName,
+					content: finalHTML
+				});
 			} else {
-				eda.sys_Message.showToastMessage('项目中没有可运行的文件', 'warn', 2);
+				eda.sys_Message.showToastMessage("previewHtmlInPopupWindow 未定义", "error", 2);
 			}
 		} catch(e) {
-			eda.sys_Message.showToastMessage('加载失败: ' + e.message, 'error', 2);
+			eda.sys_Message.showToastMessage("加载失败: " + e.message, "error", 2);
 		}
 	};
 
-	// 右键：显示快捷菜单（加载 / 删除）
-	btn.oncontextmenu = (e) => {
+	// 右键菜单
+	btn.oncontextmenu = function(e) {
 		e.preventDefault();
-		const isDark = document.body.classList.contains('dark-theme');
-		const menuBg = isDark ? '#404040' : '#fff';
-		const menuBorder = isDark ? '#222' : '#d9d9d9';
-		const menuShadow = isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)';
-		const textColor = isDark ? '#e5e5e5' : '#333';
-		const hoverBg = isDark ? '#6283a2' : '#e6f7ff';
-		const menu =
-			document.getElementById('ctx-menu') ||
-			(() => {
-				const m = document.createElement('div');
-				m.id = 'ctx-menu';
-				document.body.appendChild(m);
-				document.addEventListener('click', () => (m.style.display = 'none'));
-				return m;
-			})();
-		menu.style.cssText = 'position:fixed;z-index:10000;background:' + menuBg + ';border:1px solid ' + menuBorder + ';box-shadow:2px 2px 6px ' + menuShadow + ';display:none;font-size:12px;min-width:120px;border-radius:4px;padding:4px 0';
-		const showItem = (text, action) => {
-			const item = document.createElement('div');
+		var isDark = document.body.classList.contains("dark-theme");
+		var menuBg = isDark ? "#404040" : "#fff";
+		var menuBorder = isDark ? "#222" : "#d9d9d9";
+		var menuShadow = isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.2)";
+		var textColor = isDark ? "#e5e5e5" : "#333";
+		var hoverBg = isDark ? "#6283a2" : "#e6f7ff";
+		var menu = document.getElementById("ctx-menu") || (function() {
+			var m = document.createElement("div");
+			m.id = "ctx-menu";
+			document.body.appendChild(m);
+			document.addEventListener("click", function() { m.style.display = "none"; });
+			return m;
+		})();
+		menu.style.cssText = "position:fixed;z-index:10000;background:" + menuBg + ";border:1px solid " + menuBorder + ";box-shadow:2px 2px 6px " + menuShadow + ";display:none;font-size:12px;min-width:120px;border-radius:4px;padding:4px 0";
+		function showItem(text, action) {
+			var item = document.createElement("div");
 			item.textContent = text;
-			item.style.cssText = 'padding:8px 16px;cursor:pointer;color:' + textColor + ';user-select:none;transition:background 0.2s;';
-			item.onmouseenter = () => (item.style.backgroundColor = hoverBg);
-			item.onmouseleave = () => (item.style.backgroundColor = '');
-			item.onclick = () => {
-				menu.style.display = 'none';
-				action();
-			};
+			item.style.cssText = "padding:8px 16px;cursor:pointer;color:" + textColor + ";user-select:none;transition:background 0.2s;";
+			item.onmouseenter = function() { item.style.backgroundColor = hoverBg; };
+			item.onmouseleave = function() { item.style.backgroundColor = ""; };
+			item.onclick = function() { menu.style.display = "none"; action(); };
 			menu.appendChild(item);
-		};
-		menu.innerHTML = '';
-		showItem('加载项目', () => {
-			window.projectManager.openProject(projectId);
-			eda.sys_Message.showToastMessage('已加载项目：' + name, 'info', 1);
+		}
+		menu.innerHTML = "";
+		showItem("加载项目", async function() {
+			try {
+				var project = await window.projectManager.loadProjectById(projectId);
+				if (!project) { project = await window.projectManager.loadProjectByUuid(uuid); }
+				if (!project) { eda.sys_Message.showToastMessage("项目不存在", "error", 2); return; }
+				var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith(".js")));
+				if (isScript) {
+					await window.leftNavPanel.openScriptProject(project.id);
+				} else {
+					await window.leftNavPanel.openProject(project.id);
+					var sf = startupFile || btn.getAttribute("data-startup-file");
+					if (sf && window.fileTreeUI) { await window.fileTreeUI.loadFile(sf); }
+				}
+			} catch(e) {
+				eda.sys_Message.showToastMessage("加载项目失败: " + e.message, "error", 2);
+			}
 		});
-		showItem('删除', () => {
-			deleteBtnFromDB(uuid)
-				.then(() => {
-					li.remove();
-					eda.sys_Message.showToastMessage('已删除快捷按钮 "' + name + '"', 'info', 1);
-				})
-				.catch((err) => {
-					console.error('删除失败:', err);
-					eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 1);
-				});
+		showItem("删除", function() {
+			deleteBtnFromDB(uuid).then(function() {
+				li.remove();
+				eda.sys_Message.showToastMessage("已删除快捷按钮: " + name, "info", 1);
+			}).catch(function(err) {
+				console.error("删除失败:", err);
+				eda.sys_Message.showToastMessage("删除失败: " + err.message, "error", 1);
+			});
 		});
-		const x = e.pageX;
-		const y = e.pageY;
-		const w = window.innerWidth;
-		const h = window.innerHeight;
-		const mw = 120;
-		const mh = 80;
-		menu.style.left = Math.min(x, w - mw - 5) + 'px';
-		menu.style.top = Math.min(y, h - mh - 5) + 'px';
-		menu.style.display = 'block';
+		menu.style.left = Math.min(e.pageX, window.innerWidth - 130) + "px";
+		menu.style.top = Math.min(e.pageY, window.innerHeight - 90) + "px";
+		menu.style.display = "block";
 	};
 
 	li.appendChild(btn);
 	return li;
 }
 
-// ==========================
 // 初始化快捷按钮数据库
 // ==========================
 function BtnStore_Init() {
@@ -655,69 +693,198 @@ function BtnStore_Init() {
 }
 
 // 映射项目到顶部菜单
+async function _selectStartupFile(project) {
+	var files = project.files || [];
+	var candidates = [];
+	files.forEach(function(f) {
+		var name = f.fileName;
+		var ext = name.split(".").pop().toLowerCase();
+		if (ext === "html" || ext === "js") candidates.push({ fileName: name, ext: ext });
+	});
+	if (candidates.length === 0) return null;
+	if (candidates.length === 1) return candidates[0].fileName;
+
+	candidates.sort(function(a, b) {
+		if (a.ext !== b.ext) return a.ext === "html" ? -1 : 1;
+		var aIdx = a.fileName.replace(/.*\//, "").toLowerCase() === "index.html";
+		var bIdx = b.fileName.replace(/.*\//, "").toLowerCase() === "index.html";
+		if (aIdx !== bIdx) return aIdx ? -1 : 1;
+		return a.fileName.localeCompare(b.fileName);
+	});
+
+	return new Promise(function(resolve) {
+		var isDark = document.body.classList.contains("dark-theme");
+		var bg = isDark ? "#404040" : "#fff";
+		var fg = isDark ? "#e5e5e5" : "#333";
+		var border = isDark ? "#555" : "#d9d9d9";
+		var selBg = isDark ? "#0d6efd" : "#e6f7ff";
+		var selFg = isDark ? "#fff" : "#333";
+		var hoverBg = isDark ? "#505050" : "#f5f5f5";
+		var btnBg = isDark ? "#0d6efd" : "#1890ff";
+		var btnCancelBg = isDark ? "#555" : "#d9d9d9";
+
+		var overlay = document.createElement("div");
+		overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;";
+
+		var modal = document.createElement("div");
+		modal.style.cssText = "background:" + bg + ";color:" + fg + ";border-radius:8px;padding:20px;min-width:380px;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:12px;";
+
+		var title = document.createElement("div");
+		title.textContent = "选择启动文件";
+		title.style.cssText = "font-size:16px;font-weight:600;";
+
+		var search = document.createElement("input");
+		search.type = "text";
+		search.placeholder = "搜索文件...";
+		search.style.cssText = "width:100%;padding:6px 10px;border:1px solid " + border + ";border-radius:4px;background:" + bg + ";color:" + fg + ";font-size:13px;box-sizing:border-box;";
+
+		var list = document.createElement("div");
+		list.style.cssText = "max-height:300px;overflow-y:auto;border:1px solid " + border + ";border-radius:4px;";
+
+		var btnRow = document.createElement("div");
+		btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
+
+		var cancelBtn = document.createElement("button");
+		cancelBtn.textContent = "取消";
+		cancelBtn.style.cssText = "padding:6px 16px;border:none;border-radius:4px;cursor:pointer;background:" + btnCancelBg + ";color:" + fg + ";font-size:13px;";
+
+		var confirmBtn = document.createElement("button");
+		confirmBtn.textContent = "确定";
+		confirmBtn.style.cssText = "padding:6px 16px;border:none;border-radius:4px;cursor:pointer;background:" + btnBg + ";color:#fff;font-size:13px;";
+
+		var selectedFile = null;
+
+		function renderItems() {
+			list.innerHTML = "";
+			candidates.forEach(function(c) {
+				var div = document.createElement("div");
+				div.setAttribute("data-filename", c.fileName);
+				div.style.cssText = "padding:8px 10px;cursor:pointer;border-bottom:1px solid " + border + ";font-size:13px;color:" + fg + ";";
+				div.textContent = c.fileName + " [" + c.ext.toUpperCase() + "]";
+				div.onclick = function() {
+					list.querySelectorAll("div").forEach(function(x) { x.style.background = ""; x.style.color = fg; });
+					div.style.background = selBg;
+					div.style.color = selFg;
+					selectedFile = c.fileName;
+				};
+				div.onmouseenter = function() { if (selectedFile !== c.fileName) { div.style.background = hoverBg; } };
+				div.onmouseleave = function() { if (selectedFile !== c.fileName) { div.style.background = ""; } };
+				list.appendChild(div);
+			});
+		}
+
+		search.oninput = function() {
+			var v = search.value.toLowerCase();
+			list.querySelectorAll("div").forEach(function(el) {
+				el.style.display = el.textContent.toLowerCase().indexOf(v) >= 0 ? "" : "none";
+			});
+		};
+
+		function close(sel) {
+			overlay.remove();
+			resolve(sel);
+		}
+
+		cancelBtn.onclick = function() { close(null); };
+		confirmBtn.onclick = function() {
+			if (!selectedFile) {
+				eda.sys_Message.showToastMessage("请选择一个启动文件", "warn", 1);
+				return;
+			}
+			close(selectedFile);
+		};
+		overlay.onclick = function(e) { if (e.target === overlay) close(null); };
+
+		btnRow.appendChild(cancelBtn);
+		btnRow.appendChild(confirmBtn);
+		modal.appendChild(title);
+		modal.appendChild(search);
+		modal.appendChild(list);
+		modal.appendChild(btnRow);
+		overlay.appendChild(modal);
+		document.body.appendChild(overlay);
+
+		renderItems();
+		search.focus();
+	});
+}
+
 async function Project_SaveToBtnList(projectId) {
-	const project = await window.projectManager.loadProjectById(projectId);
+	var project = await window.projectManager.loadProjectById(projectId);
 	if (!project) {
-		eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+		eda.sys_Message.showToastMessage("项目不存在", "error", 2);
 		return;
 	}
 
-	try {
-		const db = await BtnStore_Init();
+	if (!project.uuid) {
+		project.uuid = generateUUID();
+		await window.projectManager.saveProject(project);
+	}
 
-		// 检查是否已存在相同 projectId 的映射
-		const allRecords = await new Promise((resolve, reject) => {
-			const tx = db.transaction(['BtnList'], 'readonly');
-			const req = tx.objectStore('BtnList').getAll();
-			req.onsuccess = () => resolve(req.result || []);
+	try {
+		var db = await BtnStore_Init();
+
+		var allRecords = await new Promise(function(resolve, reject) {
+			var tx = db.transaction(["BtnList"], "readonly");
+			var req = tx.objectStore("BtnList").getAll();
+			req.onsuccess = function() { resolve(req.result || []); };
 			req.onerror = reject;
 		});
 
-		const existing = allRecords.find(r => r.projectId === projectId);
+		var existing = allRecords.find(function(r) { return r.projectId === projectId || r.uuid === project.uuid; });
 		if (existing) {
-			eda.sys_Message.showToastMessage('当前脚本已经映射为顶部菜单：' + existing.name, 'info', 2);
+			db.close();
+			eda.sys_Message.showToastMessage("当前项目 " + project.projectName + " 已经映射为顶部菜单：" + existing.name, "info", 2);
 			return;
 		}
 
-		// 获取按钮名称
-		const nameResult = await Swal.fire({
-			title: '映射到顶部菜单',
-			input: 'text',
-			inputLabel: '按钮名称',
+		var nameResult = await Swal.fire({
+			title: "映射到顶部菜单",
+			input: "text",
+			inputLabel: "按钮名称",
 			inputValue: project.projectName,
-			inputPlaceholder: '例如：我的脚本',
+			inputPlaceholder: "例如：我的项目",
 			showCancelButton: true,
-			confirmButtonText: '保存',
-			cancelButtonText: '取消',
-			inputValidator: (value) => {
-				if (!value || !value.trim()) return '请输入按钮名称';
+			confirmButtonText: "下一步",
+			cancelButtonText: "取消",
+			inputValidator: function(value) {
+				if (!value || !value.trim()) return "请输入按钮名称";
 			},
 		});
-		if (!nameResult.isConfirmed) return;
-		const btnName = nameResult.value.trim();
+		if (!nameResult.isConfirmed) { db.close(); return; }
+		var btnName = nameResult.value.trim();
 
-		const uuid = generateUUID();
+		var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith(".js")));
+		var startupFile = null;
+		if (!isScript) {
+			startupFile = await _selectStartupFile(project);
+			if (startupFile === null) { db.close(); return; }
+		}
 
-		await new Promise((resolve, reject) => {
-			const tx = db.transaction(['BtnList'], 'readwrite');
-			const store = tx.objectStore('BtnList');
-			const req = store.add({
-				uuid: uuid,
-				projectId: projectId,
-				name: btnName,
-				createdAt: new Date().toISOString()
-			});
+		await new Promise(function(resolve, reject) {
+			var tx = db.transaction(["BtnList"], "readwrite");
+			var store = tx.objectStore("BtnList");
+			var record = { uuid: project.uuid, projectId: project.id, name: btnName, createdAt: new Date().toISOString() };
+			if (startupFile) record.startupFile = startupFile;
+			var req = store.add(record);
 			req.onsuccess = resolve;
 			req.onerror = reject;
 		});
 
-		const li = createQuickButton(window.editor, btnName, uuid, projectId);
-		document.getElementById('quick-btn-list')?.appendChild(li);
-		eda.sys_Message.showToastMessage('已映射到顶部菜单', 'success', 2);
+		db.close();
+		var li = createQuickButton(window.editor, btnName, project.uuid, project.id, startupFile);
+		var ul = document.getElementById("quick-btn-list");
+		if (ul) ul.appendChild(li);
+		if (startupFile) {
+			eda.sys_Message.showToastMessage("已映射到顶部菜单，启动文件：" + startupFile, "success", 2);
+		} else {
+			eda.sys_Message.showToastMessage("已映射到顶部菜单", "success", 2);
+		}
 	} catch(e) {
-		eda.sys_Message.showToastMessage('保存失败: ' + e.message, 'error', 2);
+		eda.sys_Message.showToastMessage("保存失败: " + e.message, "error", 2);
 	}
 }
+
 async function Code_SaveToBtnList(editor) {
 	// 新架构：提示用户先创建项目
 	eda.sys_Dialog.showConfirmationMessage(
@@ -754,7 +921,7 @@ async function Code_LoadBtnListFromDB(editor) {
 		if (!ul) return;
 
 		records.forEach((record) => {
-			const li = createQuickButton(editor, record.name, record.uuid, record.projectId);
+			const li = createQuickButton(editor, record.name, record.uuid, record.projectId, record.startupFile);
 			ul.appendChild(li);
 		});
 	} catch (error) {

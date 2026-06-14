@@ -23,7 +23,7 @@
 	display: flex; align-items: center; padding: 4px 6px; margin: 1px 0;
 	border-radius: 2px; cursor: pointer; transition: background 0.2s; user-select: none;
 }
-.file-tree-folder:hover { background: var(--eext-hover-bg); }
+.file-tree-folder:hover { background: rgba(24, 144, 255, 0.4); }
 
 .folder-toggle { font-size: 10px; margin-right: 4px; color: var(--eext-text-secondary); width: 12px; display: inline-block; }
 .file-tree-folder.selected .folder-toggle { color: var(--eext-text-primary); font-weight: bold; }
@@ -34,7 +34,7 @@
 	display: flex; align-items: center; padding: 4px 6px; margin: 1px 0;
 	border-radius: 2px; cursor: pointer; transition: background 0.2s; position: relative;
 }
-.file-tree-item:hover { background: var(--eext-hover-bg); }
+.file-tree-item:hover { background: rgba(24, 144, 255, 0.4); }
 .file-tree-item.active { background: var(--eext-selected-bg); border-left: 3px solid var(--eext-brand); }
 .file-tree-item.selected, .file-tree-folder.selected { background: var(--eext-selected-bg); border-left: 3px solid var(--eext-brand-hover); }
 .file-tree-item.active.selected { background: var(--eext-selected-bg); border-left: 3px solid var(--eext-brand); }

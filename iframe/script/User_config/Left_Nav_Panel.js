@@ -3,13 +3,6 @@
  * 管理三个视图：所有项目、项目设计、常用代码
  */
 
-function generateUUID() {
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-		var r = Math.random() * 16 | 0;
-		return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-	});
-}
-
 class LeftNavPanel {
 	constructor(editor) {
 		this.editor = editor;
