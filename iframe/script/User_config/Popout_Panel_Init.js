@@ -179,6 +179,9 @@ if (activeBuiltInProjectId) {
 					window.fileTreeUI.loadFile = function(fileName) {
 						try { eda.sys_MessageBus.publishPublic('popout-load-file', { fileName: fileName }); } catch (e) {}
 					};
+					window.fileTreeUI.popupPreviewHtml = function(fileName) {
+						try { eda.sys_MessageBus.publishPublic('popout-popup-preview', { fileName: fileName }); } catch (e) {}
+					};
 				}
 			}
 		});
@@ -203,6 +206,9 @@ if (activeBuiltInProjectId) {
 					if (window.fileTreeUI) {
 						window.fileTreeUI.loadFile = function(fileName) {
 							try { eda.sys_MessageBus.publishPublic('popout-load-file', { fileName: fileName }); } catch (e) {}
+						};
+						window.fileTreeUI.popupPreviewHtml = function(fileName) {
+							try { eda.sys_MessageBus.publishPublic('popout-popup-preview', { fileName: fileName }); } catch (e) {}
 						};
 					}
 				}
