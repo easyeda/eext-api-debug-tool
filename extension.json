@@ -6,7 +6,7 @@
 	"version": "2.6.7",
 	"publisher": "嘉立创EDA",
 	"engines": {
-		"eda": "^>=3.1.59"
+		"eda": ">=3.1.59"
 	},
 	"license": "Apache-2.0",
 	"repository": {
