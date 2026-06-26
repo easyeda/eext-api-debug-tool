@@ -5,7 +5,7 @@
 
 const THEME_PRESETS = {
 	light: {
-		name: '亮色',
+		name: 'Light',
 		aceTheme: 'ace/theme/github',
 		bodyClass: 'light-theme',
 		vars: {
@@ -38,7 +38,7 @@ const THEME_PRESETS = {
 	},
 
 	dark: {
-		name: '暗色',
+		name: 'Dark',
 		aceTheme: 'ace/theme/monokai',
 		bodyClass: 'dark-theme',
 		vars: {
@@ -71,7 +71,7 @@ const THEME_PRESETS = {
 	},
 
 	'dark-editor': {
-		name: '黑底白图',
+		name: 'Mono',
 		aceTheme: 'ace/theme/monokai',
 		bodyClass: 'dark-editor-theme',
 		vars: {

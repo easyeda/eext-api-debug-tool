@@ -6,31 +6,31 @@
 
 ---
 
-![img1](image/README/img1.png)
+![img1](images/README/img1.png)
 
 ## API自动生成测试用例
 
-![img2](image/README/749167ce6b11.gif)
+![img2](images/README/749167ce6b11.gif)
 
 ## API自动区分PCB和原理图
 
-![img3](image/README/img3.png)
+![img3](images/README/img3.png)
 
 ## 支持自定义补全 编辑补全参数
 
-![img4](image/README/img4.png)
+![img4](images/README/img4.png)
 
 ## 三套内置风格与自定义图元
 
-![img](image/README/1ae281237a.png)
+![img](images/README/1ae281237a.png)
 
 ## 带路径引用的html在线预览
 
-![img6](image/README/img6.png)
+![img6](images/README/img6.png)
 
 ## 一种全新的基于工作流的插件开发方式
 
-![alt text](images/工作流.png)
+![alt text](imagess/工作流.png)
 
 ## 特性
 

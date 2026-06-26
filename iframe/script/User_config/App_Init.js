@@ -220,11 +220,11 @@ window.addEventListener("beforeunload", function() {
 
 async function saveCurrentProjectFile() {
 	if (!window.projectManager.currentFile || !window.projectManager.currentProject) {
-		eda.sys_Message.showToastMessage("没有打开的项目文件", "warn", 1);
+		eda.sys_Message.showToastMessage("No project file open", "warn", 1);
 		return;
 	}
 	if (window.projectManager.currentProject.isBuiltIn) {
-		eda.sys_Message.showToastMessage("内置项目不可保存", "warn", 1);
+		eda.sys_Message.showToastMessage("Built-in projects cannot be saved", "warn", 1);
 		return;
 	}
 	try {
@@ -236,9 +236,9 @@ async function saveCurrentProjectFile() {
 			window.fileTreeUI._registerDirtyListener();
 			await window.fileTreeUI.render();
 		}
-		eda.sys_Message.showToastMessage("已保存: " + window.projectManager.currentFile, "success", 1);
+		eda.sys_Message.showToastMessage("Saved: " + window.projectManager.currentFile, "success", 1);
 	} catch(e) {
-		eda.sys_Message.showToastMessage("保存失败: " + e.message, "error", 2);
+		eda.sys_Message.showToastMessage("Save failed: " + e.message, "error", 2);
 	}
 }
 
@@ -292,19 +292,19 @@ var TabManager = {
 
 		if (tab.dirty) {
 			var result = await Swal.fire({
-				title: "未保存的更改",
-				html: "文件 <strong>" + tab.label + "</strong> 有未保存的更改，是否保存？",
+				title: "Unsaved Changes",
+				html: "File <strong>" + tab.label + "</strong> has unsaved changes. Save it?",
 				icon: "warning",
 				showDenyButton: true,
 				showCancelButton: true,
-				confirmButtonText: "保存",
-				denyButtonText: "不保存",
-				cancelButtonText: "取消",
+				confirmButtonText: "Save",
+				denyButtonText: "Don't Save",
+				cancelButtonText: "Cancel",
 			});
 			if (result.isConfirmed) {
 				await window.projectManager.saveFileContent(tab.fileName, editor.getValue());
 				if (window.fileTreeUI) { window.fileTreeUI._dirty = false; window.fileTreeUI._registerDirtyListener(); }
-				eda.sys_Message.showToastMessage("已保存: " + tab.label, "success", 1);
+				eda.sys_Message.showToastMessage("Saved: " + tab.label, "success", 1);
 			} else if (result.isDenied) {
 			} else { return; }
 		}
@@ -466,10 +466,10 @@ async function handleRunAction() {
 
 		if (window.projectManager && window.projectManager.currentFile) {
 			const ext = window.projectManager.currentFile.split('.').pop().toLowerCase();
-			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? '预览' : '运行';
+			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? 'Preview' : 'Run';
 		} else {
 			const currentMode = editor.session.getMode().$id || '';
-			runBtn.textContent = currentMode.indexOf('markdown') !== -1 ? '预览' : '运行';
+			runBtn.textContent = currentMode.indexOf('markdown') !== -1 ? 'Preview' : 'Run';
 		}
 
 		previewFrame.src = 'about:blank';
@@ -498,9 +498,9 @@ async function handleRunAction() {
 			previewFrame.src = url;
 			editorDiv.style.display = 'none';
 			previewContainer.classList.add('active');
-			runBtn.textContent = '停止';
+			runBtn.textContent = 'Stop';
 
-			eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
+			eda.sys_Message.showToastMessage('HTML preview opened', 'success', 2);
 
 			previewFrame.addEventListener('load', () => {
 				URL.revokeObjectURL(url);
@@ -514,9 +514,9 @@ async function handleRunAction() {
 			previewFrame.src = url;
 			editorDiv.style.display = 'none';
 			previewContainer.classList.add('active');
-			runBtn.textContent = '停止';
+			runBtn.textContent = 'Stop';
 
-			eda.sys_Message.showToastMessage('Markdown 预览已打开', 'success', 2);
+			eda.sys_Message.showToastMessage('Markdown preview opened', 'success', 2);
 
 			previewFrame.addEventListener('load', () => {
 				URL.revokeObjectURL(url);
@@ -539,7 +539,7 @@ async function handleRunAction() {
 			if (isHTML) {
 				if (/<script[^>]+src=/i.test(content)) {
 					eda.sys_Message.showToastMessage(
-						'检测到外部脚本引用，但未在项目中。外部脚本将无法加载，请创建项目或内联脚本。',
+						'External script reference detected but not in a project. External scripts will not load. Create a project or inline the script.',
 						'warn',
 						4
 					);
@@ -551,9 +551,9 @@ async function handleRunAction() {
 				previewFrame.src = url;
 				editorDiv.style.display = 'none';
 				previewContainer.classList.add('active');
-				runBtn.textContent = '停止';
+				runBtn.textContent = 'Stop';
 
-				eda.sys_Message.showToastMessage('HTML 预览已打开', 'success', 2);
+				eda.sys_Message.showToastMessage('HTML preview opened', 'success', 2);
 
 				previewFrame.addEventListener('load', () => {
 					URL.revokeObjectURL(url);
@@ -575,16 +575,16 @@ async function handleRunAction() {
 					previewFrame.src = url;
 					editorDiv.style.display = 'none';
 					previewContainer.classList.add('active');
-					runBtn.textContent = '停止';
+					runBtn.textContent = 'Stop';
 
-					eda.sys_Message.showToastMessage('Markdown 预览已打开', 'success', 2);
+					eda.sys_Message.showToastMessage('Markdown preview opened', 'success', 2);
 
 					previewFrame.addEventListener('load', () => {
 						URL.revokeObjectURL(url);
 					}, { once: true });
 				} else {
 					eda.sys_Message.showToastMessage(
-						'执行失败，内容不是有效的 JS、HTML 或 MD 格式。',
+						'Execution failed: content is not valid JS, HTML, or MD.',
 						'error',
 						4
 					);

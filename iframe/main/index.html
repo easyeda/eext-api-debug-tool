@@ -28,7 +28,7 @@
 				color: var(--eext-text-primary);
 			"
 		>
-			<div style="font-size: 14px; margin-bottom: 12px">正在加载编辑器...</div>
+			<div style="font-size: 14px; margin-bottom: 12px" data-i18n="loadingEditor">正在加载编辑器...</div>
 			<div style="width: 120px; height: 3px; background: var(--eext-border); border-radius: 2px; overflow: hidden">
 				<div
 					id="loading-bar"
@@ -39,9 +39,9 @@
 		<div id="app">
 			<!-- 顶部工具栏 -->
 			<div id="toolbar">
-				<button id="run-btn">运行</button>
-				<button id="file-btn">文件</button>
-				<button id="settings-btn">设置</button>
+				<button id="run-btn" data-i18n="run">运行</button>
+				<button id="file-btn" data-i18n="file">文件</button>
+				<button id="settings-btn" data-i18n="settings">设置</button>
 				<ul id="quick-btn-list"></ul>
 				<button id="ai-btn" style="margin-left: auto">Copilot</button>
 			</div>
@@ -51,31 +51,31 @@
 			<div id="main-content">
 				<!-- 左侧导航面板 -->
 				<div id="left-nav-panel">
-					<button class="nav-button active" id="nav-all-projects" title="所有项目">所有项目</button>
-					<button class="nav-button" id="nav-project-design" title="项目设计">项目设计</button>
-					<button class="nav-button" id="nav-common-code" title="常用代码">常用代码</button>
+					<button class="nav-button active" id="nav-all-projects" title="所有项目" data-i18n="allProjects" data-i18n-title="allProjects">所有项目</button>
+					<button class="nav-button" id="nav-project-design" title="项目设计" data-i18n="projectDesign" data-i18n-title="projectDesign">项目设计</button>
+					<button class="nav-button" id="nav-common-code" title="常用代码" data-i18n="codeSnippets" data-i18n-title="codeSnippets">常用代码</button>
 				</div>
 				<!-- 左侧内容区域 -->
 				<div id="left-content-area">
 					<!-- 项目列表视图 -->
 					<div id="project-list-view" style="display: flex">
 						<div class="project-list-header">
-							<input type="text" class="project-search-box" id="project-search-input" placeholder="搜索项目..." />
-							<button class="import-project-btn" id="import-project-btn" title="导入项目">导入</button>
+							<input type="text" class="project-search-box" id="project-search-input" placeholder="搜索项目..." data-i18n-placeholder="searchProjects" />
+							<button class="import-project-btn" id="import-project-btn" title="导入项目" data-i18n="importBtn" data-i18n-title="importProject">导入</button>
 						</div>
 						<div class="project-list-content" id="project-list-content"></div>
 					</div>
 					<!-- 文件树视图 -->
 					<div id="file-tree" style="display: none">
-						<button id="close-project-btn" class="close-project-btn" title="关闭项目" style="display: none">
+						<button id="close-project-btn" class="close-project-btn" title="关闭项目" data-i18n-title="closeProject" style="display: none">
 							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 						</button>
 					</div>
 					<!-- 补全仓库视图 -->
 					<div id="completer-store-view" style="display: none">
 						<div class="completer-list-header">
-							<div class="completer-header-title">常用代码</div>
-							<input type="text" class="completer-search-box" id="completer-search-input" placeholder="搜索代码..." />
+							<div class="completer-header-title" data-i18n="codeSnippets">常用代码</div>
+							<input type="text" class="completer-search-box" id="completer-search-input" placeholder="搜索代码..." data-i18n-placeholder="searchCode" />
 						</div>
 						<div class="completer-list-content" id="completer-list-content"></div>
 					</div>
@@ -92,7 +92,7 @@
 				<div id="ai-chat" style="display: none">
 					<div class="ai-chat-header">
 						<span class="ai-chat-title" id="ai-model-name">GPT-4 Model</span>
-						<button class="ai-chat-new-conversation-btn" id="ai-new-conversation-btn" title="新建对话">
+						<button class="ai-chat-new-conversation-btn" id="ai-new-conversation-btn" title="新建对话" data-i18n-title="newConversation">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="18"
@@ -107,7 +107,7 @@
 								<path d="M12 5v14M5 12h14"></path>
 							</svg>
 						</button>
-						<button class="ai-chat-settings-btn" id="ai-settings-trigger" title="聊天设置">
+						<button class="ai-chat-settings-btn" id="ai-settings-trigger" title="聊天设置" data-i18n-title="chatSettings">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="18"
@@ -128,12 +128,12 @@
 					</div>
 					<div class="ai-chat-content" id="ai-chat-list">
 						<div class="ai-message ai-message-system">
-							<div class="ai-message-bubble">你好！我是你的 AI 编程助手。有什么可以帮你的吗？</div>
+							<div class="ai-message-bubble" data-i18n="aiWelcome">你好！我是你的 AI 编程助手。有什么可以帮你的吗？</div>
 						</div>
 					</div>
 					<div class="ai-chat-footer">
-						<textarea id="ai-input" placeholder="输入代码问题或指令... (Shift+Enter 换行)" rows="1"></textarea>
-						<button id="ai-send-btn">发送</button>
+						<textarea id="ai-input" placeholder="输入代码问题或指令... (Shift+Enter 换行)" rows="1" data-i18n-placeholder="aiPlaceholder"></textarea>
+						<button id="ai-send-btn" data-i18n="send">发送</button>
 					</div>
 				</div>
 			</div>
@@ -178,6 +178,7 @@
 		<script src="/iframe/script/eext_tool/highlight.min.js"></script>
 		<script src="/iframe/script/eext_tool/marked.min.js"></script>
 		<!-- 应用逻辑 -->
+		<script src="/iframe/script/User_config/I18n.js"></script>
 		<script src="/iframe/script/ext_manifest.js"></script>
 		<script src="/iframe/script/eda_coder/EDA_Codes.js"></script>
 		<script src="/iframe/script/User_config/Project_Manager.js"></script>
@@ -194,5 +195,9 @@
 		<script src="/iframe/script/User_config/Popout_Manager.js"></script>
 		<script src="/iframe/script/User_config/Code_Config.js"></script>
 		<script src="/iframe/script/User_config/App_Init.js"></script>
+		<script>
+			// Initialize i18n (auto-switches via platform API)
+			I18N.applyI18n();
+		</script>
 	</body>
 </html>

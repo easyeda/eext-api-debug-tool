@@ -6,13 +6,13 @@ async function SetVibeCodingConfig() {
 		const chatEl = document.getElementById('ai-chat');
 		if (chatEl) chatEl.style.display = 'none';
 		const btn = document.getElementById('ai-btn');
-		if (btn) btn.innerText = 'Copilot：关';
+		if (btn) btn.innerText = 'Copilot: Off';
 	} else {
 		try { eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true'); } catch (e) {}
 		const chatEl = document.getElementById('ai-chat');
 		if (chatEl) chatEl.style.display = '';
 		const btn = document.getElementById('ai-btn');
-		if (btn) btn.innerText = 'Copilot：开';
+		if (btn) btn.innerText = 'Copilot: On';
 	}
 }
 
@@ -23,10 +23,10 @@ async function GetVibeCodingConfig() {
 	if (!btn) return;
 	const chatEl = document.getElementById('ai-chat');
 	if (flag == 'true') {
-		btn.innerText = 'Copilot：开';
+		btn.innerText = 'Copilot: On';
 		if (chatEl) chatEl.style.display = '';
 	} else {
-		btn.innerText = 'Copilot：关';
+		btn.innerText = 'Copilot: Off';
 		if (chatEl) chatEl.style.display = 'none';
 	}
 }
@@ -48,7 +48,7 @@ function initAiChat() {
 	}
 
 	const defaultProfile = {
-		name: '默认',
+		name: 'Default',
 		apiKey: '',
 		baseUrl: 'https://api.openai.com/v1',
 		model: 'gpt-4',
@@ -65,7 +65,7 @@ function initAiChat() {
 		const old = localStorage.getItem('ai_chat_config');
 		if (old) {
 			const oldCfg = JSON.parse(old);
-			profiles = [{ ...defaultProfile, ...oldCfg, name: '默认' }];
+			profiles = [{ ...defaultProfile, ...oldCfg, name: 'Default' }];
 			localStorage.setItem('ai_profiles', JSON.stringify(profiles));
 			localStorage.removeItem('ai_chat_config');
 		}
@@ -73,7 +73,7 @@ function initAiChat() {
 	try {
 		const saved = localStorage.getItem('ai_profiles');
 		if (saved) { const p = JSON.parse(saved); if (Array.isArray(p) && p.length) profiles = p; }
-	} catch (e) { console.error('加载配置集失败', e); }
+	} catch (e) { console.error('Failed to load profile set', e); }
 	try {
 		const idx = localStorage.getItem('ai_active_profile');
 		if (idx !== null) { const n = parseInt(idx); if (n >= 0 && n < profiles.length) activeIdx = n; }
@@ -87,7 +87,7 @@ function initAiChat() {
 	try {
 		const storedHistory = localStorage.getItem('ai_chat_history');
 		if (storedHistory) messageHistory = JSON.parse(storedHistory);
-	} catch (e) { console.error('加载历史记录失败', e); messageHistory = []; }
+	} catch (e) { console.error('Failed to load history', e); messageHistory = []; }
 
 	const settingsBtn = document.getElementById('ai-settings-trigger');
 	const sendBtn = document.getElementById('ai-send-btn');
@@ -112,15 +112,15 @@ function initAiChat() {
 			if (!codeElement) return;
 			const btn = document.createElement('button');
 			btn.className = 'code-copy-btn';
-			btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>复制</span>`;
+			btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>`;
 			btn.onclick = async () => {
 				const text = codeElement.innerText;
 				try {
 					await navigator.clipboard.writeText(text);
 					btn.classList.add('copied');
-					btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>已复制</span>`;
-					setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>复制</span>`; }, 2000);
-				} catch (err) { console.error('复制失败:', err); }
+					btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Copied</span>`;
+					setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>`; }, 2000);
+				} catch (err) { console.error('Copy failed:', err); }
 			};
 			pre.appendChild(btn);
 		});
@@ -131,13 +131,13 @@ function initAiChat() {
 		const cfg = getActive();
 		let opts = '';
 		profiles.forEach((p, i) => {
-			opts += `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${p.name || '配置 ' + (i + 1)}</option>`;
+			opts += `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${p.name || 'Profile ' + (i + 1)}</option>`;
 		});
-		return `<div class="ai-form-group"><label class="ai-form-label">配置方案</label>
+		return `<div class="ai-form-group"><label class="ai-form-label">Profile</label>
 			<div style="display:flex;gap:6px;align-items:center;">
 				<select id="cfg-profile-select" style="flex:1;height:24px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;background:var(--eext-bg-input);color:var(--eext-text-primary);padding:0 4px;">${opts}</select>
-				<button id="cfg-profile-new" title="新建" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;">新建</button>
-				<button id="cfg-profile-del" title="删除" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;${profiles.length <= 1 ? 'display:none;' : ''}">删除</button>
+				<button id="cfg-profile-new" title="New" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;">New</button>
+				<button id="cfg-profile-del" title="Delete" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;${profiles.length <= 1 ? 'display:none;' : ''}">Delete</button>
 			</div></div>`;
 	}
 
@@ -148,9 +148,9 @@ function initAiChat() {
 		overlay.id = 'ai-settings-modal-overlay';
 		overlay.innerHTML = `<div class="ai-modal">
 			<div class="ai-modal-header">
-				<span class="ai-modal-title">AI 配置设置</span>
+				<span class="ai-modal-title">AI Settings</span>
 				<div style="display:flex;align-items:center;gap:8px;">
-					<button class="ai-modal-close" id="ai-modal-close-btn" title="关闭">
+					<button class="ai-modal-close" id="ai-modal-close-btn" title="Close">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 					</button>
 				</div>
@@ -161,7 +161,7 @@ function initAiChat() {
 					<label class="ai-form-label">API Key</label>
 					<div style="position:relative;flex:1;">
 						<input type="password" id="cfg-api-key" class="ai-form-input" value="${cfg.apiKey || ''}" style="width:100%;padding-right:40px;">
-						<button id="toggle-api-key-visibility" class="api-key-eye-btn" type="button" title="显示/隐藏">
+						<button id="toggle-api-key-visibility" class="api-key-eye-btn" type="button" title="Show/Hide">
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 						</button>
 					</div>
@@ -175,8 +175,8 @@ function initAiChat() {
 					<input type="text" id="cfg-model" class="ai-form-input" value="${cfg.model || ''}">
 				</div>
 				<div class="ai-form-group">
-					<label class="ai-form-label">预设名称</label>
-					<input type="text" id="cfg-profile-name" class="ai-form-input" value="${cfg.name || ''}" placeholder="给这个配置起个名字">
+					<label class="ai-form-label">Profile Name</label>
+					<input type="text" id="cfg-profile-name" class="ai-form-input" value="${cfg.name || ''}" placeholder="Name this profile">
 				</div>
 				<div class="ai-form-group">
 					<label class="ai-form-label">Temperature</label>
@@ -187,18 +187,18 @@ function initAiChat() {
 						<label class="ai-checkbox-label">
 							<input type="checkbox" id="cfg-multi-turn" ${cfg.multiTurn ? 'checked' : ''}>
 							<span class="ai-checkbox"></span>
-							<span class="ai-checkbox-text">多轮对话</span>
+							<span class="ai-checkbox-text">Multi-turn conversation</span>
 						</label>
 						<label class="ai-checkbox-label">
 							<input type="checkbox" id="cfg-stream" ${cfg.stream ? 'checked' : ''}>
 							<span class="ai-checkbox"></span>
-							<span class="ai-checkbox-text">流式输出</span>
+							<span class="ai-checkbox-text">Stream output</span>
 						</label>
 					</div>
 				</div>
 			<div class="ai-modal-footer">
-				<button class="ai-btn ai-btn-cancel" id="ai-modal-cancel-btn">取消</button>
-				<button class="ai-btn ai-btn-save" id="ai-modal-save-btn">保存配置</button>
+				<button class="ai-btn ai-btn-cancel" id="ai-modal-cancel-btn">Cancel</button>
+				<button class="ai-btn ai-btn-save" id="ai-modal-save-btn">Save</button>
 			</div></div>`;
 
 		const style = document.createElement('style');
@@ -264,7 +264,7 @@ function initAiChat() {
 	}
 
 	function createNewProfile() {
-		const newProfile = { name: '配置 ' + (profiles.length + 1), apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4', multiTurn: true, stream: true, temperature: 0.7 };
+		const newProfile = { name: 'Profile ' + (profiles.length + 1), apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4', multiTurn: true, stream: true, temperature: 0.7 };
 		profiles.push(newProfile);
 		saveProfiles();
 		switchProfile(profiles.length - 1);
@@ -279,7 +279,7 @@ function initAiChat() {
 		cfg.multiTurn = document.getElementById('cfg-multi-turn').checked;
 		cfg.stream = document.getElementById('cfg-stream').checked;
 		cfg.temperature = parseFloat(document.getElementById('cfg-temperature').value) || 0.7;
-		if (!cfg.apiKey) { eda.sys_Message.showToastMessage('请填写 API Key', 'warn', 2); return; }
+		if (!cfg.apiKey) { eda.sys_Message.showToastMessage('Please fill in the API Key', 'warn', 2); return; }
 		saveProfiles();
 		if (!cfg.multiTurn) {
 			messageHistory = [];
@@ -287,7 +287,7 @@ function initAiChat() {
 			localStorage.removeItem('ai_chat_history');
 		}
 		updateModelDisplay();
-		eda.sys_Message.showToastMessage('配置已保存', 'success', 1);
+		eda.sys_Message.showToastMessage('Configuration saved', 'success', 1);
 		// 重建 modal 使下拉选项名称同步
 		closeModal();
 		modalOverlay.remove(); modalOverlay = null;
@@ -368,7 +368,7 @@ function initAiChat() {
 		if (!rawText) return;
 		const cfg = getActive();
 		if (!cfg.apiKey) {
-			eda.sys_Message.showToastMessage('请先配置 API Key', 'warn', 2);
+			eda.sys_Message.showToastMessage('Please configure the API Key first', 'warn', 2);
 			openModal();
 			return;
 		}
@@ -378,7 +378,7 @@ function initAiChat() {
 		inputArea.style.height = 'auto';
 		const loadingElements = appendMessage('system', '', false, true);
 
-		const systemInstruction = `你是一个智能编程助手。你拥有操作当前编辑器的能力。请严格遵守以下规则：\n1. **隐形指令**：如果你需要操作编辑器，请在回复的**最第一行**插入特殊标记。这个标记是系统内部指令，**绝对不要**在标记后向用户解释它，也**不要**把它作为普通文本展示给用户。系统会自动识别并隐藏它。\n2. **读取代码**：如果需要查看代码，第一行必须仅包含：[ACTION: READ_CODE]\n3. **写入代码**：如果需要写代码，第一行必须仅包含：[ACTION: WRITE_CODE]，紧接着换行后提供完整的代码块（必须包含语言标识，如 \`\`\`javascript）。\n4. **正常回答**：如果不需操作编辑器，直接回答用户问题。`;
+		const systemInstruction = `You are an intelligent coding assistant with the ability to operate the current editor. Strictly follow these rules:\n1. **Hidden instruction**: If you need to operate the editor, insert a special marker on the **very first line** of your reply. This marker is an internal system instruction. **Never** explain it to the user afterwards, and **never** show it as plain text. The system will automatically detect and hide it.\n2. **Read code**: If you need to view code, the first line must contain only: [ACTION: READ_CODE]\n3. **Write code**: If you need to write code, the first line must contain only: [ACTION: WRITE_CODE], followed by a newline and the complete code block (must include a language identifier, e.g. \`\`\`javascript).\n4. **Normal reply**: If no editor operation is needed, answer the user's question directly.`;
 
 		const currentMessages = [{ role: 'system', content: systemInstruction }, ...messageHistory, { role: 'user', content: rawText }];
 
@@ -396,11 +396,11 @@ function initAiChat() {
 				body: JSON.stringify({ model: cfg.model, messages: currentMessages, stream: false, temperature: cfg.temperature }),
 			});
 			if (!response.ok) {
-				const errData = await response.json().catch(() => ({ error: { message: '未知错误' } }));
+				const errData = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
 				throw new Error(errData.error?.message || `HTTP ${response.status}`);
 			}
 			const data = await response.json();
-			fullResponse = data.choices?.[0]?.message?.content || '无内容';
+			fullResponse = data.choices?.[0]?.message?.content || 'No content';
 			if (loadingElements?.msgDiv) loadingElements.msgDiv.remove();
 			await processAiActions(fullResponse, 0);
 		} catch (error) {
@@ -422,11 +422,11 @@ function initAiChat() {
 				let codeContent = '';
 				if (typeof editor !== 'undefined' && editor && typeof editor.getValue === 'function') codeContent = editor.getValue();
 				if (!codeContent) {
-					finalDisplayText = (finalDisplayText || '好的') + '\n\n检测到您想分析代码，但编辑器当前为空。';
+					finalDisplayText = (finalDisplayText || 'OK') + '\n\nIt looks like you want to analyze code, but the editor is currently empty.';
 				} else {
 					const tempLoading = appendMessage('system', '', false, true);
 					try {
-						const retryMessages = [{ role: 'system', content: systemInstruction }, ...messageHistory, { role: 'user', content: rawText }, { role: 'user', content: `[系统自动注入]: 这是当前编辑器的代码内容:\n\`\`\`\n${codeContent}\n\`\`\`\n请基于此代码回答用户最初的问题。` }];
+						const retryMessages = [{ role: 'system', content: systemInstruction }, ...messageHistory, { role: 'user', content: rawText }, { role: 'user', content: `[System auto-injected]: Here is the current editor code:\n\`\`\`\n${codeContent}\n\`\`\`\nPlease answer the user's original question based on this code.` }];
 						const retryResp = await fetch(`${cfg.baseUrl}/chat/completions`, {
 							method: 'POST',
 							headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
@@ -434,14 +434,14 @@ function initAiChat() {
 						});
 						if (retryResp.ok) {
 							const retryData = await retryResp.json();
-							finalDisplayText = retryData.choices?.[0]?.message?.content || '分析完成';
+							finalDisplayText = retryData.choices?.[0]?.message?.content || 'Analysis complete';
 							if (tempLoading?.msgDiv) tempLoading.msgDiv.remove();
 							await processAiActions(finalDisplayText, depth + 1);
 							return;
-						} else { throw new Error('二次请求失败'); }
+						} else { throw new Error('Second request failed'); }
 					} catch (e) {
 						if (tempLoading?.msgDiv) tempLoading.msgDiv.remove();
-						finalDisplayText += '\n\n自动获取代码后重新生成失败：' + e.message;
+						finalDisplayText += '\n\nFailed to regenerate after auto-fetching code: ' + e.message;
 					}
 				}
 			}
@@ -454,12 +454,12 @@ function initAiChat() {
 				if (mdMatch) {
 					codeToWrite = mdMatch[1];
 					const afterCode = rawCodeBlock.replace(/^```[\w]*\n[\s\S]*?\n```/, '').trim();
-					finalDisplayText = afterCode || '代码已写入编辑器。';
-				} else { codeToWrite = rawCodeBlock; finalDisplayText = '代码已写入编辑器。'; }
+					finalDisplayText = afterCode || 'Code written to editor.';
+				} else { codeToWrite = rawCodeBlock; finalDisplayText = 'Code written to editor.'; }
 				if (typeof editor !== 'undefined' && editor && typeof editor.setValue === 'function') {
 					if (cfg.stream) await typeWriterWriteToEditor(codeToWrite);
 					else editor.setValue(codeToWrite, -1);
-				} else { finalDisplayText += '\n\n未检测到编辑器，无法写入。'; }
+				} else { finalDisplayText += '\n\nNo editor detected; cannot write.'; }
 			}
 
 			renderFinalResponse(finalDisplayText);
@@ -523,7 +523,7 @@ function initAiChat() {
 		function showError(msg) {
 			const errDiv = document.createElement('div');
 			errDiv.className = 'ai-message ai-message-system';
-			errDiv.innerHTML = `<div class="ai-message-bubble" style="background:var(--eext-error-bg);border-color:var(--eext-btn-color);color:var(--eext-error-text);">错误：${msg}</div>`;
+			errDiv.innerHTML = `<div class="ai-message-bubble" style="background:var(--eext-error-bg);border-color:var(--eext-btn-color);color:var(--eext-error-text);">Error: ${msg}</div>`;
 			chatList.appendChild(errDiv);
 			chatList.scrollTop = chatList.scrollHeight;
 		}

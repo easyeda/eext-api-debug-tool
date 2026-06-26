@@ -11,7 +11,7 @@ class HTMLRenderer {
 	// 渲染 HTML 预览
 	async renderHTML(projectManager, editor) {
 		if (!projectManager.currentProject) {
-			eda.sys_Message.showToastMessage('请先创建或打开一个项目', 'warn', 2);
+			eda.sys_Message.showToastMessage('Please create or open a project first', 'warn', 2);
 			return;
 		}
 
@@ -19,7 +19,7 @@ class HTMLRenderer {
 		const htmlFiles = projectManager.currentProject.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
 
 		if (htmlFiles.length === 0) {
-			eda.sys_Message.showToastMessage('项目中没有 HTML 文件', 'warn', 2);
+			eda.sys_Message.showToastMessage('No HTML file in the project', 'warn', 2);
 			return;
 		}
 
@@ -34,12 +34,12 @@ class HTMLRenderer {
 			});
 
 			const result = await Swal.fire({
-				title: '选择要预览的 HTML 文件',
+				title: 'Select an HTML file to preview',
 				input: 'select',
 				inputOptions: options,
 				showCancelButton: true,
-				confirmButtonText: '预览',
-				cancelButtonText: '取消',
+				confirmButtonText: 'Preview',
+				cancelButtonText: 'Cancel',
 			});
 
 			if (!result.isConfirmed) return;
@@ -167,7 +167,7 @@ class HTMLRenderer {
 		`;
 
 		const title = document.createElement('div');
-		title.textContent = `预览: ${fileName}`;
+		title.textContent = `Preview: ${fileName}`;
 		title.style.cssText = `
 			font-weight: 600;
 			font-size: 16px;

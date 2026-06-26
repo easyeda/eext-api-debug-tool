@@ -100,12 +100,12 @@ class LeftNavPanel {
 				let project;
 				if (existing) {
 					const result = await Swal.fire({
-						title: '项目已存在',
-						html: `已存在名为 "<strong>${this.escapeHtml(projectName)}</strong>" 的项目，是否覆盖？`,
+						title: 'Project Already Exists',
+						html: `A project named "<strong>${this.escapeHtml(projectName)}</strong>" already exists. Overwrite it?`,
 						icon: 'question',
 						showCancelButton: true,
-						confirmButtonText: '覆盖',
-						cancelButtonText: '取消',
+						confirmButtonText: 'Overwrite',
+						cancelButtonText: 'Cancel',
 						confirmButtonColor: '#1890ff',
 					});
 					if (!result.isConfirmed) return;
@@ -132,9 +132,9 @@ class LeftNavPanel {
 
 				await window.projectManager.saveProject(project);
 				await this.loadProjectList();
-				eda.sys_Message.showToastMessage(`项目 "${projectName}" 导入成功，共 ${project.files.length} 个文件`, 'success', 2);
+				eda.sys_Message.showToastMessage(`Project "${projectName}" imported successfully, ${project.files.length} files`, 'success', 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage('导入失败: ' + error.message, 'error', 3);
+				eda.sys_Message.showToastMessage('Import failed: ' + error.message, 'error', 3);
 			}
 		};
 
@@ -234,14 +234,14 @@ class LeftNavPanel {
 		// Dirty check
 		if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
 			Swal.fire({
-				title: "未保存的更改",
-				html: "当前文件 <strong>" + (window.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+				title: "Unsaved Changes",
+				html: "The current file <strong>" + (window.projectManager.currentFile || "") + "</strong> has unsaved changes. Save it?",
 				icon: "warning",
 				showDenyButton: true,
 				showCancelButton: true,
-				confirmButtonText: "保存",
-				denyButtonText: "不保存",
-				cancelButtonText: "取消",
+				confirmButtonText: "Save",
+				denyButtonText: "Don't Save",
+				cancelButtonText: "Cancel",
 			}).then(async (result) => {
 				if (result.isConfirmed) {
 					await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
@@ -275,7 +275,7 @@ class LeftNavPanel {
 
 		this._updateCloseProjectButton();
 		this.switchView("project-design");
-		eda.sys_Message.showToastMessage("项目已关闭", "success", 1);
+		eda.sys_Message.showToastMessage("Project closed", "success", 1);
 	}
 
 	// 获取内置项目列表
@@ -317,8 +317,8 @@ class LeftNavPanel {
 			container.innerHTML = `
 				<div class="project-list-empty">
 					<p>📁</p>
-					<p>还没有项目</p>
-					<p>点击"文件 > 新建项目"创建</p>
+					<p>No projects yet</p>
+					<p>Click "File > New Project" to create one</p>
 				</div>
 			`;
 			return;
@@ -332,19 +332,19 @@ class LeftNavPanel {
 
 		// 渲染内置项目
 		if (builtInProjects.length > 0) {
-			html += '<div class="project-section-title">内置项目</div>';
+			html += '<div class="project-section-title">Built-in projects</div>';
 			builtInProjects.forEach((project) => {
 				const isSelected = this.selectedProjectId === project.id;
 				const isRunning = this._activeBuiltInProjectId === project.id;
 				html += `
 					<div class="project-item ${isSelected ? 'selected' : ''} ${isRunning ? 'builtin-running' : ''}" data-project-id="${project.id}" data-is-builtin="true">
 						<div class="project-item-name">
-							<span class="project-builtin-badge">内置</span>
+							<span class="project-builtin-badge">Built-in</span>
 								<span class="builtin-running-label"></span>
 							${this.escapeHtml(project.projectName)}
 						</div>
 						<div class="project-item-info">
-							<span>${project.files.length} 文件</span>
+							<span>${project.files.length} files</span>
 						</div>
 					</div>
 				`;
@@ -353,20 +353,20 @@ class LeftNavPanel {
 
 		// 渲染用户项目
 		if (userProjects.length > 0) {
-			html += '<div class="project-section-title">我的项目</div>';
+			html += '<div class="project-section-title">My Projects</div>';
 			userProjects.forEach((project) => {
 					const date = new Date(project.updatedAt).toLocaleDateString('zh-CN');
 					const isSelected = this.selectedProjectId === project.id;
 					const isScript = !!(project.files && project.files.length === 1 && /.js$/i.test(project.files[0].fileName) && project.isScript);
 					if (isScript) {
 						html += '<div class="project-item script-item ' + (isSelected ? 'selected' : '') + '" data-project-id="' + project.id + '" data-is-script="true">';
-						html += '<div class="project-item-name"><span class="project-builtin-badge" style="background:var(--eext-brand);">脚本</span>' + this.escapeHtml(project.projectName) + '</div>';
-						html += '<div class="project-item-info"><span>脚本</span><span>' + date + '</span></div>';
+						html += '<div class="project-item-name"><span class="project-builtin-badge" style="background:var(--eext-brand);">Script</span>' + this.escapeHtml(project.projectName) + '</div>';
+						html += '<div class="project-item-info"><span>Script</span><span>' + date + '</span></div>';
 						html += '</div>';
 					} else {
 						html += '<div class="project-item ' + (isSelected ? 'selected' : '') + '" data-project-id="' + project.id + '">';
-						html += '<div class="project-item-name"><span class="project-builtin-badge" style="background:var(--eext-brand);">项目</span>' + this.escapeHtml(project.projectName) + '</div>';
-						html += '<div class="project-item-info"><span>' + project.files.length + ' 文件</span><span>' + date + '</span></div>';
+						html += '<div class="project-item-name"><span class="project-builtin-badge" style="background:var(--eext-brand);">Project</span>' + this.escapeHtml(project.projectName) + '</div>';
+						html += '<div class="project-item-info"><span>' + project.files.length + ' files</span><span>' + date + '</span></div>';
 						html += '</div>';
 					}
 				});
@@ -448,24 +448,24 @@ class LeftNavPanel {
 			var menuItems;
 			if (isScriptProj) {
 				menuItems = [
-					{ text: '打开', action: () => this.openScriptProject(projectId) },
-					{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
-					{ text: '导出', action: () => this.exportScriptAsJs(projectId) },
+					{ text: 'Open', action: () => this.openScriptProject(projectId) },
+					{ text: 'Rename', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: 'Export', action: () => this.exportScriptAsJs(projectId) },
 					{ text: '---', action: null },
-					{ text: '映射到顶部菜单', action: () => Project_SaveToBtnList(projectId) },
-					{ text: '保存为插件', action: () => ExtStore_SavePlugin(this.editor, true) },
+					{ text: 'Map to Top Menu', action: () => Project_SaveToBtnList(projectId) },
+					{ text: 'Save as Plugin', action: () => ExtStore_SavePlugin(this.editor, true) },
 					{ text: '---', action: null },
-					{ text: '删除', action: () => this.showDeleteProjectConfirm(projectId) },
+					{ text: 'Delete', action: () => this.showDeleteProjectConfirm(projectId) },
 				];
 			} else {
 				menuItems = [
-					{ text: '打开', action: () => this.openProject(projectId) },
-					{ text: '重命名', action: () => this.showRenameProjectDialog(projectId) },
-					{ text: '导出', action: () => this.exportProjectAsZip(projectId) },
+					{ text: 'Open', action: () => this.openProject(projectId) },
+					{ text: 'Rename', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: 'Export', action: () => this.exportProjectAsZip(projectId) },
 					{ text: '---', action: null },
-					{ text: '映射到顶部菜单', action: () => Project_SaveToBtnList(projectId) },
+					{ text: 'Map to Top Menu', action: () => Project_SaveToBtnList(projectId) },
 					{ text: '---', action: null },
-					{ text: '删除', action: () => this.showDeleteProjectConfirm(projectId) },
+					{ text: 'Delete', action: () => this.showDeleteProjectConfirm(projectId) },
 				];
 			}
 
@@ -512,17 +512,17 @@ class LeftNavPanel {
 		if (!project) return;
 
 		const result = await Swal.fire({
-			title: '重命名项目',
+			title: 'Rename Project',
 			input: 'text',
 			inputValue: project.projectName,
-			inputLabel: '新项目名称',
+			inputLabel: 'New project name',
 			showCancelButton: true,
-			confirmButtonText: '确定',
-			cancelButtonText: '取消',
+			confirmButtonText: 'OK',
+			cancelButtonText: 'Cancel',
 			inputValidator: (value) => {
-				if (!value) return '请输入项目名称';
-				if (value.length < 2) return '项目名称至少2个字符';
-				if (value === project.projectName) return '名称未改变';
+				if (!value) return 'Please enter a project name';
+				if (value.length < 2) return 'Project name must be at least 2 characters';
+				if (value === project.projectName) return 'Name unchanged';
 			},
 		});
 
@@ -535,9 +535,9 @@ class LeftNavPanel {
 					if (window.fileTreeUI) await window.fileTreeUI.render();
 				}
 
-				eda.sys_Message.showToastMessage('项目重命名成功', 'success', 2);
+				eda.sys_Message.showToastMessage('Project renamed successfully', 'success', 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage('重命名失败: ' + error.message, 'error', 3);
+				eda.sys_Message.showToastMessage('Rename failed: ' + error.message, 'error', 3);
 			}
 		}
 	}
@@ -547,13 +547,13 @@ class LeftNavPanel {
 		const project = this.projects.find((p) => p.id === projectId);
 		if (!project) return;
 
-		const message = `确定要删除项目 "${project.projectName}" 吗？\n\n这将删除项目中的 ${project.files.length} 个文件。\n\n此操作不可恢复！`;
+		const message = `Are you sure you want to delete project "${project.projectName}"?\n\nThis will delete ${project.files.length} files in the project.\n\nThis action cannot be undone!`;
 
 		eda.sys_Dialog.showConfirmationMessage(
 			message,
-			'确认删除',
-			'确认删除',
-			'取消',
+			'Confirm Delete',
+			'Confirm Delete',
+			'Cancel',
 			async (confirmed) => {
 				if (!confirmed) return;
 
@@ -570,9 +570,9 @@ class LeftNavPanel {
 					}
 
 					await this.loadProjectList();
-					eda.sys_Message.showToastMessage('项目删除成功', 'success', 2);
+					eda.sys_Message.showToastMessage('Project deleted successfully', 'success', 2);
 				} catch (error) {
-					eda.sys_Message.showToastMessage('删除失败: ' + error.message, 'error', 3);
+					eda.sys_Message.showToastMessage('Delete failed: ' + error.message, 'error', 3);
 				}
 			}
 		);
@@ -596,14 +596,14 @@ class LeftNavPanel {
 				// 脏检查：当前文件未保存则提示
 				if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
 					var result = await Swal.fire({
-						title: "未保存的更改",
-						html: "当前文件 <strong>" + (window.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+						title: "Unsaved Changes",
+						html: "The current file <strong>" + (window.projectManager.currentFile || "") + "</strong> has unsaved changes. Save it?",
 						icon: "warning",
 						showDenyButton: true,
 						showCancelButton: true,
-						confirmButtonText: "保存",
-						denyButtonText: "不保存",
-						cancelButtonText: "取消",
+						confirmButtonText: "Save",
+						denyButtonText: "Don't Save",
+						cancelButtonText: "Cancel",
 					});
 					if (result.isConfirmed) {
 						await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
@@ -636,11 +636,11 @@ class LeftNavPanel {
 				this.switchView("project-design");
 				// Notify popout panels to refresh
 				if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("project-design", { projectId: projectId });
-				eda.sys_Message.showToastMessage("项目已打开，请在文件树中选择文件", "success", 2);
+				eda.sys_Message.showToastMessage("Project opened. Please select a file in the file tree", "success", 2);
 			} catch (error) {
 				// IDB 连接关闭错误来自残留 iframe 实例的重复调用，不可操作，静默忽略
 				if (!error.message || !error.message.includes('database connection is closed')) {
-					eda.sys_Message.showToastMessage("项目加载失败: " + error.message, "error", 3);
+					eda.sys_Message.showToastMessage("Project load failed: " + error.message, "error", 3);
 				}
 			}
 		}
@@ -658,14 +658,14 @@ class LeftNavPanel {
 				// 脏检查
 				if (window.fileTreeUI && window.fileTreeUI._isFileModified && window.fileTreeUI._isFileModified()) {
 					var result = await Swal.fire({
-						title: "未保存的更改",
-						html: "当前文件 <strong>" + (window.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+						title: "Unsaved Changes",
+						html: "The current file <strong>" + (window.projectManager.currentFile || "") + "</strong> has unsaved changes. Save it?",
 						icon: "warning",
 						showDenyButton: true,
 						showCancelButton: true,
-						confirmButtonText: "保存",
-						denyButtonText: "不保存",
-						cancelButtonText: "取消",
+						confirmButtonText: "Save",
+						denyButtonText: "Don't Save",
+						cancelButtonText: "Cancel",
 					});
 					if (result.isConfirmed) {
 						await window.projectManager.saveFileContent(window.projectManager.currentFile, this.editor.getValue());
@@ -691,9 +691,9 @@ class LeftNavPanel {
 
 				this.switchView("all-projects");
 				if (window.fileTreeUI) await window.fileTreeUI.render();
-				eda.sys_Message.showToastMessage("脚本已打开", "success", 2);
+				eda.sys_Message.showToastMessage("Script opened", "success", 2);
 			} catch (error) {
-				if (!error.message || !error.message.includes("database connection is closed")) { eda.sys_Message.showToastMessage("打开脚本失败: " + error.message, "error", 3); }
+				if (!error.message || !error.message.includes("database connection is closed")) { eda.sys_Message.showToastMessage("Failed to open script: " + error.message, "error", 3); }
 			}
 		}
 
@@ -726,14 +726,14 @@ class LeftNavPanel {
 		try {
 			const project = this.projects.find((p) => p.id === builtInId);
 			if (!project) {
-				eda.sys_Message.showToastMessage("内置项目不存在", "error", 2);
+				eda.sys_Message.showToastMessage("Built-in project does not exist", "error", 2);
 				return;
 			}
 
 			const entryFileName = project.entryFile || (project.files[0] && project.files[0].fileName);
 			const entryFile = project.files.find(f => f.fileName === entryFileName);
 			if (!entryFile) {
-				eda.sys_Message.showToastMessage("未找到可打开的页面", "warn", 2);
+				eda.sys_Message.showToastMessage("No openable page found", "warn", 2);
 				return;
 			}
 
@@ -759,7 +759,7 @@ class LeftNavPanel {
 				if (typeof previewHtmlInPopupWindow === "function") {
 					await previewHtmlInPopupWindow({ projectName: project.projectName, entryFile: entryFile.fileName, content: finalHTML, windowId: this._builtInPopupId, onClose: function() { if (window.leftNavPanel) { window.leftNavPanel._activeBuiltInProjectId = null; try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", ""); } catch (e) {} window.leftNavPanel.loadProjectList(); if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects"); } } });
 				} else {
-					eda.sys_Message.showToastMessage("previewHtmlInPopupWindow 未定义", "error", 2);
+					eda.sys_Message.showToastMessage("previewHtmlInPopupWindow is not defined", "error", 2);
 					return;
 				}
 			} else {
@@ -777,9 +777,9 @@ class LeftNavPanel {
 			try { eda.sys_Storage.setExtensionUserConfig("__active_builtin_project", builtInId); } catch (e) {}
 			this.loadProjectList();
 			if (typeof PopoutManager !== "undefined") PopoutManager.notifyRefresh("all-projects");
-			eda.sys_Message.showToastMessage("内置项目 " + project.projectName + " 已打开", "success", 2);
+			eda.sys_Message.showToastMessage("Built-in project " + project.projectName + " opened", "success", 2);
 		} catch (error) {
-			if (!error.message || !error.message.includes("database connection is closed")) { eda.sys_Message.showToastMessage("打开内置项目失败: " + error.message, "error", 3); }
+			if (!error.message || !error.message.includes("database connection is closed")) { eda.sys_Message.showToastMessage("Failed to open built-in project: " + error.message, "error", 3); }
 		}
 	}
 	// 内置项目右键菜单
@@ -807,7 +807,7 @@ class LeftNavPanel {
 		`;
 
 		const menuItems = [
-			{ text: '打开项目（只读）', action: () => this.openBuiltInProject(builtInId) },
+			{ text: 'Open Project (Read-only)', action: () => this.openBuiltInProject(builtInId) },
 		];
 
 		menuItems.forEach((item) => {
@@ -971,8 +971,8 @@ class LeftNavPanel {
 		if (edcodeData.length === 0 && userCompleters.length === 0) {
 			container.innerHTML = `
 				<div class="project-list-empty">
-					<p>常用代码为空</p>
-					<p>在编辑器中添加自定义补全</p>
+					<p>Common code is empty</p>
+					<p>Add custom completions in the editor</p>
 				</div>
 			`;
 			return;
@@ -983,7 +983,7 @@ class LeftNavPanel {
 
 		// 添加 edcode 库
 		if (edcodeData.length > 0) {
-			this.allCompleterItems.push({ type: 'section-title', text: 'EDA 代码库' });
+			this.allCompleterItems.push({ type: 'section-title', text: 'EDA Code Library' });
 			edcodeData.forEach((item) => {
 				this.allCompleterItems.push({ type: 'edcode', data: item });
 			});
@@ -991,7 +991,7 @@ class LeftNavPanel {
 
 		// 添加用户自定义补全
 		if (userCompleters.length > 0) {
-			this.allCompleterItems.push({ type: 'section-title', text: '自定义补全' });
+			this.allCompleterItems.push({ type: 'section-title', text: 'Custom Completions' });
 			userCompleters.forEach((completer) => {
 				this.allCompleterItems.push({ type: 'user', data: completer });
 			});
@@ -1153,7 +1153,7 @@ class LeftNavPanel {
 			const delBtn = document.createElement('button');
 			delBtn.className = 'completer-delete-btn';
 			delBtn.textContent = '×';
-			delBtn.title = '删除';
+			delBtn.title = 'Delete';
 			delBtn.addEventListener('click', async (e) => {
 				e.stopPropagation();
 				await this.showDeleteCompleterConfirm(data.id);
@@ -1214,9 +1214,9 @@ class LeftNavPanel {
 		try {
 			const cursor = this.editor.getCursorPosition();
 			this.editor.session.insert(cursor, methodPath);
-			eda.sys_Message.showToastMessage('已插入: ' + methodPath, 'success', 1);
+			eda.sys_Message.showToastMessage('Inserted: ' + methodPath, 'success', 1);
 		} catch (error) {
-			eda.sys_Message.showToastMessage('插入失败: ' + error.message, 'error', 2);
+			eda.sys_Message.showToastMessage('Insert failed: ' + error.message, 'error', 2);
 		}
 	}
 
@@ -1228,12 +1228,12 @@ class LeftNavPanel {
 		if (!completer) return;
 
 		const result = await Swal.fire({
-			title: '确认删除',
-			html: `确定要删除补全 "<strong>${this.escapeHtml(completer.name)}</strong>" 吗？`,
+			title: 'Confirm Delete',
+			html: `Are you sure you want to delete completion "<strong>${this.escapeHtml(completer.name)}</strong>"?`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: '删除',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Delete',
+			cancelButtonText: 'Cancel',
 			confirmButtonColor: '#1890ff',
 		});
 
@@ -1241,9 +1241,9 @@ class LeftNavPanel {
 			try {
 				await this.deleteCompleter(completerId);
 				await this.loadCompleterStore();
-				eda.sys_Message.showToastMessage('补全删除成功', 'success', 2);
+				eda.sys_Message.showToastMessage('Completion deleted successfully', 'success', 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage('删除失败: ' + error.message, 'error', 2);
+				eda.sys_Message.showToastMessage('Delete failed: ' + error.message, 'error', 2);
 			}
 		}
 	}
@@ -1257,10 +1257,10 @@ class LeftNavPanel {
 			if (completer && completer.value) {
 				const cursor = this.editor.getCursorPosition();
 				this.editor.session.insert(cursor, completer.value);
-				eda.sys_Message.showToastMessage('已插入: ' + (completer.caption || completer.value), 'success', 1);
+				eda.sys_Message.showToastMessage('Inserted: ' + (completer.caption || completer.value), 'success', 1);
 			}
 		} catch (error) {
-			eda.sys_Message.showToastMessage('插入失败: ' + error.message, 'error', 2);
+			eda.sys_Message.showToastMessage('Insert failed: ' + error.message, 'error', 2);
 		}
 	}
 
@@ -1282,11 +1282,11 @@ class LeftNavPanel {
 		try {
 			const project = await window.projectManager.loadProjectById(projectId);
 			if (!project) {
-				eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+				eda.sys_Message.showToastMessage('Project does not exist', 'error', 2);
 				return;
 			}
 			if (project.files.length === 0) {
-				eda.sys_Message.showToastMessage('项目中没有文件', 'warn', 2);
+				eda.sys_Message.showToastMessage('No files in project', 'warn', 2);
 				return;
 			}
 
@@ -1306,9 +1306,9 @@ class LeftNavPanel {
 			document.body.removeChild(link);
 			URL.revokeObjectURL(url);
 
-			eda.sys_Message.showToastMessage(`项目 "${project.projectName}" 已导出`, 'success', 2);
+			eda.sys_Message.showToastMessage(`Project "${project.projectName}" exported`, 'success', 2);
 		} catch (error) {
-			eda.sys_Message.showToastMessage('导出失败: ' + error.message, 'error', 3);
+			eda.sys_Message.showToastMessage('Export failed: ' + error.message, 'error', 3);
 		}
 	}
 	// 导出脚本为 JS 文件
@@ -1316,11 +1316,11 @@ class LeftNavPanel {
 		try {
 			const project = await window.projectManager.loadProjectById(projectId);
 			if (!project) {
-				eda.sys_Message.showToastMessage('项目不存在', 'error', 2);
+				eda.sys_Message.showToastMessage('Project does not exist', 'error', 2);
 				return;
 			}
 			if (!project.isScript || project.files.length === 0) {
-				eda.sys_Message.showToastMessage('脚本文件不存在', 'warn', 2);
+				eda.sys_Message.showToastMessage('Script file does not exist', 'warn', 2);
 				return;
 			}
 
@@ -1338,9 +1338,9 @@ class LeftNavPanel {
 			document.body.removeChild(link);
 			URL.revokeObjectURL(url);
 
-			eda.sys_Message.showToastMessage('脚本 "' + project.projectName + '" 已导出', 'success', 2);
+			eda.sys_Message.showToastMessage('Script "' + project.projectName + '" exported', 'success', 2);
 		} catch (error) {
-			eda.sys_Message.showToastMessage('导出失败: ' + error.message, 'error', 3);
+			eda.sys_Message.showToastMessage('Export failed: ' + error.message, 'error', 3);
 		}
 	}
 

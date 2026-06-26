@@ -26,8 +26,8 @@ function showFileContextMenu(e, editor) {
 	`;
 
 	const menuItems = [
-		{ text: '新建项目', action: () => showNewProjectDialog(editor) },
-	{ text: '新建脚本', action: () => showNewScriptDialog(editor) },
+		{ text: 'New Project', action: () => showNewProjectDialog(editor) },
+	{ text: 'New Script', action: () => showNewScriptDialog(editor) },
 	];
 
 	menu.innerHTML = '';
@@ -136,12 +136,12 @@ async function migrateCodeStoreToProjects() {
  */
 function showNewProjectDialog(editor) {
 	eda.sys_Dialog.showInputDialog(
-		"请输入项目名称", // beforeContent
-		"项目名称至少2个字符", // afterContent
-		"新建项目", // title
+		"Please enter project name", // beforeContent
+		"Project name must be at least 2 characters", // afterContent
+		"New Project", // title
 		"text", // type
 		"", // value
-		{ placeholder: "例如: MyProject", minlength: 2, maxlength: 50 }, // otherProperty
+		{ placeholder: "e.g. MyProject", minlength: 2, maxlength: 50 }, // otherProperty
 		async function(value) {
 			// 用户点击确认后的回调
 			// 用户点击取消时不执行任何操作
@@ -149,7 +149,7 @@ function showNewProjectDialog(editor) {
 
 			// 用户点击确定但输入为空或太短
 			if (!value || value.length < 2) {
-				eda.sys_Message.showToastMessage("项目名称至少2个字符", "warn", 2);
+				eda.sys_Message.showToastMessage("Project name must be at least 2 characters", "warn", 2);
 				return;
 			}
 
@@ -174,9 +174,9 @@ function showNewProjectDialog(editor) {
 					window.projectManager.currentFile = firstFile.fileName;
 				}
 
-				eda.sys_Message.showToastMessage("项目创建成功", "success", 2);
+				eda.sys_Message.showToastMessage("Project created successfully", "success", 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage("项目创建失败: " + error.message, "error", 3);
+				eda.sys_Message.showToastMessage("Project creation failed: " + error.message, "error", 3);
 			}
 		}
 	);
@@ -187,19 +187,19 @@ function showNewProjectDialog(editor) {
  */
 function showNewScriptDialog(editor) {
 	eda.sys_Dialog.showInputDialog(
-		"请输入脚本名称", // beforeContent
-		"脚本名称至少2个字符", // afterContent
-		"新建脚本", // title
+		"Please enter script name", // beforeContent
+		"Script name must be at least 2 characters", // afterContent
+		"New Script", // title
 		"text", // type
 		"", // value
-		{ placeholder: "例如: my-script", minlength: 2, maxlength: 50 }, // otherProperty
+		{ placeholder: "e.g. my-script", minlength: 2, maxlength: 50 }, // otherProperty
 		async function(value) {
 			// 用户点击取消时不执行任何操作
 			if (typeof value !== "string") return;
 
 			// 用户点击确定但输入为空或太短
 			if (!value || value.length < 2) {
-				eda.sys_Message.showToastMessage("脚本名称至少2个字符", "warn", 2);
+				eda.sys_Message.showToastMessage("Script name must be at least 2 characters", "warn", 2);
 				return;
 			}
 
@@ -250,9 +250,9 @@ function showNewScriptDialog(editor) {
 				window.leftNavPanel.switchView("all-projects");
 			}
 
-			eda.sys_Message.showToastMessage("脚本创建成功", "success", 2);
+			eda.sys_Message.showToastMessage("Script created successfully", "success", 2);
 		} catch (error) {
-			eda.sys_Message.showToastMessage("脚本创建失败: " + error.message, "error", 3);
+			eda.sys_Message.showToastMessage("Script creation failed: " + error.message, "error", 3);
 		}
 		}
 		);
@@ -319,7 +319,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	/* Header */
 	const header = document.createElement('div');
 	header.style.cssText = 'padding:8px 16px;border-bottom:1px solid var(--eext-border);display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:12px;flex-shrink:0;';
-	header.innerHTML = `<span>设置</span><button id="settings-modal-close" style="background:transparent;border:none;color:var(--eext-text-primary);cursor:pointer;font-size:12px;padding:0 8px;border-radius:2px;">×</button>`;
+	header.innerHTML = `<span>Settings</span><button id="settings-modal-close" style="background:transparent;border:none;color:var(--eext-text-primary);cursor:pointer;font-size:12px;padding:0 8px;border-radius:2px;">×</button>`;
 
 	/* Body: left menu + right content */
 	const bodyWrap = document.createElement('div');
@@ -330,11 +330,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	menuPane.style.cssText = `width:140px;flex-shrink:0;border-right:1px solid var(--eext-border);padding:8px 0;display:flex;flex-direction:column;gap:0;background:var(--eext-bg-item);`;
 
 	const menuItems = [
-		{ id: 'general', label: '通用' },
-		{ id: 'editor', label: '编辑器' },
-		{ id: 'shortcuts', label: '快捷键' },
-		{ id: 'plugins', label: '插件管理' },
-		{ id: 'completer', label: '补全仓库' },
+		{ id: 'general', label: 'General' },
+		{ id: 'editor', label: 'Editor' },
+		{ id: 'shortcuts', label: 'Shortcuts' },
+		{ id: 'plugins', label: 'Plugins' },
+		{ id: 'completer', label: 'Completer Store' },
 	];
 
 	/* Right content */
@@ -345,11 +345,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	const footer = document.createElement('div');
 	footer.style.cssText = 'padding:8px 16px;border-top:1px solid var(--eext-border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;';
 	const cancelBtn = document.createElement('button');
-	cancelBtn.textContent = '取消';
+	cancelBtn.textContent = 'Cancel';
 	cancelBtn.className = 'eext-modal-btn';
 	cancelBtn.onclick = () => overlay.remove();
 	const confirmBtn = document.createElement('button');
-	confirmBtn.textContent = '确认';
+	confirmBtn.textContent = 'OK';
 	confirmBtn.className = 'eext-modal-btn-primary';
 		confirmBtn.onclick = async () => {
 			var w = document.getElementById("ui-width-input"), h = document.getElementById("ui-height-input");
@@ -398,7 +398,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 		if (activeMenu === 'general') {
 			/* Theme cards */
-			const sec = section('主题');
+			const sec = section('Theme');
 			ThemeEngine.listThemes().filter(t => t.preset).forEach(t => {
 				const active = ThemeEngine.getCurrent() === t.id;
 				const card = document.createElement('div');
@@ -414,7 +414,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 
 			/* Window size */
-			const sec2 = section('窗口尺寸');
+			const sec2 = section('Window Size');
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;align-items:center;gap:8px;';
 			const makeInput = (label, id, ph) => {
@@ -423,17 +423,17 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				inp.style.cssText = 'width:90px;height:24px;padding:0 6px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;color:var(--eext-text-primary);background:var(--eext-bg-input);';
 				return { span, inp };
 			};
-			const w = makeInput('宽', 'ui-width-input', String(window.innerWidth));
-			const h = makeInput('高', 'ui-height-input', String(window.innerHeight));
+			const w = makeInput('W', 'ui-width-input', String(window.innerWidth));
+			const h = makeInput('H', 'ui-height-input', String(window.innerHeight));
 		(async function() { try { var sw = await eda.sys_Storage.getExtensionUserConfig("UI_width"); if (sw) w.inp.value = sw; var sh = await eda.sys_Storage.getExtensionUserConfig("UI_height"); if (sh) h.inp.value = sh; } catch(e) {} })();
 			row.appendChild(w.span); row.appendChild(w.inp);
 			row.appendChild(h.span); row.appendChild(h.inp);
 			contentPane.appendChild(row);
 
 			/* Color customization */
-			const sec3 = section('图元颜色');
+			const sec3 = section('Element Colors');
 			const keys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
-			const labels = {'bg-toolbar':'顶部菜单','bg-panel':'左侧面板背景','bg-input':'输入框','editor-bg':'编辑器背景','editor-line-bg':'编辑器选中行','text-primary':'左侧面板文字','border':'边框'};
+			const labels = {'bg-toolbar':'Top Menu','bg-panel':'Left Panel Background','bg-input':'Input Box','editor-bg':'Editor Background','editor-line-bg':'Editor Selected Line','text-primary':'Left Panel Text','border':'Border'};
 			keys.forEach(k => {
 				const cr = document.createElement('div');
 				cr.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
@@ -454,7 +454,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 
 			/* Close panel on render */
-			const sec4 = section("渲染行为");
+			const sec4 = section("Render Behavior");
 			const cbRow = document.createElement("div");
 			cbRow.style.cssText = "display:flex;align-items:center;gap:12px;";
 			const cbPanel = document.createElement("input"); cbPanel.type = "checkbox"; cbPanel.id = "close-panel-on-render-checkbox";
@@ -466,7 +466,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig("close_panel_on_render");
 				cbPanel.checked = (saved === true || saved === "true");
 			} catch(e) { cbPanel.checked = true; }
-			const cbLabel = document.createElement("span"); cbLabel.textContent = "渲染页面时关闭面板";
+			const cbLabel = document.createElement("span"); cbLabel.textContent = "Close panel when rendering page";
 			cbLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			cbLabel.onclick = function() { cbPanel.checked = !cbPanel.checked; cbPanel.onchange(); };
 			cbRow.appendChild(cbPanel); cbRow.appendChild(cbLabel);
@@ -484,13 +484,13 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig("builtin_separate_render");
 				cbSep.checked = (saved === true || saved === "true");
 			} catch(e) { cbSep.checked = false; }
-			const cbLabel2 = document.createElement("span"); cbLabel2.textContent = "内置项目单独渲染";
+			const cbLabel2 = document.createElement("span"); cbLabel2.textContent = "Render built-in projects separately";
 			cbLabel2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			cbLabel2.onclick = function() { cbSep.checked = !cbSep.checked; cbSep.onchange(); };
 			cbRow2.appendChild(cbSep); cbRow2.appendChild(cbLabel2);
 			contentPane.appendChild(cbRow2);
 		} else if (activeMenu === 'editor') {
-			const sec = section('补全模式');
+			const sec = section('Completion Mode');
 
 			// 带注释补全
 			const row = document.createElement('div');
@@ -505,7 +505,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
 				cb.checked = (saved === true || saved === 'true');
 			} catch(e) { cb.checked = false; }
-			const label = document.createElement('span'); label.textContent = '带注释补全';
+			const label = document.createElement('span'); label.textContent = 'Completion with comment';
 			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;';
 			label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
 			row.appendChild(cb); row.appendChild(label);
@@ -514,7 +514,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 随机分配变量
 			var row2 = document.createElement("div");
 			row2.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
-			var label2 = document.createElement("span"); label2.textContent = "随机分配变量";
+			var label2 = document.createElement("span"); label2.textContent = "Random variable assignment";
 			label2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			label2.onclick = function() { cb2.checked = !cb2.checked; cb2.onchange(); };
 			var cb2 = document.createElement("input"); cb2.type = 'checkbox';
@@ -533,7 +533,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 异步函数标识补全
 			var rowAwait = document.createElement("div");
 			rowAwait.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
-			var labelAwait = document.createElement("span"); labelAwait.textContent = "异步函数标识补全";
+			var labelAwait = document.createElement("span"); labelAwait.textContent = "Async function identifier completion";
 			labelAwait.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			labelAwait.onclick = function() { cbAwait.checked = !cbAwait.checked; cbAwait.onchange(); };
 			var cbAwait = document.createElement("input"); cbAwait.type = 'checkbox';
@@ -551,7 +551,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 新建文件带文件名注释
 			var row3 = document.createElement("div");
 			row3.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
-			var label3 = document.createElement("span"); label3.textContent = "新建文件带文件名注释";
+			var label3 = document.createElement("span"); label3.textContent = "New file with filename comment";
 			label3.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			label3.onclick = function() { cb3.checked = !cb3.checked; cb3.onchange(); };
 			var cb3 = document.createElement("input"); cb3.type = 'checkbox';
@@ -571,7 +571,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var previewWrap = document.createElement('div');
 			previewWrap.style.cssText = 'margin-top:14px;padding:10px 12px;border:1px solid var(--eext-border);border-radius:4px;background:var(--eext-bg-input);';
 			var previewTitle = document.createElement('div');
-			previewTitle.textContent = '预览';
+			previewTitle.textContent = 'Preview';
 			previewTitle.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);margin-bottom:6px;';
 			previewWrap.appendChild(previewTitle);
 			var previewCode = document.createElement('pre');
@@ -579,7 +579,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			previewWrap.appendChild(previewCode);
 			contentPane.appendChild(previewWrap);
 
-			var PREVIEW_DESC = '搜索器件';
+			var PREVIEW_DESC = 'Search device';
 			var PREVIEW_PARAMS = 'key, libraryUuid, classification, symbolType, itemsOfPage, page';
 			var PREVIEW_CALL = 'eda.lib_Device.search(' + PREVIEW_PARAMS + ')';
 			var PREVIEW_FILENAME = 'myScript.js';
@@ -663,7 +663,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 			renderCompletionPreview();
 		} else if (activeMenu === 'shortcuts') {
-			section('快捷键');
+			section('Shortcuts');
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
 
 			var tableWrapper = document.createElement('div');
@@ -679,11 +679,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var shortcutsData = null;
 
 			async function renderShortcuts() {
-				tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">加载中...</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">Loading...</td></tr>';
 				try {
 					shortcutsData = typeof loadShortcuts === 'function' ? await loadShortcuts() : null;
 					if (!shortcutsData) {
-						tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">无法加载快捷键配置</td></tr>';
+						tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">Unable to load shortcut configuration</td></tr>';
 						return;
 					}
 					tbody.innerHTML = '';
@@ -714,7 +714,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 						tbody.appendChild(tr);
 					});
 				} catch(e) {
-					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-error);font-size:12px;padding:24px;">加载失败: ' + e.message + '</td></tr>';
+					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-error);font-size:12px;padding:24px;">Load failed: ' + e.message + '</td></tr>';
 				}
 			}
 			renderShortcuts();
@@ -723,16 +723,16 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
 
 			var resetBtn = document.createElement('button');
-			resetBtn.textContent = '恢复默认';
+			resetBtn.textContent = 'Reset to Default';
 			resetBtn.className = 'eext-modal-btn';
 			resetBtn.onclick = async function() {
 				var result = await Swal.fire({
-					title: '确认恢复默认',
-					html: '确定要恢复默认快捷键设置吗？当前的自定义设置将会丢失。',
+					title: 'Confirm Reset to Default',
+					html: 'Are you sure you want to restore default shortcut settings? Current custom settings will be lost.',
 					icon: 'warning',
 					showCancelButton: true,
-					confirmButtonText: '确认',
-					cancelButtonText: '取消',
+					confirmButtonText: 'Confirm',
+					cancelButtonText: 'Cancel',
 				});
 				if (!result.isConfirmed) return;
 				if (typeof resetShortcuts === 'function') {
@@ -742,21 +742,21 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				}
 				await renderShortcuts();
 				var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
-				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('已恢复默认快捷键', 'success', 1);
+				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('Shortcuts reset to default', 'success', 1);
 			};
 			btnRow.appendChild(resetBtn);
 
 			var saveBtn = document.createElement('button');
-			saveBtn.textContent = '保存';
+			saveBtn.textContent = 'Save';
 			saveBtn.className = 'eext-modal-btn-primary';
 			saveBtn.onclick = async function() {
 				if (typeof saveShortcuts === 'function') {
 					var success = await saveShortcuts(shortcutsData);
 					var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
 					if (success) {
-						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('快捷键设置已保存，请重新打开窗口以应用更改', 'success', 3);
+						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('Shortcuts saved, please reopen the window to apply changes', 'success', 3);
 					} else {
-						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('保存失败', 'error', 2);
+						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('Save failed', 'error', 2);
 					}
 				}
 			};
@@ -764,17 +764,17 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			contentPane.appendChild(btnRow);
 		} else if (activeMenu === 'plugins') {
-			section('插件管理');
+			section('Plugins');
 			var list = document.createElement('div');
 			list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
 			contentPane.appendChild(list);
 
 			async function loadPluginList() {
-				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">加载中...</div>';
+				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">Loading...</div>';
 				try {
 					var plugins = typeof ExtStore_GetExtList === 'function' ? await ExtStore_GetExtList() : [];
 					if (!plugins || plugins.length === 0) {
-						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">暂无已保存的插件</div>';
+						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">No saved plugins</div>';
 					} else {
 						list.innerHTML = '';
 						plugins.forEach(function(p) {
@@ -787,7 +787,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 							// Plugin name
 							var nameSpan = document.createElement('span');
-							nameSpan.textContent = p.name || '未命名';
+							nameSpan.textContent = p.name || 'Unnamed';
 							nameSpan.title = p.name;
 							nameSpan.style.cssText = 'flex:1;font-size:12px;color:var(--eext-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
 							row1.appendChild(nameSpan);
@@ -836,22 +836,22 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 								}
 								try {
 									await ExtStore_TogglePlugin(p.name, newState);
-									eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已' + (newState ? '启用' : '禁用'), 'success', 1);
+									eda.sys_Message.showToastMessage('Plugin "' + p.name + '" ' + (newState ? 'enabled' : 'disabled'), 'success', 1);
 								} catch(err) {
 									cb.checked = !newState;
 									customCheckbox.style.background = cb.checked ? '#1890ff' : '#fff';
 									customCheckbox.style.borderColor = cb.checked ? '#1890ff' : '#d9d9d9';
 									checkmark.style.opacity = cb.checked ? '1' : '0';
-									eda.sys_Message.showToastMessage('操作失败: ' + err.message, 'error', 2);
+									eda.sys_Message.showToastMessage('Operation failed: ' + err.message, 'error', 2);
 								}
 							};
 							var checkboxText = document.createElement('span');
-							checkboxText.textContent = '启用';
+							checkboxText.textContent = 'Enable';
 							checkboxText.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
 							checkboxLabel.appendChild(checkboxText);
 							row2.appendChild(checkboxLabel);
 							var timingLabel = document.createElement('span');
-							timingLabel.textContent = '启动时机:';
+							timingLabel.textContent = 'Startup timing:';
 							timingLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
 							row2.appendChild(timingLabel);
 
@@ -867,7 +867,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							rp.checked = currentTiming === 'onPluginOpen';
 							rp.style.cssText = 'margin:0;';
 							radioPlugin.appendChild(rp);
-							radioPlugin.appendChild(document.createTextNode('打开窗口'));
+							radioPlugin.appendChild(document.createTextNode('On window open'));
 							row2.appendChild(radioPlugin);
 
 							var radioEda = document.createElement('label');
@@ -879,39 +879,39 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							re.checked = currentTiming === 'onEdaStartup';
 							re.style.cssText = 'margin:0;';
 							radioEda.appendChild(re);
-							radioEda.appendChild(document.createTextNode('打开EDA'));
+							radioEda.appendChild(document.createTextNode('On EDA open'));
 							row2.appendChild(radioEda);
 
 
 						// Buttons: rename, load, delete
 							// Rename button
 							var renameBtn = document.createElement('button');
-							renameBtn.textContent = '重命名';
+							renameBtn.textContent = 'Rename';
 							renameBtn.className = 'eext-modal-btn';
 							renameBtn.onclick = async function() {
 								eda.sys_Dialog.showInputDialog(
-									'请输入新名称',
-									'插件名称',
-									'重命名插件',
+									'Please enter a new name',
+									'Plugin name',
+									'Rename Plugin',
 									'text',
 									p.name,
 									{ minlength: 1, maxlength: 50 },
 									async function(value) {
 										if (typeof value !== 'string') return;
 										if (!value || !value.trim()) {
-											eda.sys_Message.showToastMessage('请输入名称', 'warn', 2);
+											eda.sys_Message.showToastMessage('Please enter a name', 'warn', 2);
 											return;
 										}
 										if (value.trim() === p.name) {
-											eda.sys_Message.showToastMessage('名称未改变', 'warn', 2);
+											eda.sys_Message.showToastMessage('Name unchanged', 'warn', 2);
 											return;
 										}
 										try {
 											await ExtStore_RenameExt(p.name, value.trim());
 											await loadPluginList();
-											eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
+											eda.sys_Message.showToastMessage('Rename successful', 'success', 1);
 										} catch(err) {
-											eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+											eda.sys_Message.showToastMessage('Rename failed: ' + err.message, 'error', 2);
 										}
 									}
 								);
@@ -920,7 +920,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 							// Load button
 							var loadBtn = document.createElement('button');
-							loadBtn.textContent = '加载';
+							loadBtn.textContent = 'Load';
 							loadBtn.className = 'eext-modal-btn-primary';
 							loadBtn.onclick = async function() {
 								try {
@@ -932,33 +932,33 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 										if (req.result && req.result.code) {
 											editor.setValue(req.result.code, -1);
 											editor.clearSelection();
-											eda.sys_Message.showToastMessage('已加载：' + p.name, 'success', 1);
+											eda.sys_Message.showToastMessage('Loaded: ' + p.name, 'success', 1);
 										}
 									};
 								} catch(err) {
-									eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
+									eda.sys_Message.showToastMessage('Load failed: ' + err.message, 'error', 2);
 								}
 							};
 							row2.appendChild(loadBtn);
 
 							// Delete button
 							var delBtn = document.createElement('button');
-							delBtn.textContent = '删除';
+							delBtn.textContent = 'Delete';
 							delBtn.className = 'eext-modal-btn-delete';
 							delBtn.onclick = async function() {
 								eda.sys_Dialog.showConfirmationMessage(
-									'确定删除插件 "' + p.name + '"？',
-									'确认删除',
-									'删除',
-									'取消',
+									'Delete plugin "' + p.name + '"?',
+									'Confirm Delete',
+									'Delete',
+									'Cancel',
 									async function(confirmed) {
 										if (!confirmed) return;
 										try {
 											await ExtStore_DeleteExt(p.name);
 											await loadPluginList();
-											eda.sys_Message.showToastMessage('插件 "' + p.name + '" 已删除', 'info', 1);
+											eda.sys_Message.showToastMessage('Plugin "' + p.name + '" deleted', 'info', 1);
 										} catch(err) {
-											eda.sys_Message.showToastMessage('删除失败: ' + err.message, 'error', 2);
+											eda.sys_Message.showToastMessage('Delete failed: ' + err.message, 'error', 2);
 										}
 									}
 								);
@@ -972,7 +972,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 										try {
 											await ExtStore_UpdateStartupConfig(p.name, newTiming);
 										} catch(e) {
-											eda.sys_Message.showToastMessage('保存启动配置失败: ' + e.message, 'error', 2);
+											eda.sys_Message.showToastMessage('Failed to save startup config: ' + e.message, 'error', 2);
 										}
 									}
 								};
@@ -986,21 +986,21 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 						});
 					}
 				} catch(err) {
-					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">加载失败：' + err.message + '</div>';
+					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">Load failed: ' + err.message + '</div>';
 				}
 			}
 
 			loadPluginList();
 		} else if (activeMenu === 'completer') {
-			section('补全仓库');
+			section('Completer Store');
 			const toolbar = document.createElement('div');
 			toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;';
 			const hint = document.createElement('div');
 			hint.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);';
-			hint.textContent = '提示：双击补全项可编辑';
+			hint.textContent = 'Tip: Double-click a completer item to edit';
 			toolbar.appendChild(hint);
 			const addBtn = document.createElement('button');
-			addBtn.textContent = '新增补全项';
+			addBtn.textContent = 'New Completer Item';
 			addBtn.style.cssText = 'padding:5px 14px;font-size:11px;border:1px solid var(--eext-brand);border-radius:4px;background:var(--eext-brand);color:#fff;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;';
 			addBtn.onmouseenter = function() { addBtn.style.opacity = '0.85'; };
 			addBtn.onmouseleave = function() { addBtn.style.opacity = '1'; };
@@ -1014,10 +1014,10 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const thead = document.createElement('thead');
 			thead.style.cssText = 'background:var(--eext-bg-item);';
 			thead.innerHTML = '<tr>' +
-				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:20%;\'>名称</th>' +
-				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:28%;\'>描述</th>' +
-				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:34%;\'>补全值</th>' +
-				'<th style=\'padding:8px 12px;text-align:right;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:18%;\'>操作</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:20%;\'>Name</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:28%;\'>Description</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:34%;\'>Value</th>' +
+				'<th style=\'padding:8px 12px;text-align:right;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:18%;\'>Actions</th>' +
 				'</tr>';
 			table.appendChild(thead);
 			const tbody = document.createElement('tbody');
@@ -1025,17 +1025,17 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			listWrap.appendChild(table);
 			contentPane.appendChild(listWrap);
 			async function loadCompleters() {
-				tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>加载中...</td></tr>';
+				tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>Loading...</td></tr>';
 				try {
 					const items = await new Promise(function(r) { try { var x = indexedDB.open('UserCompleterStore', 1); x.onsuccess = function() { var t = x.result.transaction('completions','readonly'); var g = t.objectStore('completions').getAll(); g.onsuccess = function() { r(g.result || []); }; g.onerror = function() { r([]); }; }; x.onerror = function() { r([]); }; } catch(e) { r([]); } });
 					if (!items || items.length === 0) {
-						tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>暂无自定义补全项。</td></tr>';
+						tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>No custom completer items.</td></tr>';
 						return;
 					}
 					tbody.innerHTML = '';
 					items.forEach(function(c, idx) { tbody.appendChild(_buildCompleterRow(c, editor, loadCompleters, idx)); });
 				} catch(e) {
-					tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-error);font-size:12px;\'>加载失败: ' + e.message + '</td></tr>';
+					tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-error);font-size:12px;\'>Load failed: ' + e.message + '</td></tr>';
 				}
 			}
 			loadCompleters();
@@ -1060,7 +1060,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			contentPane.querySelectorAll('input[type=color]').forEach(el => nv[el.getAttribute('data-key')] = el.value);
 			if (Object.keys(nv).length === 0) return;
 			const cur = ThemeEngine.getCurrent();
-			const nm = cur === 'dark' ? '自定义暗色' : cur === 'light' ? '自定义亮色' : '自定义';
+			const nm = cur === 'dark' ? 'Custom Dark' : cur === 'light' ? 'Custom Light' : 'Custom';
 var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}, nm).then(function(n) { if (n) ThemeEngine.apply(n); });
 		}, 500);
 	}
@@ -1114,7 +1114,7 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	header.className = 'shortcut-edit-header';
 	var title = document.createElement('span');
 	title.className = 'shortcut-edit-title';
-	title.textContent = '设置';
+	title.textContent = 'Settings';
 	header.appendChild(title);
 	var closeBtn = document.createElement('button');
 	closeBtn.className = 'shortcut-edit-close';
@@ -1147,21 +1147,21 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 		return input;
 	}
 
-	var nameInput = buildField('功能', 'shortcut-edit-name', name, true);
-	var keyInput = buildField('快捷键', 'shortcut-edit-key', currentShortcut, false);
+	var nameInput = buildField('Function', 'shortcut-edit-name', name, true);
+	var keyInput = buildField('Shortcut', 'shortcut-edit-key', currentShortcut, false);
 
 	keyInput.classList.add('shortcut-key-input');
-	keyInput.placeholder = '点击此处后按下组合键';
+	keyInput.placeholder = 'Click here then press a key combination';
 	keyInput.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
 	keyInput.style.textAlign = 'center';
 
 	keyInput.addEventListener('focus', function() {
 		keyInput.style.borderColor = 'var(--eext-brand)';
-		keyInput.placeholder = '按下组合键...';
+		keyInput.placeholder = 'Press a key combination...';
 	});
 	keyInput.addEventListener('blur', function() {
 		keyInput.style.borderColor = 'var(--eext-border)';
-		keyInput.placeholder = '点击此处后按下组合键';
+		keyInput.placeholder = 'Click here then press a key combination';
 	});
 	keyInput.addEventListener('keydown', function(e) {
 		e.preventDefault();
@@ -1188,7 +1188,7 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	footer.className = 'shortcut-edit-footer';
 
 	var confirmBtn = document.createElement('button');
-	confirmBtn.textContent = '确认';
+	confirmBtn.textContent = 'OK';
 	confirmBtn.className = 'eext-modal-btn-primary';
 	confirmBtn.onclick = function() {
 		var newShortcut = keyInput.value.trim();
@@ -1197,7 +1197,7 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	};
 
 	var cancelBtn = document.createElement('button');
-	cancelBtn.textContent = '取消';
+	cancelBtn.textContent = 'Cancel';
 	cancelBtn.className = 'eext-modal-btn';
 	cancelBtn.onclick = closeDialog;
 
@@ -1260,22 +1260,22 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	/* 名称单元格 */
 	const tdCaption = document.createElement("td");
 	tdCaption.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-	tdCaption.textContent = rec.caption || "未命名";
-	bindTruncateTitle(tdCaption, "名称: " + (rec.caption || "未命名"));
+	tdCaption.textContent = rec.caption || "Unnamed";
+	bindTruncateTitle(tdCaption, "Name: " + (rec.caption || "Unnamed"));
 	tr.appendChild(tdCaption);
 
 	/* 描述单元格 */
 	const tdDesc = document.createElement("td");
 	tdDesc.style.cssText = "padding:8px 12px;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdDesc.textContent = rec.description || "—";
-	bindTruncateTitle(tdDesc, rec.description ? "描述: " + rec.description : "");
+	bindTruncateTitle(tdDesc, rec.description ? "Description: " + rec.description : "");
 	tr.appendChild(tdDesc);
 
 	/* 补全值单元格 */
 	const tdValue = document.createElement("td");
 	tdValue.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);font-family:Consolas,Monaco,'Courier New',monospace;font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdValue.textContent = rec.value || "";
-	bindTruncateTitle(tdValue, "补全值: " + (rec.value || ""));
+	bindTruncateTitle(tdValue, "Value: " + (rec.value || ""));
 	tr.appendChild(tdValue);
 
 	/* 操作单元格 */
@@ -1284,12 +1284,12 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	const delBtn = document.createElement("button");
 	delBtn.className = "eext-modal-btn-delete";
 	delBtn.style.cssText = "padding:4px 12px;font-size:11px;min-width:auto;height:auto;";
-	delBtn.textContent = "删除";
+	delBtn.textContent = "Delete";
 	delBtn.onclick = function(ev) {
 		ev.stopPropagation();
 		eda.sys_Dialog.showConfirmationMessage(
-			"确定删除补全项 \"" + (rec.caption || "未命名") + "\" 吗？此操作不可撤销。",
-			"提示", "确认", "取消",
+			"Delete completer item \"" + (rec.caption || "Unnamed") + "\"? This action cannot be undone.",
+			"Tip", "Confirm", "Cancel",
 			async function(confirmed) {
 				if (!confirmed) return;
 				try {
@@ -1313,9 +1313,9 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 						window.leftNavPanel.loadCompleterStore();
 					}
 					reloadFn();
-					eda.sys_Message.showToastMessage("已删除: " + (rec.caption || "未命名"), "success", 1);
+					eda.sys_Message.showToastMessage("Deleted: " + (rec.caption || "Unnamed"), "success", 1);
 				} catch(err) {
-					eda.sys_Message.showToastMessage("删除失败: " + err.message, "error", 1);
+					eda.sys_Message.showToastMessage("Delete failed: " + err.message, "error", 1);
 				}
 			}
 		);
@@ -1358,7 +1358,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 	if (old) old.remove();
 
 	const isAdd = !rec || !rec.id;
-	const modeTitle = isAdd ? "新增补全项" : "编辑补全项";
+	const modeTitle = isAdd ? "New Completer Item" : "Edit Completer Item";
 
 	const overlay = document.createElement("div");
 	overlay.id = "eext-cs-edit-overlay";
@@ -1409,11 +1409,11 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		return input;
 	}
 
-	const captionInput = buildField("名称", "请输入名称（中文映射）", "eext-cs-edit-caption", "text");
-	const valueInput = buildField("补全值", "请输入补全值（选中后插入的代码）", "eext-cs-edit-value", "text");
+	const captionInput = buildField("Name", "Enter name", "eext-cs-edit-caption", "text");
+	const valueInput = buildField("Value", "Enter completion value (code to insert when selected)", "eext-cs-edit-value", "text");
 	valueInput.style.fontFamily = "Consolas,Monaco,'Courier New',monospace";
 	valueInput.style.fontSize = "12px";
-	const descInput = buildField("描述", "请输入描述（补全提示说明，可选）", "eext-cs-edit-desc", "text");
+	const descInput = buildField("Description", "Enter description (completion tooltip, optional)", "eext-cs-edit-desc", "text");
 
 	captionInput.value = (rec && rec.caption) || "";
 	valueInput.value = (rec && rec.value) || "";
@@ -1425,14 +1425,14 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 	const footer = document.createElement("div");
 	footer.style.cssText = "padding:12px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--eext-border);background:var(--eext-bg-item);";
 	const cancelBtn = document.createElement("button");
-	cancelBtn.textContent = "取消";
+	cancelBtn.textContent = "Cancel";
 	cancelBtn.style.cssText = "padding:8px 18px;border:1px solid var(--eext-border);border-radius:4px;background:transparent;color:var(--eext-text-primary);font-size:12px;cursor:pointer;transition:background 0.15s;";
 	cancelBtn.onmouseenter = function() { cancelBtn.style.background = "var(--eext-hover-bg)"; };
 	cancelBtn.onmouseleave = function() { cancelBtn.style.background = "transparent"; };
 	cancelBtn.onclick = function() { closeDialog(); };
 	footer.appendChild(cancelBtn);
 	const saveBtn = document.createElement("button");
-	saveBtn.textContent = "保存";
+	saveBtn.textContent = "Save";
 	saveBtn.style.cssText = "padding:8px 20px;border:none;border-radius:4px;background:var(--eext-brand);color:#fff;font-size:12px;cursor:pointer;font-weight:500;transition:opacity 0.15s;";
 	saveBtn.onmouseenter = function() { saveBtn.style.opacity = "0.85"; };
 	saveBtn.onmouseleave = function() { saveBtn.style.opacity = "1"; };
@@ -1469,8 +1469,8 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		var newCaption = captionInput.value.trim();
 		var newValue = valueInput.value.trim();
 		var newDesc = descInput.value.trim();
-		if (!newCaption) { captionInput.focus(); eda.sys_Message.showToastMessage("名称不能为空", "error", 1); return; }
-		if (!newValue) { valueInput.focus(); eda.sys_Message.showToastMessage("补全值不能为空", "error", 1); return; }
+		if (!newCaption) { captionInput.focus(); eda.sys_Message.showToastMessage("Name cannot be empty", "error", 1); return; }
+		if (!newValue) { valueInput.focus(); eda.sys_Message.showToastMessage("Value cannot be empty", "error", 1); return; }
 
 		/* 自动提取参数 */
 		var newParams = [];
@@ -1480,7 +1480,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		}
 
 		saveBtn.disabled = true;
-		saveBtn.textContent = "保存中...";
+		saveBtn.textContent = "Saving...";
 		cancelBtn.disabled = true;
 		try {
 			if (isAdd) {
@@ -1494,10 +1494,10 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 				});
 				if (dupCheck) {
 					saveBtn.disabled = false;
-					saveBtn.textContent = "保存";
+					saveBtn.textContent = "Save";
 					cancelBtn.disabled = false;
 					captionInput.focus();
-					eda.sys_Message.showToastMessage("名称 \"" + newCaption + "\" 已存在", "error", 1);
+					eda.sys_Message.showToastMessage("Name \"" + newCaption + "\" already exists", "error", 1);
 					return;
 				}
 				await new Promise(function(resolve, reject) {
@@ -1529,7 +1529,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 						const getReq = store.get(rec.id);
 						getReq.onsuccess = function() {
 							const record = getReq.result;
-							if (!record) return reject(new Error("记录不存在"));
+							if (!record) return reject(new Error("Record does not exist"));
 							Object.assign(record, { caption: newCaption, value: newValue, params: newParams, description: newDesc });
 							const putReq = store.put(record);
 							putReq.onsuccess = resolve;
@@ -1559,12 +1559,12 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 			}
 			closeDialog();
 			reloadFn();
-			eda.sys_Message.showToastMessage((isAdd ? "已新增: " : "已更新: ") + newCaption, "success", 1);
+			eda.sys_Message.showToastMessage((isAdd ? "Added: " : "Updated: ") + newCaption, "success", 1);
 		} catch(err) {
 			saveBtn.disabled = false;
-			saveBtn.textContent = "保存";
+			saveBtn.textContent = "Save";
 			cancelBtn.disabled = false;
-			eda.sys_Message.showToastMessage((isAdd ? "新增失败: " : "更新失败: ") + err.message, "error", 1);
+			eda.sys_Message.showToastMessage((isAdd ? "Add failed: " : "Update failed: ") + err.message, "error", 1);
 		}
 	};
 }

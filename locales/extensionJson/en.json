@@ -1,3 +1,7 @@
 {
-	"About...": "About..."
+	"About...": "About...",
+	"智能API调试工具": "Smart API Debug Tool",
+	"支持中文联想的EDA扩展API脚本代码编辑器，支持代码高亮、自动补全、函数提示，AI注释，AI报错分析等功能。": "An EDA extension API script code editor with Chinese input support, featuring code highlighting, auto-completion, function hints, AI annotations, and AI error analysis.",
+	"代码编辑器": "Code Editor",
+	"打开编辑器...": "Open Editor..."
 }

@@ -112,8 +112,8 @@ class FileTreeUI {
 		if (!this.projectManager.currentProject) {
 			this.container.innerHTML = `
 				<div class="file-tree-empty">
-					<p>没有打开的项目</p>
-					<p>点击"文件 > 新建"创建项目</p>
+					<p>No project open</p>
+					<p>Click "File > New" to create a project</p>
 				</div>
 			`;
 			return;
@@ -305,14 +305,14 @@ class FileTreeUI {
 			// 检查当前文件是否有未保存修改
 			if (!skipDirtyCheck && this._isFileModified()) {
 				var result = await Swal.fire({
-					title: "未保存的更改",
-					html: "当前文件 <strong>" + (this.projectManager.currentFile || "") + "</strong> 有未保存的更改，是否保存？",
+					title: "Unsaved Changes",
+					html: "The current file <strong>" + (this.projectManager.currentFile || "") + "</strong> has unsaved changes. Save it?",
 					icon: "warning",
 					showDenyButton: true,
 					showCancelButton: true,
-					confirmButtonText: "保存",
-					denyButtonText: "不保存",
-					cancelButtonText: "取消",
+					confirmButtonText: "Save",
+					denyButtonText: "Don't Save",
+					cancelButtonText: "Cancel",
 				});
 				if (result.isConfirmed) {
 					await window.projectManager.saveFileContent(this.projectManager.currentFile, this.editor.getValue());
@@ -348,7 +348,7 @@ class FileTreeUI {
 			// 根据文件类型更新运行按钮文本
 			var ext = fileName.split(".").pop().toLowerCase();
 			var runBtn = document.getElementById("run-btn");
-			if (runBtn) runBtn.textContent = (ext === "md" || ext === "markdown") ? "预览" : "运行";
+			if (runBtn) runBtn.textContent = (ext === "md" || ext === "markdown") ? "Preview" : "Run";
 
 			// 注册脏标记监听器（用户编辑时触发）
 			this._registerDirtyListener();
@@ -437,36 +437,36 @@ class FileTreeUI {
 			// 文件右键菜单
 			const selectedCount = this.selectedItems.size;
 			if (selectedCount > 1) {
-				menuItems = [{ text: `删除 ${selectedCount} 个项目`, action: () => this.showBatchDeleteConfirm() }];
+				menuItems = [{ text: `Delete ${selectedCount} items`, action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
-					{ text: '重命名', action: () => this.showRenameDialog(target) },
-					{ text: '删除', action: () => this.showDeleteConfirm(target) },
+					{ text: 'Rename', action: () => this.showRenameDialog(target) },
+					{ text: 'Delete', action: () => this.showDeleteConfirm(target) },
 				];
 				const fileExt = target.split(".").pop().toLowerCase();
 				if (fileExt === "html") {
 					menuItems.push({ text: "---", action: null });
-					menuItems.push({ text: "弹出预览", action: () => this.popupPreviewHtml(target) });
+					menuItems.push({ text: "Popup Preview", action: () => this.popupPreviewHtml(target) });
 				}
 			}
 		} else if (type === 'folder') {
 			// 文件夹右键菜单
 			const selectedCount = this.selectedItems.size;
 			if (selectedCount > 1) {
-				menuItems = [{ text: `删除 ${selectedCount} 个项目`, action: () => this.showBatchDeleteConfirm() }];
+				menuItems = [{ text: `Delete ${selectedCount} items`, action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
-					{ text: '新建文件', action: () => this.showAddFileDialog(target) },
-					{ text: '新建文件夹', action: () => this.showAddFolderDialog(target) },
+					{ text: 'New File', action: () => this.showAddFileDialog(target) },
+					{ text: 'New Folder', action: () => this.showAddFolderDialog(target) },
 					{ text: '---', action: null },
-					{ text: '删除文件夹', action: () => this.showDeleteFolderConfirm(target) },
+					{ text: 'Delete Folder', action: () => this.showDeleteFolderConfirm(target) },
 				];
 			}
 		} else if (type === 'blank') {
 			// 空白区域右键菜单（根目录）
 			menuItems = [
-				{ text: '新建文件', action: () => this.showAddFileDialog('') },
-				{ text: '新建文件夹', action: () => this.showAddFolderDialog('') },
+				{ text: 'New File', action: () => this.showAddFileDialog('') },
+				{ text: 'New Folder', action: () => this.showAddFolderDialog('') },
 			];
 		}
 
@@ -513,18 +513,18 @@ class FileTreeUI {
 
 	// 显示添加文件夹对话框
 	async showAddFolderDialog(basePath = '') {
-		const placeholder = basePath ? `例如: ${basePath}/components` : '例如: src 或 src/components';
+		const placeholder = basePath ? `e.g.: ${basePath}/components` : 'e.g.: src or src/components';
 		const result = await Swal.fire({
-			title: '新建文件夹',
+			title: 'New Folder',
 			input: 'text',
-			inputLabel: '文件夹路径',
+			inputLabel: 'Folder path',
 			inputPlaceholder: placeholder,
 			showCancelButton: true,
-			confirmButtonText: '创建',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Create',
+			cancelButtonText: 'Cancel',
 			inputValidator: (value) => {
-				if (!value) return '请输入文件夹路径';
-				if (/[<>:"|?*]/.test(value)) return '文件夹名称包含非法字符';
+				if (!value) return 'Please enter a folder path';
+				if (/[<>:"|?*]/.test(value)) return 'Folder name contains invalid characters';
 			},
 		});
 
@@ -539,28 +539,28 @@ class FileTreeUI {
 			this.expandedFolders.add(folderPath);
 
 			await this.render();
-			eda.sys_Message.showToastMessage('文件夹创建成功，请在文件夹中添加文件', 'success', 2);
+			eda.sys_Message.showToastMessage('Folder created. Add files to it.', 'success', 2);
 		}
 	}
 
 	// 显示添加文件对话框
 	async showAddFileDialog(basePath = '') {
-		const placeholder = basePath ? `例如: ${basePath}/app.js` : '例如: index.html 或 src/app.js';
+		const placeholder = basePath ? `e.g.: ${basePath}/app.js` : 'e.g.: index.html or src/app.js';
 		const result = await Swal.fire({
-			title: '新建文件',
+			title: 'New File',
 			input: 'text',
-			inputLabel: '文件路径',
+			inputLabel: 'File path',
 			inputPlaceholder: placeholder,
 			showCancelButton: true,
-			confirmButtonText: '创建',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Create',
+			cancelButtonText: 'Cancel',
 			inputValidator: (value) => {
-				if (!value) return '请输入文件名';
-				if (!/\.[a-zA-Z0-9]+$/.test(value)) return '文件名必须包含扩展名';
-				if (/[<>:"|?*]/.test(value)) return '文件名包含非法字符';
+				if (!value) return 'Please enter a file name';
+				if (!/\.[a-zA-Z0-9]+$/.test(value)) return 'File name must include an extension';
+				if (/[<>:"|?*]/.test(value)) return 'File name contains invalid characters';
 				const fullPath = basePath ? `${basePath}/${value}` : value;
 				const exists = this.projectManager.currentProject.files.some((f) => f.fileName === fullPath);
-				if (exists) return '文件已存在';
+				if (exists) return 'File already exists';
 			},
 		});
 
@@ -587,27 +587,27 @@ class FileTreeUI {
 			}
 
 			await this.render();
-			eda.sys_Message.showToastMessage('文件创建成功', 'success', 2);
+			eda.sys_Message.showToastMessage('File created', 'success', 2);
 		}
 	}
 
 	// 显示重命名对话框
 	async showRenameDialog(oldName) {
 		const result = await Swal.fire({
-			title: '重命名文件',
+			title: 'Rename File',
 			input: 'text',
 			inputValue: oldName,
-			inputLabel: '新文件路径',
+			inputLabel: 'New file path',
 			showCancelButton: true,
-			confirmButtonText: '重命名',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Rename',
+			cancelButtonText: 'Cancel',
 			inputValidator: (value) => {
-				if (!value) return '请输入文件名';
-				if (!/.[a-zA-Z0-9]+$/.test(value)) return '文件名必须包含扩展名';
-				if (value === oldName) return '文件名未改变';
-				if (/[<>:"|?*]/.test(value)) return '文件名包含非法字符';
+				if (!value) return 'Please enter a file name';
+				if (!/.[a-zA-Z0-9]+$/.test(value)) return 'File name must include an extension';
+				if (value === oldName) return 'File name unchanged';
+				if (/[<>:"|?*]/.test(value)) return 'File name contains invalid characters';
 				const exists = this.projectManager.currentProject.files.some((f) => f.fileName === value);
-				if (exists) return '文件已存在';
+				if (exists) return 'File already exists';
 			},
 		});
 
@@ -632,19 +632,19 @@ class FileTreeUI {
 			}
 
 			await this.render();
-			eda.sys_Message.showToastMessage('文件重命名成功', 'success', 2);
+			eda.sys_Message.showToastMessage('File renamed', 'success', 2);
 		}
 	}
 
 	// 显示删除确认
 	async showDeleteConfirm(fileName) {
 		const result = await Swal.fire({
-			title: '确认删除',
-			text: `确定要删除文件 "${fileName}" 吗？`,
+			title: 'Confirm Delete',
+			text: `Delete file "${fileName}"?`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: '删除',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Delete',
+			cancelButtonText: 'Cancel',
 			confirmButtonColor: '#1890ff',
 		});
 
@@ -661,7 +661,7 @@ class FileTreeUI {
 			}
 
 			await this.render();
-			eda.sys_Message.showToastMessage('文件删除成功', 'success', 2);
+			eda.sys_Message.showToastMessage('File deleted', 'success', 2);
 		}
 	}
 
@@ -669,20 +669,20 @@ class FileTreeUI {
 	async popupPreviewHtml(fileName) {
 		const project = this.projectManager.currentProject;
 		if (!project) {
-			eda.sys_Message.showToastMessage('没有打开的项目', 'warn', 2);
+			eda.sys_Message.showToastMessage('No project open', 'warn', 2);
 			return;
 		}
 		if (project.isBuiltIn) {
-			eda.sys_Message.showToastMessage('内置项目不支持弹出预览', 'warn', 2);
+			eda.sys_Message.showToastMessage('Built-in projects do not support popup preview', 'warn', 2);
 			return;
 		}
 		if (!project.files || !Array.isArray(project.files)) {
-			eda.sys_Message.showToastMessage('项目文件列表无效', 'warn', 2);
+			eda.sys_Message.showToastMessage('Invalid project file list', 'warn', 2);
 			return;
 		}
 		let htmlFile = project.files.find(f => f.fileName === fileName);
 		if (!htmlFile) {
-			eda.sys_Message.showToastMessage('未找到文件', 'warn', 2);
+			eda.sys_Message.showToastMessage('File not found', 'warn', 2);
 			return;
 		}
 		let content;
@@ -715,12 +715,12 @@ class FileTreeUI {
 		const filesInFolder = this.projectManager.currentProject.files.filter((f) => f.fileName.startsWith(folderPath + '/'));
 
 		const result = await Swal.fire({
-			title: '确认删除文件夹',
-			html: `确定要删除文件夹 "<strong>${folderPath}</strong>" 吗？<br><br>这将删除文件夹内的 <strong>${filesInFolder.length}</strong> 个文件。`,
+			title: 'Confirm Delete Folder',
+			html: `Delete folder "<strong>${folderPath}</strong>"?<br><br>This will delete <strong>${filesInFolder.length}</strong> file(s) inside it.`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: '删除',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Delete',
+			cancelButtonText: 'Cancel',
 			confirmButtonColor: '#1890ff',
 		});
 
@@ -741,7 +741,7 @@ class FileTreeUI {
 
 			this.selectedItems.clear();
 			await this.render();
-			eda.sys_Message.showToastMessage(`文件夹删除成功，共删除 ${filesInFolder.length} 个文件`, 'success', 2);
+			eda.sys_Message.showToastMessage(`Folder deleted (${filesInFolder.length} file(s) removed)`, 'success', 2);
 		}
 	}
 
@@ -767,12 +767,12 @@ class FileTreeUI {
 		});
 
 		const result = await Swal.fire({
-			title: '确认批量删除',
-			html: `确定要删除选中的 <strong>${selectedArray.length}</strong> 个项目吗？<br><br>这将删除 <strong>${totalFiles}</strong> 个文件。`,
+			title: 'Confirm Bulk Delete',
+			html: `Delete the <strong>${selectedArray.length}</strong> selected item(s)?<br><br>This will delete <strong>${totalFiles}</strong> file(s).`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: '删除',
-			cancelButtonText: '取消',
+			confirmButtonText: 'Delete',
+			cancelButtonText: 'Cancel',
 			confirmButtonColor: '#1890ff',
 		});
 
@@ -793,7 +793,7 @@ class FileTreeUI {
 
 			this.selectedItems.clear();
 			await this.render();
-			eda.sys_Message.showToastMessage(`批量删除成功，共删除 ${totalFiles} 个文件`, 'success', 2);
+			eda.sys_Message.showToastMessage(`Bulk delete complete (${totalFiles} file(s) removed)`, 'success', 2);
 		}
 	}
 

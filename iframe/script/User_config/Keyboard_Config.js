@@ -5,15 +5,15 @@
 
 // 默认快捷键配置
 const DEFAULT_SHORTCUTS = {
-	run: { win: 'Ctrl+Enter', mac: 'Command+Enter', description: '运行代码' },
-	saveFile: { win: 'Ctrl+S', mac: 'Command+S', description: '保存当前文件' },
-	format: { win: 'Ctrl+K', mac: 'Command+K', description: '格式化代码' },
-	find: { win: 'Ctrl+F', mac: 'Command+F', description: '查找' },
-	replace: { win: 'Ctrl+H', mac: 'Command+H', description: '替换' },
-	import: { win: 'Ctrl+O', mac: 'Command+O', description: '导入文件' },
-	export: { win: 'Ctrl+E', mac: 'Command+E', description: '导出文件' },
-	saveToList: { win: 'Ctrl+Shift+S', mac: 'Command+Shift+S', description: '保存到快捷按钮' },
-	saveAsPlugin: { win: 'Ctrl+Shift+P', mac: 'Command+Shift+P', description: '保存为插件' },
+	run: { win: 'Ctrl+Enter', mac: 'Command+Enter', description: 'Run Code' },
+	saveFile: { win: 'Ctrl+S', mac: 'Command+S', description: 'Save Current File' },
+	format: { win: 'Ctrl+K', mac: 'Command+K', description: 'Format Code' },
+	find: { win: 'Ctrl+F', mac: 'Command+F', description: 'Find' },
+	replace: { win: 'Ctrl+H', mac: 'Command+H', description: 'Replace' },
+	import: { win: 'Ctrl+O', mac: 'Command+O', description: 'Import File' },
+	export: { win: 'Ctrl+E', mac: 'Command+E', description: 'Export File' },
+	saveToList: { win: 'Ctrl+Shift+S', mac: 'Command+Shift+S', description: 'Save to Shortcut Button' },
+	saveAsPlugin: { win: 'Ctrl+Shift+P', mac: 'Command+Shift+P', description: 'Save as Plugin' },
 };
 
 /**
@@ -34,7 +34,7 @@ async function loadShortcuts() {
 			return { ...DEFAULT_SHORTCUTS, ...parsed };
 		}
 	} catch (e) {
-		console.error('加载快捷键配置失败:', e);
+		console.error('Failed to load shortcut config:', e);
 	}
 	return DEFAULT_SHORTCUTS;
 }
@@ -47,7 +47,7 @@ async function saveShortcuts(shortcuts) {
 		await eda.sys_Storage.setExtensionUserConfig('keyboard_shortcuts', JSON.stringify(shortcuts));
 		return true;
 	} catch (e) {
-		console.error('保存快捷键配置失败:', e);
+		console.error('Failed to save shortcut config:', e);
 		return false;
 	}
 }
@@ -121,14 +121,14 @@ function showConfirmModal(title, message, onConfirm, isDark) {
 	confirmFooter.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:flex-end;gap:8px;`;
 
 	const cancelBtn = document.createElement('button');
-	cancelBtn.textContent = '取消';
+	cancelBtn.textContent = 'Cancel';
 	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;transition:background 0.2s,border-color 0.2s;`;
 	cancelBtn.onmouseenter = () => (cancelBtn.style.backgroundColor = isDark ? '#353535' : '#f5f5f5');
 	cancelBtn.onmouseleave = () => (cancelBtn.style.backgroundColor = 'transparent');
 	cancelBtn.onclick = () => confirmOverlay.remove();
 
 	const confirmBtn = document.createElement('button');
-	confirmBtn.textContent = '确认';
+	confirmBtn.textContent = 'OK';
 	confirmBtn.style.cssText = `padding:8px 16px;background:#1890ff;color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;transition:background 0.2s,border-color 0.2s;`;
 	confirmBtn.onmouseenter = () => (confirmBtn.style.backgroundColor = '#40a9ff');
 	confirmBtn.onmouseleave = () => (confirmBtn.style.backgroundColor = '#1890ff');
@@ -177,7 +177,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 
 	const header = document.createElement('div');
 	header.style.cssText = `padding:16px 20px;border-bottom:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:12px;`;
-	header.innerHTML = `<span>快捷键设置</span><button id="keyboard-modal-close" style="background:transparent;border:none;color:${isDark ? '#e5e5e5' : '#333'};cursor:pointer;font-size:16px;line-height:1;padding:0;width:24px;height:24px;">×</button>`;
+	header.innerHTML = `<span>Keyboard Shortcuts</span><button id="keyboard-modal-close" style="background:transparent;border:none;color:${isDark ? '#e5e5e5' : '#333'};cursor:pointer;font-size:16px;line-height:1;padding:0;width:24px;height:24px;">×</button>`;
 
 	const body = document.createElement('div');
 	body.style.cssText = `padding:20px;overflow-y:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none;`;
@@ -194,7 +194,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 
 	const platformInfo = document.createElement('div');
 	platformInfo.style.cssText = `margin-bottom:16px;padding:12px;background:${isDark ? '#353535' : '#f5f5f5'};border-radius:2px;font-size:12px;color:${isDark ? '#868686' : '#666'};`;
-	platformInfo.textContent = `当前平台: ${platform === 'mac' ? 'macOS' : 'Windows'}`;
+	platformInfo.textContent = `Current platform: ${platform === 'mac' ? 'macOS' : 'Windows'}`;
 	body.appendChild(platformInfo);
 
 	const shortcutsList = document.createElement('div');
@@ -211,18 +211,18 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 		const input = document.createElement('input');
 		input.type = 'text';
 		input.value = config[platform];
-		input.placeholder = '按下快捷键...';
+		input.placeholder = 'Press a shortcut...';
 		input.readOnly = true;
 		input.style.cssText = `width:180px;padding:8px 12px;background:${isDark ? '#404040' : '#fff'};color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;font-size:12px;text-align:center;font-family:monospace;cursor:pointer;user-select:none;`;
 
 		input.addEventListener('focus', () => {
 			input.style.borderColor = isDark ? '#1890ff' : '#1890ff';
-			input.placeholder = '按下任意键...';
+			input.placeholder = 'Press any key...';
 		});
 
 		input.addEventListener('blur', () => {
 			input.style.borderColor = isDark ? '#222' : '#d9d9d9';
-			input.placeholder = '按下快捷键...';
+			input.placeholder = 'Press a shortcut...';
 		});
 
 		input.addEventListener('keydown', (e) => {
@@ -256,12 +256,12 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	footer.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:space-between;gap:12px;`;
 
 	const resetBtn = document.createElement('button');
-	resetBtn.textContent = '恢复默认';
+	resetBtn.textContent = 'Reset to Default';
 	resetBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;transition:background 0.2s,border-color 0.2s;`;
 	resetBtn.onclick = () => {
 		showConfirmModal(
-			'确认恢复默认',
-			'确定要恢复默认快捷键设置吗？当前的自定义设置将会丢失。',
+			'Confirm Reset to Default',
+			'Reset shortcuts to default? Your custom settings will be lost.',
 			async () => {
 				shortcuts = await resetShortcuts();
 				overlay.remove();
@@ -275,7 +275,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	buttonGroup.style.cssText = `display:flex;gap:8px;`;
 
 	const cancelBtn = document.createElement('button');
-	cancelBtn.textContent = '取消';
+	cancelBtn.textContent = 'Cancel';
 	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;`;
 	cancelBtn.onclick = () => {
 		window.keyboardShortcutsModalOpen = false;
@@ -284,17 +284,17 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	};
 
 	const saveBtn = document.createElement('button');
-	saveBtn.textContent = '保存';
+	saveBtn.textContent = 'Save';
 	saveBtn.style.cssText = `padding:8px 16px;background:${isDark ? '#1890ff' : '#1890ff'};color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;`;
 	saveBtn.onclick = async () => {
 		const success = await saveShortcuts(shortcuts);
 		if (success) {
-			eda.sys_Message.showToastMessage('快捷键设置已保存，请重新打开窗口以应用更改', 'success', 3);
+			eda.sys_Message.showToastMessage('Shortcuts saved. Please reopen the window to apply changes.', 'success', 3);
 			window.keyboardShortcutsModalOpen = false;
 			overlay.remove();
 			if (onClose) onClose();
 		} else {
-			eda.sys_Message.showToastMessage('保存失败', 'error', 2);
+			eda.sys_Message.showToastMessage('Save failed', 'error', 2);
 		}
 	};
 

@@ -1,4 +1,26 @@
 {
 	"About": "About",
-	"EasyEDA extension SDK v": "EasyEDA extension SDK v${1}"
+	"EasyEDA extension SDK v": "EasyEDA extension SDK v${1}",
+	"有未保存的文件，确定关闭窗口？": "There are unsaved files. Are you sure you want to close the window?",
+	"关闭确认": "Close Confirmation",
+	"确定": "OK",
+	"取消": "Cancel",
+	"正在加载编辑器...": "Loading editor...",
+	"运行": "Run",
+	"文件": "File",
+	"设置": "Settings",
+	"所有项目": "All Projects",
+	"项目设计": "Project Design",
+	"常用代码": "Code Snippets",
+	"搜索项目...": "Search projects...",
+	"导入": "Import",
+	"导入项目": "Import Project",
+	"关闭项目": "Close Project",
+	"搜索代码...": "Search code...",
+	"新建对话": "New Conversation",
+	"聊天设置": "Chat Settings",
+	"你好！我是你的 AI 编程助手。有什么可以帮你的吗？": "Hello! I'm your AI coding assistant. How can I help you?",
+	"输入代码问题或指令... (Shift+Enter 换行)": "Enter code questions or instructions... (Shift+Enter for new line)",
+	"发送": "Send",
+	"收回": "Collapse"
 }

@@ -41,7 +41,7 @@ export function activate(status?: 'onStartupFinished', arg?: string): void {
 
 export function about(): void {
 	eda.sys_Dialog.showInformationMessage(
-		eda.sys_I18n.text('EasyEDA Debug Tool v', undefined, undefined, extensionConfig.version),
+		eda.sys_I18n.text('EasyEDA extension SDK v', undefined, undefined, extensionConfig.version),
 		eda.sys_I18n.text('About'),
 	);
 }
@@ -62,7 +62,7 @@ export async function openScriptTool(): void {
 				try {
 					const hasDirty = eda.sys_Storage.getExtensionUserConfig('__has_dirty');
 					if (hasDirty === 'true') {
-						eda.sys_Dialog.showConfirmationMessage('有未保存的文件，确定关闭窗口？', '关闭确认', '确定', '取消', (confirmed: boolean) => {
+						eda.sys_Dialog.showConfirmationMessage(eda.sys_I18n.text('有未保存的文件，确定关闭窗口？'), eda.sys_I18n.text('关闭确认'), eda.sys_I18n.text('确定'), eda.sys_I18n.text('取消'), (confirmed: boolean) => {
 							if (confirmed) {
 								_closing = true;
 								try { eda.sys_IFrame.closeIFrame('popout-all-projects'); } catch (e) {}

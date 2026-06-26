@@ -22,25 +22,25 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 	// 头部
 	const header = document.createElement('div');
 	header.className = 'cs-header';
-	header.textContent = '补全仓库';
+	header.textContent = 'Completer Store';
 
 	const headerRight = document.createElement('div');
 	headerRight.className = 'cs-header-right';
 
 	const clearBtn = document.createElement('button');
 	clearBtn.className = 'eext-modal-btn-delete';
-	clearBtn.textContent = '清空全部';
+	clearBtn.textContent = 'Clear All';
 	clearBtn.onclick = () => {
-		eda.sys_Dialog.showConfirmationMessage('确定清空所有自定义补全项？此操作不可撤销。', '提示', '确认', '取消', async (confirmed) => {
+		eda.sys_Dialog.showConfirmationMessage('Clear all custom completions? This cannot be undone.', 'Tip', 'OK', 'Cancel', async (confirmed) => {
 			if (!confirmed) return;
 			try {
 				await _clearAllCompleters();
 				_removeUserCompleterFromEditor(editor);
 				await renderList(listEl);
 				if (window.leftNavPanel) await window.leftNavPanel.loadCompleterStore();
-				_toast('已清空所有自定义补全', 'success', 2);
+				_toast('All custom completions cleared', 'success', 2);
 			} catch (err) {
-				_toast('清空失败: ' + err.message, 'error', 2);
+				_toast('Clear failed: ' + err.message, 'error', 2);
 			}
 		});
 	};
@@ -49,7 +49,7 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'cs-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = onBackCallback ? '返回' : '关闭';
+	closeBtn.title = onBackCallback ? 'Back' : 'Close';
 	closeBtn.onclick = () => {
 		modal.remove();
 		if (onBackCallback) onBackCallback();
@@ -69,7 +69,7 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 
 	// 渲染列表
 	async function renderList(el) {
-		el.innerHTML = '<div class="cs-status">加载中...</div>';
+		el.innerHTML = '<div class="cs-status">Loading...</div>';
 		try {
 			const db = await UserCompleterStore_Init();
 			const records = await new Promise((resolve, reject) => {
@@ -80,7 +80,7 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 			});
 
 			if (records.length === 0) {
-				el.innerHTML = '<div class="cs-status">暂无自定义补全项</div>';
+				el.innerHTML = '<div class="cs-status">No custom completions yet</div>';
 				return;
 			}
 
@@ -89,7 +89,7 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 				el.appendChild(_createCompleterItem(editor, rec, el, renderList));
 			}
 		} catch (err) {
-			el.innerHTML = '<div class="cs-status cs-status-error">加载失败: ' + err.message + '</div>';
+			el.innerHTML = '<div class="cs-status cs-status-error">Load failed: ' + err.message + '</div>';
 		}
 	}
 
@@ -137,13 +137,13 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 	const value = document.createElement('span');
 	value.className = 'cs-item-value';
 	value.textContent = rec.value;
-	value.title = '补全值: ' + rec.value;
+	value.title = 'Value: ' + rec.value;
 	info.appendChild(value);
 
 	if (rec.params && rec.params.length > 0) {
 		const params = document.createElement('span');
 		params.className = 'cs-item-params';
-		params.textContent = '参数: ' + rec.params.join(', ');
+		params.textContent = 'Params: ' + rec.params.join(', ');
 		info.appendChild(params);
 	}
 
@@ -164,16 +164,16 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 	// 编辑按钮
 	const editBtn = document.createElement('button');
 	editBtn.className = 'cs-btn cs-btn-edit';
-	editBtn.textContent = '编辑';
+	editBtn.textContent = 'Edit';
 	editBtn.onclick = () => _showEditCompleterForm(editor, rec, item, listEl, renderList);
 	actions.appendChild(editBtn);
 
 	// 删除按钮
 	const delBtn = document.createElement('button');
 	delBtn.className = 'eext-modal-btn-delete';
-	delBtn.textContent = '删除';
+	delBtn.textContent = 'Delete';
 	delBtn.onclick = async () => {
-		delBtn.textContent = '删除中...';
+		delBtn.textContent = 'Deleting...';
 		delBtn.disabled = true;
 		try {
 			await _deleteCompleterById(rec.id);
@@ -193,10 +193,10 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 				await window.leftNavPanel.loadCompleterStore();
 			}
 
-			_toast('已删除: ' + rec.caption, 'success', 2);
+			_toast('Deleted: ' + rec.caption, 'success', 2);
 		} catch (err) {
-			_toast('删除失败: ' + err.message, 'error', 2);
-			delBtn.textContent = '删除';
+			_toast('Delete failed: ' + err.message, 'error', 2);
+			delBtn.textContent = 'Delete';
 			delBtn.disabled = false;
 		}
 	};
@@ -219,7 +219,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const row1 = document.createElement('div');
 	row1.className = 'cs-edit-row';
 	const labelCaption = document.createElement('label');
-	labelCaption.textContent = '名称:';
+	labelCaption.textContent = 'Name:';
 	const inputCaption = document.createElement('input');
 	inputCaption.className = 'cs-edit-input';
 	inputCaption.value = rec.caption;
@@ -230,11 +230,11 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const row2 = document.createElement('div');
 	row2.className = 'cs-edit-row';
 	const labelValue = document.createElement('label');
-	labelValue.textContent = '补全值:';
+	labelValue.textContent = 'Value:';
 	const inputValue = document.createElement('input');
 	inputValue.className = 'cs-edit-input';
 	inputValue.value = rec.value;
-	inputValue.placeholder = '选中补全后插入的完整内容';
+	inputValue.placeholder = 'Full content inserted when completion is selected';
 	row2.appendChild(labelValue);
 	row2.appendChild(inputValue);
 	form.appendChild(row2);
@@ -242,11 +242,11 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const row3 = document.createElement('div');
 	row3.className = 'cs-edit-row';
 	const labelDesc = document.createElement('label');
-	labelDesc.textContent = '描述:';
+	labelDesc.textContent = 'Description:';
 	const inputDesc = document.createElement('input');
 	inputDesc.className = 'cs-edit-input';
 	inputDesc.value = rec.description || '';
-	inputDesc.placeholder = '补全提示说明（可通过描述触发补全）';
+	inputDesc.placeholder = 'Completion hint (triggers via description)';
 	row3.appendChild(labelDesc);
 	row3.appendChild(inputDesc);
 	form.appendChild(row3);
@@ -256,18 +256,18 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 
 	const saveBtn = document.createElement('button');
 	saveBtn.className = 'cs-btn cs-btn-save';
-	saveBtn.textContent = '保存';
+	saveBtn.textContent = 'Save';
 	saveBtn.onclick = async () => {
 		const newCaption = inputCaption.value.trim();
 		const newValue = inputValue.value.trim();
 		const newDescription = inputDesc.value.trim();
 
 		if (!newCaption) {
-			_toast('名称不能为空', 'warn', 2);
+			_toast('Name cannot be empty', 'warn', 2);
 			return;
 		}
 		if (!newValue) {
-			_toast('补全值不能为空', 'warn', 2);
+			_toast('Value cannot be empty', 'warn', 2);
 			return;
 		}
 
@@ -275,7 +275,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 		const parsed = _parseLineForCompletion(newValue);
 		const newParams = parsed ? parsed.params : [];
 
-		saveBtn.textContent = '保存中...';
+		saveBtn.textContent = 'Saving...';
 		saveBtn.disabled = true;
 		try {
 			await _updateCompleter(rec.id, {
@@ -301,10 +301,10 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 				await window.leftNavPanel.loadCompleterStore();
 			}
 
-			_toast('已更新: ' + newCaption, 'success', 2);
+			_toast('Updated: ' + newCaption, 'success', 2);
 		} catch (err) {
-			_toast('更新失败: ' + err.message, 'error', 2);
-			saveBtn.textContent = '保存';
+			_toast('Update failed: ' + err.message, 'error', 2);
+			saveBtn.textContent = 'Save';
 			saveBtn.disabled = false;
 		}
 	};
@@ -312,7 +312,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 
 	const cancelBtn = document.createElement('button');
 	cancelBtn.className = 'cs-btn cs-btn-cancel';
-	cancelBtn.textContent = '取消';
+	cancelBtn.textContent = 'Cancel';
 	cancelBtn.onclick = () => form.remove();
 	btnRow.appendChild(cancelBtn);
 
@@ -349,7 +349,7 @@ async function _updateCompleter(id, fields) {
 		const getReq = store.get(id);
 		getReq.onsuccess = () => {
 			const record = getReq.result;
-			if (!record) return reject(new Error('记录不存在'));
+			if (!record) return reject(new Error('Record does not exist'));
 			Object.assign(record, fields);
 			const putReq = store.put(record);
 			putReq.onsuccess = resolve;

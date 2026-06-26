@@ -21,7 +21,7 @@ function CodeStore_Init() {
 			resolve(e.target.result);
 		};
 		request.onerror = (e) => {
-			console.error('数据库打开失败:', e.target.error);
+			console.error('Database open failed:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -49,7 +49,7 @@ async function CodeStore_SaveCode(name, code) {
 		};
 
 		request.onerror = (e) => {
-			console.error('保存失败:', e.target.error);
+			console.error('Save failed:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -73,23 +73,23 @@ function CodeStore_DeleteCode(db, name) {
 			const id = e.target.result;
 			if (id === undefined) {
 				// 没找到对应 name 的记录
-				console.warn(`未找到名称为 "${name}" 的代码`);
+				console.warn(`Code named "${name}" not found`);
 				resolve(false); // 或 resolve(null)
 				return;
 			}
 			// 找到 id 后，通过主键删除
 			const deleteRequest = store.delete(id);
 			deleteRequest.onsuccess = () => {
-				console.log(`成功删除代码 "${name}" (ID: ${id})`);
+				console.log(`Successfully deleted code "${name}" (ID: ${id})`);
 				resolve(true);
 			};
 			deleteRequest.onerror = (e) => {
-				console.error('删除失败:', e.target.error);
+				console.error('Delete failed:', e.target.error);
 				reject(e.target.error);
 			};
 		};
 		getRequest.onerror = (e) => {
-			console.error('❌ 查询 name 失败:', e.target.error);
+			console.error('❌ Query name failed:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -112,7 +112,7 @@ function CodeStore_UpdateCode(db, name, newCode) {
 			const record = e.target.result; //这里是返回的完整对象
 			if (!record) {
 				//一般不会发生这种情况 除非有神人手动修改了indexDB的数据库
-				console.warn(`${name}"更新失败`);
+				console.warn(`${name}" update failed`);
 				resolve(false);
 				return;
 			}
@@ -128,13 +128,13 @@ function CodeStore_UpdateCode(db, name, newCode) {
 			};
 			putRequest.onerror = (e) => {
 				//一般也不会出现这种情况
-				console.error('保存失败:', e.target.error);
+				console.error('Save failed:', e.target.error);
 				reject(e.target.error);
 			};
 		};
 		getRequest.onerror = (e) => {
 			//上同
-			console.error('查询失败:', e.target.error);
+			console.error('Query failed:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -166,7 +166,7 @@ function CodeStore_Get_CodeList(db) {
 			}
 		};
 		request.onerror = (e) => {
-			console.error('未知错误：', e.target.error);
+			console.error('Unknown error:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -181,24 +181,24 @@ function CodeStore_Get_CodeList(db) {
 async function Code_SaveCode(editor) {
 	const currentCode = editor.getValue();
 	if (!currentCode.trim()) {
-		eda.sys_Message.showToastMessage('当前没有可保存的代码内容。', 'info', 1);
+		eda.sys_Message.showToastMessage('No code content to save.', 'info', 1);
 		return;
 	}
 
 	eda.sys_Dialog.showInputDialog(
-		'请输入代码名称：',
-		'若名称已存在，将自动覆盖更新其代码内容。',
-		'保存/更新代码',
+		'Please enter a code name:',
+		'If the name already exists, its code content will be automatically overwritten and updated.',
+		'Save/Update Code',
 		'text',
 		'',
 		{
-			placeholder: '例如：快速排序算法',
+			placeholder: 'e.g.: Quick Sort Algorithm',
 			minlength: 1,
 			maxlength: 100,
 		},
 		async (inputValue) => {
 			if (inputValue == null || inputValue.trim() === '') {
-				eda.sys_Message.showToastMessage('用户取消或未输入名称', 'info', 1);
+				eda.sys_Message.showToastMessage('User cancelled or no name entered', 'info', 1);
 				return;
 			}
 
@@ -221,16 +221,16 @@ async function Code_SaveCode(editor) {
 				if (recordExists) {
 					const updated = await CodeStore_UpdateCode(db, name, currentCode);
 					if (updated) {
-						eda.sys_Message.showToastMessage(`代码 "${name}" 已成功更新`, 'info', 1);
+						eda.sys_Message.showToastMessage(`Code "${name}" updated successfully`, 'info', 1);
 					} else {
-						eda.sys_Message.showToastMessage(`更新失败："${name}" 未找到（理论上不应发生）`, 'info', 1);
+						eda.sys_Message.showToastMessage(`Update failed: "${name}" not found (theoretically should not happen)`, 'info', 1);
 					}
 				} else {
 					const newId = await CodeStore_SaveCode(name, currentCode);
-					eda.sys_Message.showToastMessage(`代码 "${name}" 已保存，ID: ${newId}`, 'info', 1);
+					eda.sys_Message.showToastMessage(`Code "${name}" saved, ID: ${newId}`, 'info', 1);
 				}
 			} catch (error) {
-				eda.sys_Message.showToastMessage(`保存/更新代码时出错: ${error.message || error}`, 'info', 1);
+				eda.sys_Message.showToastMessage(`Error saving/updating code: ${error.message || error}`, 'info', 1);
 			}
 		},
 	);
@@ -259,13 +259,13 @@ async function Code_OpenLoadWindow(editor) {
 	// 3. 标题栏
 	const header = document.createElement('div');
 	header.className = 'code-load-header';
-	header.textContent = '加载代码片段';
+	header.textContent = 'Load Code Snippet';
 
 	// 4. 关闭按钮
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'code-load-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = '关闭';
+	closeBtn.title = 'Close';
 	closeBtn.onclick = () => {
 		// 添加淡出效果可选，这里直接移除
 		if (backdrop.parentNode) {
@@ -279,7 +279,7 @@ async function Code_OpenLoadWindow(editor) {
 	// 5. 搜索框
 	const searchBox = document.createElement('input');
 	searchBox.type = 'text';
-	searchBox.placeholder = '搜索代码名称...';
+	searchBox.placeholder = 'Search code name...';
 	searchBox.className = 'code-load-search'; // 应用 CSS 类
 
 	modal.appendChild(searchBox);
@@ -307,16 +307,16 @@ async function Code_OpenLoadWindow(editor) {
 		console.error(err);
 		// 假设 eda.sys_Message 存在，如果不存在请替换为你的提示逻辑
 		if (eda && eda.sys_Message) {
-			eda.sys_Message.showToastMessage('加载代码列表失败', 'info', 1);
+			eda.sys_Message.showToastMessage('Failed to load code list', 'info', 1);
 		}
-		listContainer.innerHTML = '<div class="code-load-error">加载失败</div>';
+		listContainer.innerHTML = '<div class="code-load-error">Load failed</div>';
 	}
 
 	// 渲染列表函数
 	function renderList(items) {
 		listContainer.innerHTML = '';
 		if (items.length === 0) {
-			listContainer.innerHTML = '<div class="code-load-empty">暂无代码片段</div>';
+			listContainer.innerHTML = '<div class="code-load-empty">No code snippets</div>';
 			return;
 		}
 
@@ -344,13 +344,13 @@ async function Code_OpenLoadWindow(editor) {
 						editor.setValue(record.code, -1);
 						editor.clearSelection();
 						if (eda && eda.sys_Message) {
-							eda.sys_Message.showToastMessage(`已加载代码：${item.name}`, 'info', 1);
+							eda.sys_Message.showToastMessage(`Code loaded: ${item.name}`, 'info', 1);
 						}
 					}
 				} catch (e) {
 					console.error(e);
 					if (eda && eda.sys_Message) {
-						eda.sys_Message.showToastMessage(`加载代码内容失败: ${e.message || e}`, 'info', 1);
+						eda.sys_Message.showToastMessage(`Failed to load code content: ${e.message || e}`, 'info', 1);
 					}
 				}
 				// 关闭窗口
@@ -417,13 +417,13 @@ async function Code_OpenDeleteWindow(editor) {
 	// 标题栏
 	const header = document.createElement('div');
 	header.className = 'code-load-header';
-	header.textContent = '删除代码片段';
+	header.textContent = 'Delete Code Snippet';
 
 	// 关闭按钮
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'code-load-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = '关闭';
+	closeBtn.title = 'Close';
 	closeBtn.onclick = () => {
 		if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
 	};
@@ -434,7 +434,7 @@ async function Code_OpenDeleteWindow(editor) {
 	// 搜索框
 	const searchBox = document.createElement('input');
 	searchBox.type = 'text';
-	searchBox.placeholder = '搜索代码名称...';
+	searchBox.placeholder = 'Search code name...';
 	searchBox.className = 'code-load-search';
 	modal.appendChild(searchBox);
 
@@ -457,15 +457,15 @@ async function Code_OpenDeleteWindow(editor) {
 		allItems = await CodeStore_Get_CodeList(dbInstance);
 		renderList(allItems);
 	} catch (err) {
-		eda.sys_Message.showToastMessage('加载代码列表失败', 'info', 1);
-		listContainer.innerHTML = '<div class="code-load-error">加载失败</div>';
+		eda.sys_Message.showToastMessage('Failed to load code list', 'info', 1);
+		listContainer.innerHTML = '<div class="code-load-error">Load failed</div>';
 	}
 
 	// 渲染列表（列表项用红色提示这是删除操作）
 	function renderList(items) {
 		listContainer.innerHTML = '';
 		if (items.length === 0) {
-			listContainer.innerHTML = '<div class="code-load-empty">暂无代码片段</div>';
+			listContainer.innerHTML = '<div class="code-load-empty">No code snippets</div>';
 			return;
 		}
 
@@ -474,26 +474,26 @@ async function Code_OpenDeleteWindow(editor) {
 			itemEl.className = 'code-load-item';
 			itemEl.textContent = `${item.name} • ${new Date(item.createdAt).toLocaleString()}`;
 			itemEl.style.color = '#1890ff';
-			itemEl.title = `点击删除：${item.name}`;
+			itemEl.title = `Click to delete: ${item.name}`;
 
 			itemEl.onclick = async () => {
 				if (!dbInstance) {
-					eda.sys_Message.showToastMessage('数据库连接已断开，无法删除', 'info', 1);
+					eda.sys_Message.showToastMessage('Database connection lost, cannot delete', 'info', 1);
 					return;
 				}
-				eda.sys_Dialog.showConfirmationMessage(`确认删除代码 "${item.name}"？`, '提示', '确认', '取消', async (confirmed) => {
+				eda.sys_Dialog.showConfirmationMessage(`Confirm delete code "${item.name}"?`, 'Prompt', 'Confirm', 'Cancel', async (confirmed) => {
 				if (!confirmed) return;
 				try {
 					const deleted = await CodeStore_DeleteCode(dbInstance, item.name);
 					if (deleted) {
 						allItems = allItems.filter((i) => i.name !== item.name);
 						renderList(allItems);
-						eda.sys_Message.showToastMessage(`代码 "${item.name}" 已删除`, 'success', 1);
+						eda.sys_Message.showToastMessage(`Code "${item.name}" deleted`, 'success', 1);
 					} else {
-						eda.sys_Message.showToastMessage(`未找到代码 "${item.name}"`, 'info', 1);
+						eda.sys_Message.showToastMessage(`Code "${item.name}" not found`, 'info', 1);
 					}
 				} catch (e) {
-					eda.sys_Message.showToastMessage(`删除失败: ${e.message || e}`, 'info', 1);
+					eda.sys_Message.showToastMessage(`Delete failed: ${e.message || e}`, 'info', 1);
 				}
 			});
 			};

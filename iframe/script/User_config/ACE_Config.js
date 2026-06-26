@@ -150,7 +150,7 @@ async function SetTheme(editor, light_theme, dark_theme) {
 	const next = current === 'dark' ? 'light' : current === 'light' ? 'dark' : 'light';
 	ThemeEngine.apply(next);
 	if (window.fileTreeUI) window.fileTreeUI.applyTheme();
-	await eda.sys_Message.showToastMessage('当前主题已切换为' + (next === 'dark' ? '暗色' : next === 'light' ? '亮色' : next), 'info', 1);
+	await eda.sys_Message.showToastMessage('Theme switched to ' + (next === 'dark' ? 'dark' : next === 'light' ? 'light' : next), 'info', 1);
 	return next;
 }
 
@@ -394,12 +394,12 @@ function buildDocText(item) {
 
 	// 附加 @remarks 说明
 	if (item.remarks) {
-		doc += '\n备注：' + item.remarks;
+		doc += '\nRemarks: ' + item.remarks;
 	}
 
 	// 枚举成员：显示所属枚举类型
 	if (item.isEnumMember) {
-		doc += '\n枚举：' + (item.enumType || '');
+		doc += '\nEnum: ' + (item.enumType || '');
 		return doc.trim();
 	}
 
@@ -409,22 +409,22 @@ function buildDocText(item) {
 	}
 
 	// 方法/属性
-	doc += '\n用法：' + item.methodPath + '()\n';
+	doc += '\nUsage: ' + item.methodPath + '()\n';
 	if (item.parameters && item.parameters.length > 0) {
-		doc += '参数:\n';
+		doc += 'Parameters:\n';
 		item.parameters.forEach((p) => {
 			doc += `  • ${p.name}: ${p.description}\n`;
 		});
 	} else {
-		doc += '\n此方法无参数，可直接调用';
+		doc += '\nNo parameters, can be called directly';
 	}
 	if (item.returns) {
-		doc += '\n\n返回值:' + item.returns;
+		doc += '\n\nReturns:' + item.returns;
 	}
 	if (item.isAsync) {
-		doc += '\n\n★ 异步方法 — 调用时需使用 await';
+		doc += '\n\n★ Async method — requires await';
 	} else if (item.isAsync === false) {
-		doc += '\n\n★ 同步方法 — 无需 await，直接调用';
+		doc += '\n\n★ Sync method — no await needed';
 	}
 	return doc.trim();
 }
@@ -462,7 +462,7 @@ function ACE_ChangeCodeSize(editor, currentFontSize, showToast, step = 1) {
 function ACE_RunCode(editor) {
 	const code = editor.getValue().trim();
 	if (!code) {
-		console.log('编辑器为空，未执行任何代码。');
+		console.log('Editor is empty, no code executed.');
 		return;
 	}
 	try {
@@ -470,8 +470,8 @@ function ACE_RunCode(editor) {
 		const newcode = `(async () => {\n ${code}\n})();`;
 		eval(newcode);
 	} catch (error) {
-		eda.sys_Message.showToastMessage('执行失败，内容不是有效的 JS、HTML 或 MD 格式。', 'error', 2);
-		console.error('执行出错:', error);
+		eda.sys_Message.showToastMessage('Execution failed: content is not valid JS, HTML, or MD format.', 'error', 2);
+		console.error('Execution error:', error);
 	}
 }
 
@@ -482,7 +482,7 @@ async function previewHtmlInPopupWindow(data) {
 	try {
 		const htmlContent = data.content;
 		if (!htmlContent) {
-			eda.sys_Message.showToastMessage('HTML内容为空', 'error', 2);
+			eda.sys_Message.showToastMessage('HTML content is empty', 'error', 2);
 			return;
 		}
 
@@ -514,9 +514,9 @@ async function previewHtmlInPopupWindow(data) {
 			}
 		);
 
-		eda.sys_Message.showToastMessage('预览窗口已打开', 'success', 2);
+		eda.sys_Message.showToastMessage('Preview window opened', 'success', 2);
 	} catch (error) {
-		eda.sys_Message.showToastMessage('打开预览窗口失败: ' + error.message, 'error', 2);
+		eda.sys_Message.showToastMessage('Failed to open preview window: ' + error.message, 'error', 2);
 	}
 }
 
@@ -553,7 +553,7 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			var project = await window.projectManager.loadProjectById(projectId);
 			if (!project) { project = await window.projectManager.loadProjectByUuid(uuid); }
 			if (!project) {
-				eda.sys_Message.showToastMessage("项目不存在", "error", 2);
+				eda.sys_Message.showToastMessage("Project not found", "error", 2);
 				return;
 			}
 			var sf = startupFile || btn.getAttribute("data-startup-file");
@@ -564,9 +564,9 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			if (ext === "js" || (!ext && isScript)) {
 				var code = project.files[0].content;
 				if (code && code.trim()) {
-					try { eval(code); } catch(e) { eda.sys_Message.showToastMessage("执行失败: " + e.message, "error", 2); }
+					try { eval(code); } catch(e) { eda.sys_Message.showToastMessage("Execution failed: " + e.message, "error", 2); }
 				} else {
-					eda.sys_Message.showToastMessage("脚本内容为空", "warn", 2);
+					eda.sys_Message.showToastMessage("Script content is empty", "warn", 2);
 				}
 				return;
 			}
@@ -575,12 +575,12 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			var htmlFiles = project.files.filter(function(f) { return f.fileName.toLowerCase().endsWith(".html"); });
 			var entryFileName = sf || (htmlFiles.length > 0 ? htmlFiles[0].fileName : null);
 			if (!entryFileName) {
-				eda.sys_Message.showToastMessage("项目中没有可运行的文件", "warn", 2);
+				eda.sys_Message.showToastMessage("No runnable files in project", "warn", 2);
 				return;
 			}
 			var entryFile = project.files.find(function(f) { return f.fileName === entryFileName; });
 			if (!entryFile) {
-				eda.sys_Message.showToastMessage("启动文件不存在", "error", 2);
+				eda.sys_Message.showToastMessage("Startup file not found", "error", 2);
 				return;
 			}
 
@@ -605,10 +605,10 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 					content: finalHTML
 				});
 			} else {
-				eda.sys_Message.showToastMessage("previewHtmlInPopupWindow 未定义", "error", 2);
+				eda.sys_Message.showToastMessage("previewHtmlInPopupWindow is not defined", "error", 2);
 			}
 		} catch(e) {
-			eda.sys_Message.showToastMessage("加载失败: " + e.message, "error", 2);
+			eda.sys_Message.showToastMessage("Load failed: " + e.message, "error", 2);
 		}
 	};
 
@@ -639,11 +639,11 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			menu.appendChild(item);
 		}
 		menu.innerHTML = "";
-		showItem("加载项目", async function() {
+		showItem("Load Project", async function() {
 			try {
 				var project = await window.projectManager.loadProjectById(projectId);
 				if (!project) { project = await window.projectManager.loadProjectByUuid(uuid); }
-				if (!project) { eda.sys_Message.showToastMessage("项目不存在", "error", 2); return; }
+				if (!project) { eda.sys_Message.showToastMessage("Project not found", "error", 2); return; }
 				var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith(".js")));
 				if (isScript) {
 					await window.leftNavPanel.openScriptProject(project.id);
@@ -653,16 +653,16 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 					if (sf && window.fileTreeUI) { await window.fileTreeUI.loadFile(sf); }
 				}
 			} catch(e) {
-				eda.sys_Message.showToastMessage("加载项目失败: " + e.message, "error", 2);
+				eda.sys_Message.showToastMessage("Failed to load project: " + e.message, "error", 2);
 			}
 		});
-		showItem("删除", function() {
+		showItem("Delete", function() {
 			deleteBtnFromDB(uuid).then(function() {
 				li.remove();
-				eda.sys_Message.showToastMessage("已删除快捷按钮: " + name, "info", 1);
+				eda.sys_Message.showToastMessage("Deleted quick button: " + name, "info", 1);
 			}).catch(function(err) {
-				console.error("删除失败:", err);
-				eda.sys_Message.showToastMessage("删除失败: " + err.message, "error", 1);
+				console.error("Delete failed:", err);
+				eda.sys_Message.showToastMessage("Delete failed: " + err.message, "error", 1);
 			});
 		});
 		menu.style.left = Math.min(e.pageX, window.innerWidth - 130) + "px";
@@ -730,12 +730,12 @@ async function _selectStartupFile(project) {
 		modal.style.cssText = "background:" + bg + ";color:" + fg + ";border-radius:8px;padding:20px;min-width:380px;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:12px;";
 
 		var title = document.createElement("div");
-		title.textContent = "选择启动文件";
+		title.textContent = "Select Startup File";
 		title.style.cssText = "font-size:16px;font-weight:600;";
 
 		var search = document.createElement("input");
 		search.type = "text";
-		search.placeholder = "搜索文件...";
+		search.placeholder = "Search files...";
 		search.style.cssText = "width:100%;padding:6px 10px;border:1px solid " + border + ";border-radius:4px;background:" + bg + ";color:" + fg + ";font-size:13px;box-sizing:border-box;";
 
 		var list = document.createElement("div");
@@ -745,11 +745,11 @@ async function _selectStartupFile(project) {
 		btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
 
 		var cancelBtn = document.createElement("button");
-		cancelBtn.textContent = "取消";
+		cancelBtn.textContent = "Cancel";
 		cancelBtn.style.cssText = "padding:6px 16px;border:none;border-radius:4px;cursor:pointer;background:" + btnCancelBg + ";color:" + fg + ";font-size:13px;";
 
 		var confirmBtn = document.createElement("button");
-		confirmBtn.textContent = "确定";
+		confirmBtn.textContent = "OK";
 		confirmBtn.style.cssText = "padding:6px 16px;border:none;border-radius:4px;cursor:pointer;background:" + btnBg + ";color:#fff;font-size:13px;";
 
 		var selectedFile = null;
@@ -788,7 +788,7 @@ async function _selectStartupFile(project) {
 		cancelBtn.onclick = function() { close(null); };
 		confirmBtn.onclick = function() {
 			if (!selectedFile) {
-				eda.sys_Message.showToastMessage("请选择一个启动文件", "warn", 1);
+				eda.sys_Message.showToastMessage("Please select a startup file", "warn", 1);
 				return;
 			}
 			close(selectedFile);
@@ -812,7 +812,7 @@ async function _selectStartupFile(project) {
 async function Project_SaveToBtnList(projectId) {
 	var project = await window.projectManager.loadProjectById(projectId);
 	if (!project) {
-		eda.sys_Message.showToastMessage("项目不存在", "error", 2);
+		eda.sys_Message.showToastMessage("Project not found", "error", 2);
 		return;
 	}
 
@@ -834,21 +834,21 @@ async function Project_SaveToBtnList(projectId) {
 		var existing = allRecords.find(function(r) { return r.projectId === projectId || r.uuid === project.uuid; });
 		if (existing) {
 			db.close();
-			eda.sys_Message.showToastMessage("当前项目 " + project.projectName + " 已经映射为顶部菜单：" + existing.name, "info", 2);
+			eda.sys_Message.showToastMessage("Current project " + project.projectName + " is already mapped to header menu: " + existing.name, "info", 2);
 			return;
 		}
 
 		var nameResult = await Swal.fire({
-			title: "映射到顶部菜单",
+			title: "Map to Header Menu",
 			input: "text",
-			inputLabel: "按钮名称",
+			inputLabel: "Button Name",
 			inputValue: project.projectName,
-			inputPlaceholder: "例如：我的项目",
+			inputPlaceholder: "e.g.: My Project",
 			showCancelButton: true,
-			confirmButtonText: "下一步",
-			cancelButtonText: "取消",
+			confirmButtonText: "Next",
+			cancelButtonText: "Cancel",
 			inputValidator: function(value) {
-				if (!value || !value.trim()) return "请输入按钮名称";
+				if (!value || !value.trim()) return "Please enter a button name";
 			},
 		});
 		if (!nameResult.isConfirmed) { db.close(); return; }
@@ -876,29 +876,29 @@ async function Project_SaveToBtnList(projectId) {
 		var ul = document.getElementById("quick-btn-list");
 		if (ul) ul.appendChild(li);
 		if (startupFile) {
-			eda.sys_Message.showToastMessage("已映射到顶部菜单，启动文件：" + startupFile, "success", 2);
+			eda.sys_Message.showToastMessage("Mapped to header menu, startup file: " + startupFile, "success", 2);
 		} else {
-			eda.sys_Message.showToastMessage("已映射到顶部菜单", "success", 2);
+			eda.sys_Message.showToastMessage("Mapped to header menu", "success", 2);
 		}
 	} catch(e) {
-		eda.sys_Message.showToastMessage("保存失败: " + e.message, "error", 2);
+		eda.sys_Message.showToastMessage("Save failed: " + e.message, "error", 2);
 	}
 }
 
 async function Code_SaveToBtnList(editor) {
 	// 新架构：提示用户先创建项目
 	eda.sys_Dialog.showConfirmationMessage(
-		'请先将当前代码保存为项目，然后使用项目的映射到顶部菜单功能。\n\n这样可以确保修改代码后按钮效果实时同步。',
-		'提示',
-		'去创建项目',
-		'取消',
+		'Please save the current code as a project first, then use the project\'s "Map to Header Menu" feature.\n\nThis ensures that button effects sync in real-time after code modifications.',
+		'Tip',
+		'Go Create Project',
+		'Cancel',
 		(confirmed) => {
 			if (confirmed) {
 				// 提示用户创建新项目
 				if (window.fileTreeUI) {
 					window.fileTreeUI.createNewProject();
 				} else {
-					eda.sys_Message.showToastMessage('请先创建一个项目', 'info', 2);
+					eda.sys_Message.showToastMessage('Please create a project first', 'info', 2);
 				}
 			}
 		}
@@ -925,8 +925,8 @@ async function Code_LoadBtnListFromDB(editor) {
 			ul.appendChild(li);
 		});
 	} catch (error) {
-		console.error('加载快捷按钮失败:', error);
-		eda.sys_Message.showToastMessage(`加载失败: ${error.message}`, 'error', 1);
+		console.error('Failed to load quick buttons:', error);
+		eda.sys_Message.showToastMessage(`Load failed: ${error.message}`, 'error', 1);
 	}
 }
 
@@ -948,7 +948,7 @@ function ExtStore_Init() {
 			resolve(result);
 		};
 		request.onerror = (e) => {
-			console.error('数据库打开失败:', e.target.error);
+			console.error('Failed to open database:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -977,16 +977,16 @@ async function ExtStore_SaveExt(name, code) {
 			const putRequest = store.put(record); // put 会根据 id 自动 insert 或 update
 			putRequest.onsuccess = (ev) => {
 				const id = ev.target.result;
-				console.log('保存/更新成功，ID:', id);
+				console.log('Save/update succeeded, ID:', id);
 				resolve(id);
 			};
 			putRequest.onerror = (ev) => {
-				console.error('保存/更新失败:', ev.target.error);
+				console.error('Save/update failed:', ev.target.error);
 				reject(ev.target.error);
 			};
 		};
 		getRequest.onerror = (e) => {
-			console.error('查询插件名失败:', e.target.error);
+			console.error('Failed to query plugin name:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -1004,23 +1004,23 @@ async function ExtStore_DeleteExt(name) {
 		getRequest.onsuccess = (e) => {
 			const id = e.target.result;
 			if (id === undefined) {
-				console.warn(`未找到名称为 "${name}" 的插件`);
+				console.warn(`Plugin "${name}" not found`);
 				resolve(false);
 				return;
 			}
 			const deleteRequest = store.delete(id);
 			deleteRequest.onsuccess = () => {
 				ExtStore_SyncAutoStartPlugins();
-				console.log(`成功删除插件 "${name}" (ID: ${id})`);
+				console.log(`Successfully deleted plugin "${name}" (ID: ${id})`);
 				resolve(true);
 			};
 			deleteRequest.onerror = (e) => {
-				console.error('删除失败:', e.target.error);
+				console.error('Delete failed:', e.target.error);
 				reject(e.target.error);
 			};
 		};
 		getRequest.onerror = (e) => {
-			console.error('查询 name 索引失败:', e.target.error);
+			console.error('Failed to query name index:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -1037,7 +1037,7 @@ async function ExtStore_RenameExt(oldName, newName) {
 		getRequest.onsuccess = (e) => {
 			const record = e.target.result;
 			if (!record) {
-				reject(new Error(`未找到名称为 "${oldName}" 的启动项`));
+				reject(new Error(`Startup item "${oldName}" not found`));
 				return;
 			}
 			record.name = newName;
@@ -1078,7 +1078,7 @@ async function ExtStore_GetExtList() {
 			}
 		};
 		request.onerror = (e) => {
-			console.error('查询插件列表失败:', e.target.error);
+			console.error('Failed to query plugin list:', e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -1095,7 +1095,7 @@ async function ExtStore_GetExtList() {
 			getRequest.onsuccess = function(e) {
 				var record = e.target.result;
 				if (!record) {
-				reject(new Error("插件 \"" + name + "\" 不存在"));
+				reject(new Error("Plugin \"" + name + "\" does not exist"));
 					return;
 				}
 				record.enabled = !!enabled;
@@ -1118,7 +1118,7 @@ async function ExtStore_GetExtList() {
 			getRequest.onsuccess = function(e) {
 				var record = e.target.result;
 				if (!record) {
-					reject(new Error("插件 \"" + name + "\" 不存在"));
+					reject(new Error("Plugin \"" + name + "\" does not exist"));
 					return;
 				}
 				record.startupTiming = startupTiming;
@@ -1185,11 +1185,11 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	// 3. 头部
 	const header = document.createElement('div');
 	header.className = 'plugin-manager-header';
-	header.textContent = '启动项管理';
+	header.textContent = 'Startup Item Manager';
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'plugin-manager-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = onBackCallback ? '返回' : '关闭';
+	closeBtn.title = onBackCallback ? 'Back' : 'Close';
 	closeBtn.onclick = () => {
 		if (modal.parentNode) modal.parentNode.removeChild(modal);
 		if (onBackCallback) onBackCallback();
@@ -1205,21 +1205,21 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	saveSection.className = 'plugin-manager-save-section';
 	const saveLabel = document.createElement('div');
 	saveLabel.className = 'plugin-manager-label';
-	saveLabel.textContent = '添加启动项：';
+	saveLabel.textContent = 'Add Startup Item:';
 	saveSection.appendChild(saveLabel);
 	const inputGroup = document.createElement('div');
 	inputGroup.className = 'plugin-manager-input-group';
 	const nameInput = document.createElement('input');
 	nameInput.type = 'text';
-	nameInput.placeholder = '启动项名称（不可重复）';
+	nameInput.placeholder = 'Startup item name (must be unique)';
 	nameInput.className = 'plugin-manager-input';
 	inputGroup.appendChild(nameInput);
 	const saveBtn = document.createElement('button');
-	saveBtn.textContent = '添加';
+	saveBtn.textContent = 'Add';
 	saveBtn.className = 'eext-modal-btn-primary';
 	saveBtn.onclick = async () => {
 		const originalText = saveBtn.textContent;
-		saveBtn.textContent = '添加中...';
+		saveBtn.textContent = 'Adding...';
 		saveBtn.disabled = true;
 		try {
 			await saveCurrentCodeAsPlugin(editor, nameInput, (msg, type) => {
@@ -1240,18 +1240,18 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	// --- 启动项列表标题 ---
 	const listTitle = document.createElement('div');
 	listTitle.className = 'plugin-manager-list-title';
-	listTitle.textContent = '已有启动项：';
+	listTitle.textContent = 'Existing Startup Items:';
 	body.appendChild(listTitle);
 	const pluginList = document.createElement('div');
 	pluginList.className = 'plugin-manager-list';
 	body.appendChild(pluginList);
 	// --- 渲染启动项列表函数 ---
 	async function renderPluginList(listEl) {
-		listEl.innerHTML = '<div class="plugin-manager-status">加载中...</div>';
+		listEl.innerHTML = '<div class="plugin-manager-status">Loading...</div>';
 		try {
 			const plugins = await ExtStore_GetExtList();
 			if (plugins.length === 0) {
-				listEl.innerHTML = '<div class="plugin-manager-status">暂无启动项</div>';
+				listEl.innerHTML = '<div class="plugin-manager-status">No startup items yet</div>';
 			} else {
 				listEl.innerHTML = '';
 				for (const plugin of plugins) {
@@ -1263,36 +1263,36 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					nameSpan.title = plugin.name;
 					item.appendChild(nameSpan);
 					const renameBtn = document.createElement('button');
-					renameBtn.textContent = '重命名';
+					renameBtn.textContent = 'Rename';
 					renameBtn.className = 'eext-modal-btn';
 					renameBtn.onclick = async (e) => {
 						e.stopPropagation();
 						const result = await Swal.fire({
-							title: '重命名启动项',
+							title: 'Rename Startup Item',
 							input: 'text',
 							inputValue: plugin.name,
-							inputLabel: '新名称',
+							inputLabel: 'New Name',
 							showCancelButton: true,
-							confirmButtonText: '确定',
-							cancelButtonText: '取消',
+							confirmButtonText: 'OK',
+							cancelButtonText: 'Cancel',
 							inputValidator: (value) => {
-								if (!value || !value.trim()) return '请输入名称';
-								if (value.trim() === plugin.name) return '名称未改变';
+								if (!value || !value.trim()) return 'Please enter a name';
+								if (value.trim() === plugin.name) return 'Name unchanged';
 							},
 						});
 						if (result.isConfirmed) {
 							try {
 								await ExtStore_RenameExt(plugin.name, result.value.trim());
 								await renderPluginList(pluginList);
-								eda.sys_Message.showToastMessage('重命名成功', 'success', 1);
+								eda.sys_Message.showToastMessage('Renamed successfully', 'success', 1);
 							} catch (err) {
-								eda.sys_Message.showToastMessage('重命名失败: ' + err.message, 'error', 2);
+								eda.sys_Message.showToastMessage('Rename failed: ' + err.message, 'error', 2);
 							}
 						}
 					};
 					item.appendChild(renameBtn);
 					const loadBtn = document.createElement('button');
-					loadBtn.textContent = '加载';
+					loadBtn.textContent = 'Load';
 					loadBtn.className = 'eext-modal-btn-primary';
 					loadBtn.onclick = async (e) => {
 						e.stopPropagation();
@@ -1305,43 +1305,43 @@ async function showPluginManagerModal(editor, onBackCallback) {
 								if (req.result && req.result.code) {
 									editor.setValue(req.result.code, -1);
 									editor.clearSelection();
-									eda.sys_Message.showToastMessage(`已加载：${plugin.name}`, 'success', 1);
+									eda.sys_Message.showToastMessage(`Loaded: ${plugin.name}`, 'success', 1);
 								}
 							};
 						} catch (err) {
-							eda.sys_Message.showToastMessage('加载失败: ' + err.message, 'error', 2);
+							eda.sys_Message.showToastMessage('Load failed: ' + err.message, 'error', 2);
 						}
 					};
 					item.appendChild(loadBtn);
 					const delBtn = document.createElement('button');
-					delBtn.textContent = '删除';
+					delBtn.textContent = 'Delete';
 					delBtn.className = 'eext-modal-btn-delete';
 					delBtn.onclick = async (e) => {
 						e.stopPropagation();
 						const confirmResult = await Swal.fire({
-							title: '确认删除',
-							html: `确定删除启动项 "<strong>${plugin.name}</strong>"？`,
+							title: 'Confirm Delete',
+							html: `Are you sure you want to delete startup item "<strong>${plugin.name}</strong>"?`,
 							icon: 'warning',
 							showCancelButton: true,
-							confirmButtonText: '删除',
-							cancelButtonText: '取消',
+							confirmButtonText: 'Delete',
+							cancelButtonText: 'Cancel',
 							confirmButtonColor: '#d33',
 						});
 						if (!confirmResult.isConfirmed) return;
-						delBtn.textContent = '删除中...';
+						delBtn.textContent = 'Deleting...';
 						delBtn.disabled = true;
 						try {
 							await ExtStore_DeleteExt(plugin.name);
 							await renderPluginList(pluginList);
 							if (eda && eda.sys_Message) {
-								eda.sys_Message.showToastMessage(`启动项 "${plugin.name}" 已删除`, 'info', 1);
+								eda.sys_Message.showToastMessage(`Startup item "${plugin.name}" deleted`, 'info', 1);
 							}
 						} catch (err) {
-							console.error('删除失败:', err);
+							console.error('Delete failed:', err);
 							if (eda && eda.sys_Message) {
-								eda.sys_Message.showToastMessage(`删除失败: ${err.message}`, 'error', 2);
+								eda.sys_Message.showToastMessage(`Delete failed: ${err.message}`, 'error', 2);
 							}
-							delBtn.textContent = '删除';
+							delBtn.textContent = 'Delete';
 							delBtn.disabled = false;
 						}
 					};
@@ -1350,7 +1350,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 				}
 			}
 		} catch (err) {
-			listEl.innerHTML = `<div class="plugin-manager-status error">加载启动项失败：${err.message}</div>`;
+			listEl.innerHTML = `<div class="plugin-manager-status error">Failed to load startup items: ${err.message}</div>`;
 		}
 	}
 	// 初始加载
@@ -1388,21 +1388,21 @@ async function saveCurrentCodeAsPlugin(editor, nameInput, messageCallback) {
 	const code = editor.getValue().trim();
 
 	if (!name) {
-		messageCallback('请输入启动项名称', 'warn');
+		messageCallback('Please enter a startup item name', 'warn');
 		return;
 	}
 	if (!code) {
-		messageCallback('当前编辑器为空，无法保存', 'info');
+		messageCallback('Editor is empty, cannot save', 'info');
 		return;
 	}
 
 	try {
 		await ExtStore_SaveExt(name, code);
-		messageCallback(`启动项 "${name}" 已保存`, 'success');
+		messageCallback(`Startup item "${name}" saved`, 'success');
 		nameInput.value = '';
 	} catch (err) {
-		console.error('保存启动项失败:', err);
-		messageCallback(`保存失败: ${err.message}`, 'error');
+		console.error('Failed to save startup item:', err);
+		messageCallback(`Save failed: ${err.message}`, 'error');
 	}
 }
 
@@ -1410,29 +1410,29 @@ async function saveCurrentCodeAsPlugin(editor, nameInput, messageCallback) {
 async function ExtStore_SavePlugin(editor) {
 	const code = editor.getValue().trim();
 	if (!code) {
-		eda.sys_Message.showToastMessage('当前编辑器为空，无法保存', 'info', 2);
+		eda.sys_Message.showToastMessage('Editor is empty, cannot save', 'info', 2);
 		return;
 	}
 
 	const result = await Swal.fire({
-		title: '保存到启动项',
+		title: 'Save to Startup Items',
 		input: 'text',
-		inputLabel: '启动项名称',
-		inputPlaceholder: '例如：自动初始化脚本',
+		inputLabel: 'Startup Item Name',
+		inputPlaceholder: 'e.g.: Auto-init script',
 		showCancelButton: true,
-		confirmButtonText: '保存',
-		cancelButtonText: '取消',
+		confirmButtonText: 'Save',
+		cancelButtonText: 'Cancel',
 		inputValidator: (value) => {
-			if (!value || !value.trim()) return '请输入启动项名称';
+			if (!value || !value.trim()) return 'Please enter a startup item name';
 		},
 	});
 
 	if (result.isConfirmed) {
 		try {
 			await ExtStore_SaveExt(result.value.trim(), code);
-			eda.sys_Message.showToastMessage(`启动项 "${result.value.trim()}" 已保存`, 'success', 2);
+			eda.sys_Message.showToastMessage(`Startup item "${result.value.trim()}" saved`, 'success', 2);
 		} catch (err) {
-			eda.sys_Message.showToastMessage(`保存失败: ${err.message}`, 'error', 2);
+			eda.sys_Message.showToastMessage(`Save failed: ${err.message}`, 'error', 2);
 		}
 	}
 }
@@ -1471,8 +1471,8 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 							// onLog(`插件 "${record.name}" 执行成功`, 'success');
 							results.push({ name: record.name, status: 'success' });
 						} catch (err) {
-							console.error(`插件 "${record.name}" 执行出错:`, err);
-							onLog(`插件 "${record.name}" 执行失败: ${err.message}`, 'error');
+							console.error(`Error executing plugin "${record.name}":`, err);
+							onLog(`Plugin "${record.name}" execution failed: ${err.message}`, 'error');
 							results.push({ name: record.name, status: 'error', error: err.message });
 						}
 					}
@@ -1489,20 +1489,20 @@ async function ExtStore_LoadAndRunAllPlugins(globalContext = {}, onLog = (msg, t
 
 			request.onerror = (e) => {
 				const error = e.target.error;
-				console.error('扫描插件数据库失败:', error);
+				console.error('Failed to scan plugin database:', error);
 
 				// 清理（即使出错也要清理）
 				tempKeys.forEach((key) => {
 					delete window[key];
 				});
 
-				onLog(`扫描插件失败: ${error.message}`, 'error');
+				onLog(`Failed to scan plugins: ${error.message}`, 'error');
 				reject(error);
 			};
 		});
 	} catch (err) {
-		console.error('初始化数据库失败，无法加载插件:', err);
-		onLog(`数据库初始化失败: ${err.message}`, 'error');
+		console.error('Database initialization failed, cannot load plugins:', err);
+		onLog(`Database initialization failed: ${err.message}`, 'error');
 		throw err;
 	}
 }
@@ -1524,7 +1524,7 @@ function ImportFile(editor) {
 		if (!file) return;
 
 		if (!file.name.endsWith('.js')) {
-			eda.sys_Message.showToastMessage('请选择一个有效的 JavaScript (.js) 文件。', 'warn', 2);
+			eda.sys_Message.showToastMessage('Please select a valid JavaScript (.js) file.', 'warn', 2);
 			return;
 		}
 
@@ -1534,8 +1534,8 @@ function ImportFile(editor) {
 			editor.session.setMode('ace/mode/javascript');
 		};
 		reader.onerror = () => {
-			console.error('读取文件时出错');
-			eda.sys_Message.showToastMessage('读取文件失败，请重试。', 'error', 2);
+			console.error('Error reading file');
+			eda.sys_Message.showToastMessage('Failed to read file, please try again.', 'error', 2);
 		};
 
 		reader.readAsText(file);
@@ -1615,7 +1615,7 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 
 		// 1. 跳转方法文档
 		menu.appendChild(
-			createMenuItem(matchedMethod ? '跳转方法文档' : '未找到可跳转的方法', !!matchedMethod, () => {
+			createMenuItem(matchedMethod ? 'Jump to Method Docs' : 'No jumpable method found', !!matchedMethod, () => {
 				let clean = matchedMethod.startsWith('eda.') ? matchedMethod.substring(4) : matchedMethod;
 				const url = `https://prodocs.lceda.cn/cn/api/reference/pro-api.${clean.toLowerCase()}.html`;
 				window.open(url, '_blank');
@@ -1624,14 +1624,14 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 
 		// 2. 生成测试用例
 		menu.appendChild(
-			createMenuItem('生成测试用例', !!matchedMethod, () => {
+			createMenuItem('Generate Test Case', !!matchedMethod, () => {
 				generateTestCase(editor, matchedMethod);
 			}),
 		);
 
 		// 3. 添加到补全
 		menu.appendChild(
-			createMenuItem('添加到补全', true, () => {
+			createMenuItem('Add to Completions', true, () => {
 				UserCompleter_Add(editor, lineText);
 			}),
 		);
@@ -1669,18 +1669,18 @@ function _findMethodInfo(methodPath) {
  */
 function _formatMethodDoc(info) {
 	if (!info) return '';
-	let doc = `方法路径: ${info.methodPath}\n`;
-	doc += `描述: ${info.description || '无'}\n`;
+	let doc = `Method path: ${info.methodPath}\n`;
+	doc += `Description: ${info.description || 'None'}\n`;
 	if (info.parameters && info.parameters.length > 0) {
-		doc += '参数:\n';
+		doc += 'Parameters:\n';
 		info.parameters.forEach((p) => {
 			doc += `  - ${p.name}: ${p.description || ''}\n`;
 		});
 	} else {
-		doc += '参数: 无（可直接调用）\n';
+		doc += 'Parameters: none (can be called directly)\n';
 	}
-	doc += `返回值: ${info.returns || '无'}\n`;
-	doc += `备注: ${info.remarks || '无'}\n`;
+	doc += `Returns: ${info.returns || 'None'}\n`;
+	doc += `Remarks: ${info.remarks || 'None'}\n`;
 	return doc;
 }
 
@@ -1755,7 +1755,7 @@ async function _traceWithProgress(methodPath) {
 	const info = _findMethodInfo(methodPath);
 	if (!info) return [];
 
-	_toast(`[1/3] 分析 ${info.description || methodPath} 的参数依赖...`, 'info', 2);
+	_toast(`[1/3] Analyzing parameter dependencies of ${info.description || methodPath}...`, 'info', 2);
 	await new Promise((r) => setTimeout(r, 300));
 
 	const rawDeps = _traceDependencies(methodPath);
@@ -1770,11 +1770,11 @@ async function _traceWithProgress(methodPath) {
 	}
 
 	if (uniqueDeps.length === 0) {
-		_toast(`[2/3] ${info.description} 无外部依赖，直接生成`, 'info', 2);
+		_toast(`[2/3] ${info.description} has no external dependencies, generating directly`, 'info', 2);
 	} else {
 		for (let i = 0; i < uniqueDeps.length; i++) {
 			const dep = uniqueDeps[i];
-			_toast(`[2/3] 追溯依赖 (${i + 1}/${uniqueDeps.length}): ${dep.methodPath} — ${dep.description || ''}`, 'info', 2);
+			_toast(`[2/3] Tracing dependency (${i + 1}/${uniqueDeps.length}): ${dep.methodPath} — ${dep.description || ''}`, 'info', 2);
 			await new Promise((r) => setTimeout(r, 400));
 		}
 	}
@@ -1793,40 +1793,40 @@ function _buildTestCasePrompt(methodPath, dependencyChain) {
 
 	let depsDocs = '';
 	if (dependencyChain.length > 0) {
-		depsDocs = '\n## 依赖方法（按调用顺序排列，叶子节点在前）\n';
+		depsDocs = '\n## Dependency methods (in call order, leaf nodes first)\n';
 		dependencyChain.forEach((dep, i) => {
-			depsDocs += `\n### 依赖 ${i + 1}\n`;
+			depsDocs += `\n### Dependency ${i + 1}\n`;
 			depsDocs += _formatMethodDoc(dep);
 		});
 	}
 
-	const systemPrompt = `你是 EDA（嘉立创EDA/EasyEDA Pro）扩展 API 的测试用例生成器。
+	const systemPrompt = `You are a test case generator for the EDA (EasyEDA Pro) extension API.
 
-你的任务是为指定的 API 方法生成**可直接运行的 JavaScript 测试用例代码**。
+Your task is to generate **directly runnable JavaScript test case code** for the specified API method.
 
-## 规则
+## Rules
 
-1. **输出格式**：只输出一段纯 JavaScript 代码，不要包含 markdown 代码块标记（不要 \`\`\`），不要有任何解释文字。
-2. **JSDoc 头部**：代码最上方必须有一个 JSDoc 注释块，格式如下：
+1. **Output format**: Output only a single block of pure JavaScript code. Do not include markdown code fences (no \`\`\`), and do not include any explanatory text.
+2. **JSDoc header**: The top of the code must contain a JSDoc comment block in the following format:
    /**
-    * <方法全路径>()
-    * 方法用例: <方法描述>
+    * <full method path>()
+    * Method case: <method description>
     * @parameters
-    * <参数名>: <参数描述>
-    * ...（如果无参数则写"本方法无输入参数，可直接调用"）
-    * @returns <返回值描述>
-    * @remarks: <备注，如果无则写"无">
+    * <param name>: <param description>
+    * ... (if there are no parameters, write "This method has no input parameters and can be called directly")
+    * @returns <return value description>
+    * @remarks: <remarks; if none, write "None">
     */
-3. **依赖追溯**：下方提供的依赖方法必须在代码中按顺序先调用，取得返回值后作为目标方法的参数传入。
-4. **变量命名**：每个 API 调用结果用有意义的变量名（如 libraryList、searchResult 等），并在调用后加上 console.log 打印结果。
-5. **所有 API 调用都是异步的**：使用 await 调用，代码在顶层作用域执行（不需要包裹 async 函数）。
-6. **只使用提供的方法**：绝对不要编造不存在的 API。
-7. **参数值**：对于字符串参数使用合理的示例值（如 '' 表示空搜索词），对于可选参数可以使用 undefined。`;
+3. **Dependency tracing**: The dependency methods provided below must be called in order first, and their return values passed as arguments to the target method.
+4. **Variable naming**: Use meaningful variable names for each API call result (e.g. libraryList, searchResult), and add a console.log after each call to print the result.
+5. **All API calls are asynchronous**: Use await for calls; code runs in top-level scope (no need to wrap in an async function).
+6. **Only use the provided methods**: Never fabricate APIs that do not exist.
+7. **Parameter values**: Use reasonable example values for string parameters (e.g. '' for an empty search term); for optional parameters you may use undefined.`;
 
-	const userPrompt = `## 目标方法
+	const userPrompt = `## Target method
 ${targetDoc}
 ${depsDocs}
-请为 ${methodPath} 生成测试用例代码。`;
+Please generate test case code for ${methodPath}.`;
 
 	return { systemPrompt, userPrompt };
 }
@@ -1849,9 +1849,9 @@ async function generateTestCase(editor, methodPath) {
 
 	if (!chatConfig || !chatConfig.apiKey) {
 		if (typeof eda !== 'undefined' && eda.sys_Message) {
-			eda.sys_Message.showToastMessage('请先在 AI 配置设置中填写 API Key', 'warn', 3);
+			eda.sys_Message.showToastMessage('Please fill in the API Key in the AI configuration settings first', 'warn', 3);
 		} else {
-			eda.sys_Message.showToastMessage('请先在 AI 配置设置中填写 API Key', 'warn', 3);
+			eda.sys_Message.showToastMessage('Please fill in the API Key in the AI configuration settings first', 'warn', 3);
 		}
 		return;
 	}
@@ -1862,11 +1862,11 @@ async function generateTestCase(editor, methodPath) {
 	// 第二阶段：构建 prompt 并调用 AI
 	const prompts = _buildTestCasePrompt(methodPath, dependencyChain);
 	if (!prompts) {
-		_toast(`未在方法库中找到 ${methodPath}`, 'error', 2);
+		_toast(`${methodPath} not found in the method library`, 'error', 2);
 		return;
 	}
 
-	_toast('[3/3] 正在生成代码...', 'info', 3);
+	_toast('[3/3] Generating code...', 'info', 3);
 
 	const messages = [
 		{ role: 'system', content: prompts.systemPrompt },
@@ -1888,7 +1888,7 @@ async function generateTestCase(editor, methodPath) {
 		});
 
 		if (!response.ok) {
-			const errData = await response.json().catch(() => ({ error: { message: '未知错误' } }));
+			const errData = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
 			throw new Error(errData.error?.message || `HTTP ${response.status}`);
 		}
 
@@ -1903,13 +1903,13 @@ async function generateTestCase(editor, methodPath) {
 		if (code) {
 			editor.setValue(code, -1);
 			editor.clearSelection();
-			_toast('测试用例已生成', 'success', 2);
+			_toast('Test case generated', 'success', 2);
 		} else {
-			throw new Error('AI 返回内容为空');
+			throw new Error('AI returned empty content');
 		}
 	} catch (error) {
-		console.error('生成测试用例失败:', error);
-		_toast(`生成失败: ${error.message}`, 'error', 3);
+		console.error('Failed to generate test case:', error);
+		_toast(`Generation failed: ${error.message}`, 'error', 3);
 	}
 }
 
@@ -1967,7 +1967,7 @@ function _parseLineForCompletion(lineText) {
 async function UserCompleter_Add(editor, lineText) {
 	const parsed = _parseLineForCompletion(lineText);
 	if (!parsed) {
-		_toast('当前行无法识别为有效的补全项', 'warn', 2);
+		_toast('The current line cannot be recognized as a valid completion item', 'warn', 2);
 		return;
 	}
 
@@ -1982,7 +1982,7 @@ async function UserCompleter_Add(editor, lineText) {
 			req.onsuccess = () => res(!!req.result);
 		});
 		if (existing) {
-			_toast(`"${parsed.caption}" 已存在于自定义补全中`, 'info', 2);
+			_toast(`"${parsed.caption}" already exists in custom completions`, 'info', 2);
 			return;
 		}
 
@@ -2008,10 +2008,10 @@ async function UserCompleter_Add(editor, lineText) {
 			await window.leftNavPanel.loadCompleterStore();
 		}
 
-		_toast(`已添加补全: ${parsed.caption}`, 'success', 2);
+		_toast(`Completion added: ${parsed.caption}`, 'success', 2);
 	} catch (err) {
-		console.error('添加自定义补全失败:', err);
-		_toast(`添加失败: ${err.message}`, 'error', 2);
+		console.error('Failed to add custom completion:', err);
+		_toast(`Add failed: ${err.message}`, 'error', 2);
 	}
 }
 
@@ -2055,9 +2055,9 @@ editor.completers.push(userCompleter);
 
 		const docLines = [];
 		if (rec.description) docLines.push(rec.description);
-		docLines.push('补全值: ' + rec.value);
+		docLines.push('Completion value: ' + rec.value);
 		if (rec.params && rec.params.length > 0) {
-			docLines.push('参数: ' + rec.params.join(', '));
+			docLines.push('Parameters: ' + rec.params.join(', '));
 		}
 		const docText = docLines.join('\n');
 
@@ -2103,7 +2103,7 @@ async function UserCompleter_LoadAll(editor) {
 			_registerUserCompleters(editor, records);
 		}
 	} catch (err) {
-		console.error('加载自定义补全失败:', err);
+		console.error('Failed to load custom completions:', err);
 	}
 }
 
@@ -2117,7 +2117,7 @@ async function UserCompleter_LoadAll(editor) {
  */
 function ExportFileForJs(text, filename = 'script.js') {
 	if (!text || text.trim() === '') {
-		showToast('内容不能为空');
+		showToast('Content cannot be empty');
 		return;
 	}
 	// 确保文件名以 .js 结尾
@@ -2206,7 +2206,7 @@ function showToast(message, options = {}) {
 		};
 		const validTypes = ['info', 'success', 'warning', 'error'];
 		if (!validTypes.includes(config.type)) {
-			console.warn(`不存在的消息类型"${config.type}"`);
+			console.warn(`Unknown message type "${config.type}"`);
 			config.type = 'info';
 		}
 		let toastContainer = document.getElementById('__toast-container');
@@ -2277,6 +2277,6 @@ function showToast(message, options = {}) {
 		}
 		toastEl.addEventListener('click', removeToast, { once: true });
 	} catch (error) {
-		console.error('显示消息异常', error);
+		console.error('Error displaying message', error);
 	}
 }

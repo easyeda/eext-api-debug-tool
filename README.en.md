@@ -6,31 +6,31 @@ A lightweight, embeddable JavaScript code editor built on [Ace Editor](https://a
 
 ---
 
-![img1](image/README/img1.png)
+![img1](images/README/img1.png)
 
 ## API Auto-Generated Test Cases
 
-![img2](image/README/749167ce6b11.gif)
+![img2](images/README/749167ce6b11.gif)
 
 ## API Auto-Distinguish PCB and Schematic
 
-![img3](image/README/img3.png)
+![img3](images/README/img3.png)
 
 ## Support Custom Completion & Edit Completion Parameters
 
-![img4](image/README/img4.png)
+![img4](images/README/img4.png)
 
 ## Three Built-in Styles and Custom Primitives
 
-![img5](image/README/1ae249a96fce.gif)
+![img5](images/README/1ae249a96fce.gif)
 
 ## HTML Online Preview with Path References
 
-![img6](image/README/img6.png)
+![img6](images/README/img6.png)
 
 ## A Brand New Workflow-Based Plugin Development Approach
 
-![alt text](images/工作流.png)
+![alt text](imagess/工作流.png)
 
 ## Features
 

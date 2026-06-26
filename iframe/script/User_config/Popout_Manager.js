@@ -5,9 +5,9 @@
  */
 
 const POPOUT_VIEW_MAP = {
-	"all-projects": { btnId: "nav-all-projects", viewId: "project-list-view", title: "所有项目" },
-	"project-design": { btnId: "nav-project-design", viewId: "file-tree", title: "项目设计" },
-	"common-code": { btnId: "nav-common-code", viewId: "completer-store-view", title: "常用代码" },
+	"all-projects": { btnId: "nav-all-projects", viewId: "project-list-view", title: "All Projects" },
+	"project-design": { btnId: "nav-project-design", viewId: "file-tree", title: "Project Design" },
+	"common-code": { btnId: "nav-common-code", viewId: "completer-store-view", title: "Common Code" },
 };
 
 const POPOUT_DRAG_BTN_MAP = {
@@ -127,10 +127,10 @@ const PopoutManager = {
 				}
 			);
 			this._poppedOutPanels[viewName].iframeId = iframeId;
-			eda.sys_Message.showToastMessage(cfg.title + ' 已弹出', 'success', 2);
+			eda.sys_Message.showToastMessage(cfg.title + ' popped out', 'success', 2);
 		} catch (e) {
 			this.restorePanel(viewName);
-			eda.sys_Message.showToastMessage(cfg.title + ' 弹出失败', 'error', 3);
+			eda.sys_Message.showToastMessage(cfg.title + ' popout failed', 'error', 3);
 		}
 	},
 
@@ -156,7 +156,7 @@ const PopoutManager = {
 		delete this._poppedOutPanels[viewName];
 
 		if (window.leftNavPanel) window.leftNavPanel.switchView(viewName);
-		eda.sys_Message.showToastMessage('面板已收回', 'success', 1);
+		eda.sys_Message.showToastMessage('Panel restored', 'success', 1);
 	},
 
 	// 主 iframe 侧 MessageBus
