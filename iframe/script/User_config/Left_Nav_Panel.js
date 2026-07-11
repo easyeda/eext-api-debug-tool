@@ -449,7 +449,7 @@ class LeftNavPanel {
 			if (isScriptProj) {
 				menuItems = [
 					{ text: I18N.t('openMenu'), action: () => this.openScriptProject(projectId) },
-					{ text: 'Rename', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: I18N.t('rename'), action: () => this.showRenameProjectDialog(projectId) },
 					{ text: I18N.t('exportMenu'), action: () => this.exportScriptAsJs(projectId) },
 					{ text: '---', action: null },
 					{ text: I18N.t('mapToTopMenu'), action: () => Project_SaveToBtnList(projectId) },
@@ -460,7 +460,7 @@ class LeftNavPanel {
 			} else {
 				menuItems = [
 					{ text: I18N.t('openMenu'), action: () => this.openProject(projectId) },
-					{ text: 'Rename', action: () => this.showRenameProjectDialog(projectId) },
+					{ text: I18N.t('rename'), action: () => this.showRenameProjectDialog(projectId) },
 					{ text: I18N.t('exportMenu'), action: () => this.exportProjectAsZip(projectId) },
 					{ text: '---', action: null },
 					{ text: I18N.t('mapToTopMenu'), action: () => Project_SaveToBtnList(projectId) },

@@ -1,17 +1,28 @@
 async function SetVibeCodingConfig() {
 	let flag;
 	try { flag = await eda.sys_Storage.getExtensionUserConfig('Vibe_Coding_Config'); } catch (e) {}
+	const chatEl = document.getElementById('ai-chat');
+	const btn = document.getElementById('ai-btn');
 	if (flag == 'true') {
+		// 当前展开 → 收起
 		try { eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'false'); } catch (e) {}
-		const chatEl = document.getElementById('ai-chat');
+		let panelMode;
+		try { panelMode = await eda.sys_Storage.getExtensionUserConfig('ai_panel_mode'); } catch(e) {}
+		if (panelMode === 'popout') {
+			try { eda.sys_IFrame.closeIFrame('ai-chat-popout'); } catch(e) {}
+		}
 		if (chatEl) chatEl.style.display = 'none';
-		const btn = document.getElementById('ai-btn');
 		if (btn) btn.innerText = I18N.t('copilotOff');
 	} else {
+		// 当前收起 → 展开
 		try { eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true'); } catch (e) {}
-		const chatEl = document.getElementById('ai-chat');
-		if (chatEl) chatEl.style.display = '';
-		const btn = document.getElementById('ai-btn');
+		let panelMode;
+		try { panelMode = await eda.sys_Storage.getExtensionUserConfig('ai_panel_mode'); } catch(e) {}
+		if (panelMode === 'popout' && typeof _openAiPopout === 'function') {
+			_openAiPopout(btn);
+		} else {
+			if (chatEl) chatEl.style.display = '';
+		}
 		if (btn) btn.innerText = I18N.t('copilotOn');
 	}
 }
@@ -24,7 +35,13 @@ async function GetVibeCodingConfig() {
 	const chatEl = document.getElementById('ai-chat');
 	if (flag == 'true') {
 		btn.innerText = I18N.t('copilotOn');
-		if (chatEl) chatEl.style.display = '';
+		let panelMode;
+		try { panelMode = await eda.sys_Storage.getExtensionUserConfig('ai_panel_mode'); } catch(e) {}
+		if (panelMode === 'popout' && typeof _openAiPopout === 'function') {
+			_openAiPopout(btn);
+		} else {
+			if (chatEl) chatEl.style.display = '';
+		}
 	} else {
 		btn.innerText = I18N.t('copilotOff');
 		if (chatEl) chatEl.style.display = 'none';
@@ -79,7 +96,19 @@ function initAiChat() {
 		if (idx !== null) { const n = parseInt(idx); if (n >= 0 && n < profiles.length) activeIdx = n; }
 	} catch (e) {}
 
-	function getActive() { return profiles[activeIdx]; }
+	function reloadHistory() {
+    try {
+      const stored = localStorage.getItem('ai_chat_history');
+      if (stored) {
+        messageHistory = JSON.parse(stored);
+        if (chatList) {
+          chatList.innerHTML = '';
+          messageHistory.forEach(function(msg) { appendMessage(msg.role, msg.content, false, false); });
+        }
+      }
+    } catch (e) {}
+  }
+  function getActive() { return profiles[activeIdx]; }
 	function saveProfiles() { localStorage.setItem('ai_profiles', JSON.stringify(profiles)); }
 	function saveActiveIdx() { localStorage.setItem('ai_active_profile', String(activeIdx)); }
 
@@ -279,7 +308,8 @@ function initAiChat() {
 		cfg.multiTurn = document.getElementById('cfg-multi-turn').checked;
 		cfg.stream = document.getElementById('cfg-stream').checked;
 		cfg.temperature = parseFloat(document.getElementById('cfg-temperature').value) || 0.7;
-		if (!cfg.apiKey) { eda.sys_Message.showToastMessage(I18N.t('fillApiKey'), 'warn', 2); return; }
+		reloadHistory();
+      if (!cfg.apiKey) { eda.sys_Message.showToastMessage(I18N.t('fillApiKey'), 'warn', 2); return; }
 		saveProfiles();
 		if (!cfg.multiTurn) {
 			messageHistory = [];
@@ -546,4 +576,7 @@ function initAiChat() {
 	}
 }
 
-document.addEventListener('DOMContentLoaded', initAiChat);
+// 延迟初始化，避免阻塞 DOMContentLoaded 导致 Violation 警告
+document.addEventListener('DOMContentLoaded', function() {
+	requestIdleCallback ? requestIdleCallback(initAiChat) : setTimeout(initAiChat, 0);
+});

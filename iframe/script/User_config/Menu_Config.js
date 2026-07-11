@@ -292,6 +292,56 @@ function _readCSSColor(varName) {
 	return '#000';
 }
 
+// --- AI panel helpers (global, used by Ai_Chat.js) ---
+
+function _openAiPopout(aiBtn) {
+	const chatEl = document.getElementById("ai-chat");
+	if (chatEl) chatEl.style.display = "none";
+	eda.sys_IFrame.openIFrame("iframe/ai-popout.html", 420, 600, "ai-chat-popout", {
+		title: I18N.t("aiAssistant"), maximizeButton: true, minimizeButton: true,
+		onBeforeCloseCallFn: async function() {
+			try { eda.sys_Storage.setExtensionUserConfig("Vibe_Coding_Config", "false"); } catch(e) {}
+			const btn = aiBtn || document.getElementById("ai-btn");
+			if (btn) btn.innerText = I18N.t("copilotOff");
+			return true;
+		},
+	});
+	if (aiBtn) aiBtn.innerText = I18N.t("copilotOn");
+}
+
+function _closeAiPopout() {
+	try { eda.sys_IFrame.closeIFrame("ai-chat-popout"); } catch(e) {}
+}
+
+async function applyAiPanelMode(mode) {
+	if (window._aiSwitching) return;
+	window._aiSwitching = true;
+	const chatEl = document.getElementById("ai-chat");
+	const aiBtn = document.getElementById("ai-btn");
+	const radios = document.querySelectorAll("input[name=ai-panel-mode]");
+	radios.forEach(function(rr) { rr.disabled = true; });
+	try {
+		let copilotOn = false;
+		try { copilotOn = (await eda.sys_Storage.getExtensionUserConfig("Vibe_Coding_Config")) === "true"; } catch(e) {}
+		if (mode === "popout") {
+			try { eda.sys_Storage.setExtensionUserConfig("ai_panel_mode", "popout"); } catch(e) {}
+			if (copilotOn) {
+				_openAiPopout(aiBtn);
+			}
+		} else {
+			_closeAiPopout();
+			try { eda.sys_Storage.setExtensionUserConfig("ai_panel_mode", "inline"); } catch(e) {}
+			if (copilotOn) {
+				if (chatEl) chatEl.style.display = "";
+				if (aiBtn) aiBtn.innerText = I18N.t("copilotOn");
+			}
+		}
+	} finally {
+		radios.forEach(function(rr) { rr.disabled = false; });
+		window._aiSwitching = false;
+	}
+}
+
 function showSettingsModal(editor, light_theme, dark_theme) {
 	if (document.getElementById('settings-modal-overlay')) return;
 
@@ -335,6 +385,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		{ id: 'shortcuts', label: I18N.t('shortcuts') },
 		{ id: 'plugins', label: I18N.t('plugins') },
 		{ id: 'completer', label: I18N.t('completerStore') },
+			{ id: 'aiAssistant', label: I18N.t('aiAssistant') },
 	];
 
 	/* Right content */
@@ -399,11 +450,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		if (activeMenu === 'general') {
 			/* Theme cards */
 			const sec = section(I18N.t('theme'));
-			ThemeEngine.listThemes().filter(t => t.preset).forEach(t => {
+			ThemeEngine.listThemes().forEach(t => {
 				const active = ThemeEngine.getCurrent() === t.id;
 				const card = document.createElement('div');
 				card.style.cssText = `display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:${active ? 'var(--eext-hover-bg)' : 'var(--eext-bg-item)'};border:1px solid ${active ? 'var(--eext-brand)' : 'transparent'};border-radius:2px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);`;
-				const swatch = t.id === 'dark' ? '#404040' : t.id === 'dark-editor' ? '#272822' : t.id === 'system' ? 'linear-gradient(135deg,#f5f5f5 50%,#404040 50%)' : '#f5f5f5';
+				const swatch = t.id === 'dark' ? '#404040' : t.id === 'dark-editor' ? '#272822' : t.id === 'Custom' ? 'linear-gradient(135deg,#1890ff 50%,#f5f5f5 50%)' : t.id === 'system' ? 'linear-gradient(135deg,#f5f5f5 50%,#404040 50%)' : '#f5f5f5';
 				card.innerHTML = `<div style="width:12px;height:12px;border-radius:2px;border:1px solid var(--eext-border);background:${swatch};"></div><span>${t.name}</span>${active ? '<span style="margin-left:auto;color:var(--eext-brand);">✔</span>' : ''}`;
 				card.onclick = async () => {
 					if (ThemeEngine.getCurrent() === t.id) return;
@@ -412,6 +463,16 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				};
 				contentPane.appendChild(card);
 			});
+			if (!ThemeEngine._customThemes["Custom"]) {
+				const cc = document.createElement("div");
+				cc.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:var(--eext-bg-item);border:1px solid transparent;border-radius:2px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);";
+				cc.innerHTML = '<div style="width:12px;height:12px;border-radius:2px;border:1px solid var(--eext-border);background:linear-gradient(135deg,#1890ff 50%,#f5f5f5 50%);"></div><span>' + I18N.t("custom") + '</span>';
+				cc.onclick = function() {
+					var vv = ThemeEngine.getCurrentVars();
+					ThemeEngine.saveCustom("Custom", vv, undefined, undefined, I18N.t("custom")).then(function(n) { if (n) { ThemeEngine.apply("Custom"); renderContent(); } });
+				};
+				contentPane.appendChild(cc);
+			}
 
 			/* Window size */
 			const sec2 = section(I18N.t('windowSize'));
@@ -444,7 +505,17 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const hi = document.createElement('input'); hi.type = 'text'; hi.value = domVal || '';
 				hi.style.cssText = 'width:78px;height:24px;padding:0 4px;border:1px solid var(--eext-border);border-radius:2px;font-size:11px;font-family:monospace;color:var(--eext-text-primary);background:var(--eext-bg-input);';
 				hi.setAttribute('data-key', k);
-				const apply = (v) => { document.documentElement.style.setProperty('--eext-'+k, v); _pt(); };
+					const apply = (v) => {
+						document.documentElement.style.setProperty('--eext-'+k, v);
+						if (!ThemeEngine._customThemes["Custom"]) {
+							var bv = ThemeEngine.getCurrentVars();
+							ThemeEngine.saveCustom("Custom", bv, undefined, undefined, I18N.t("custom"));
+							ThemeEngine.apply("Custom");
+							renderContent();
+							return;
+						}
+						_pt();
+					};
 				hi.oninput = () => { sw.value = hi.value; apply(hi.value); };
 				sw.oninput = () => { hi.value = sw.value; apply(sw.value); };
 				const lb = document.createElement('span'); lb.textContent = labels[k];
@@ -1039,6 +1110,30 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				}
 			}
 			loadCompleters();
+			loadCompleters();
+		} else if (activeMenu === "aiAssistant") {
+			section(I18N.t("aiAssistant"));
+			let currentMode;
+			try { currentMode = eda.sys_Storage.getExtensionUserConfig("ai_panel_mode") || "inline"; } catch (e) { currentMode = "inline"; }
+			const modeRow = document.createElement("div");
+			modeRow.style.cssText = "display:flex;align-items:center;gap:16px;";
+			const modeLabel = document.createElement("span");
+			modeLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			modeLabel.textContent = I18N.t("panelDisplayMode");
+			modeRow.appendChild(modeLabel);
+			["inline", "popout"].forEach(function(value) {
+				const lb = document.createElement("label");
+				lb.style.cssText = "display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);";
+				const r = document.createElement("input");
+				r.type = "radio"; r.name = "ai-panel-mode"; r.value = value;
+				r.checked = (currentMode === value);
+				r.style.cssText = "margin:0;accent-color:var(--eext-brand);";
+				r.onchange = async function() { if (this.checked) await applyAiPanelMode(value); };
+				lb.appendChild(r);
+				lb.appendChild(document.createTextNode(I18N.t(value === "inline" ? "inlineMode" : "popoutMode")));
+				modeRow.appendChild(lb);
+			});
+			contentPane.appendChild(modeRow);
 		}
 	}
 
@@ -1059,9 +1154,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const nv = {};
 			contentPane.querySelectorAll('input[type=color]').forEach(el => nv[el.getAttribute('data-key')] = el.value);
 			if (Object.keys(nv).length === 0) return;
-			const cur = ThemeEngine.getCurrent();
-			const nm = cur === 'dark' ? I18N.t('customDark') : cur === 'light' ? I18N.t('customLight') : I18N.t('custom');
-var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}, nm).then(function(n) { if (n) ThemeEngine.apply(n); });
+			const nm = I18N.t('custom');
+			var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom('Custom', {...cv, ...nv}, nm).then(function(n) { if (n) ThemeEngine.apply(n); });
 		}, 500);
 	}
 

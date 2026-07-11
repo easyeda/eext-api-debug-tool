@@ -437,7 +437,7 @@ class FileTreeUI {
 			// 文件右键菜单
 			const selectedCount = this.selectedItems.size;
 			if (selectedCount > 1) {
-				menuItems = [{ text: `Delete ${selectedCount} items`, action: () => this.showBatchDeleteConfirm() }];
+				menuItems = [{ text: I18N.format('deleteItems', selectedCount), action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
 					{ text: I18N.t('rename'), action: () => this.showRenameDialog(target) },
@@ -446,14 +446,14 @@ class FileTreeUI {
 				const fileExt = target.split(".").pop().toLowerCase();
 				if (fileExt === "html") {
 					menuItems.push({ text: "---", action: null });
-					menuItems.push({ text: "Popup Preview", action: () => this.popupPreviewHtml(target) });
+					menuItems.push({ text: I18N.t('popupPreview'), action: () => this.popupPreviewHtml(target) });
 				}
 			}
 		} else if (type === 'folder') {
 			// 文件夹右键菜单
 			const selectedCount = this.selectedItems.size;
 			if (selectedCount > 1) {
-				menuItems = [{ text: `Delete ${selectedCount} items`, action: () => this.showBatchDeleteConfirm() }];
+				menuItems = [{ text: I18N.format('deleteItems', selectedCount), action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
 					{ text: I18N.t('newFileDialog'), action: () => this.showAddFileDialog(target) },
