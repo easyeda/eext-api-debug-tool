@@ -10,7 +10,7 @@
 
 ## API自动生成测试用例
 
-![img2](images/README/749167ce6b11.gif)
+![Auto-generate](images/README/Auto-generate.gif)
 
 ## API自动区分PCB和原理图
 
@@ -22,15 +22,15 @@
 
 ## 三套内置风格与自定义图元
 
-![img](images/README/1ae281237a.png)
+![change-theme](images/README/change-theme.png)
 
-## 带路径引用的html在线预览
+## 带路径引用的html在线预览(支持在html内直接引入JS文件)
 
-![img6](images/README/img6.png)
+![1783749336755](images/README/Quick-preview.png)
 
 ## 一种全新的基于工作流的插件开发方式
 
-![img6](images/README/workflow.png)
+![1783749640170](images/README/ext.png)
 
 ## 特性
 
