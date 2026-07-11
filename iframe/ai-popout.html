@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<title>AI Assistant</title>
+	<link rel="stylesheet" href="/iframe/style/theme-vars.css" />
+	<link rel="stylesheet" href="/iframe/style/theme-base.css" />
+	<link rel="stylesheet" href="/iframe/style/file-tree.css" />
+	<link rel="stylesheet" href="/iframe/style/left-nav.css" />
+	<style>
+		* { margin: 0; padding: 0; box-sizing: border-box; }
+		body {
+			display: flex;
+			flex-direction: column;
+			height: 100vh;
+			background: var(--eext-bg-body);
+			color: var(--eext-text-primary);
+			font-family: var(--eext-font-family);
+			font-size: var(--eext-font-size);
+			overflow: hidden;
+		}
+		#ai-chat-popout {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+		}
+	</style>
+</head>
+<body>
+	<div id="ai-chat-popout"></div>
+
+	<script src="/iframe/script/eext_tool/highlight.min.js"></script>
+	<script src="/iframe/script/eext_tool/marked.min.js"></script>
+	<script src="/iframe/script/User_config/I18n.js"></script>
+	<script src="/iframe/script/User_config/Theme_Engine.js"></script>
+	<script>
+		// 构建 AI 聊天 DOM（必须在 Ai_Chat.js 之前，让它的 DOMContentLoaded 能找到元素）
+		(function() {
+			var c = document.getElementById('ai-chat-popout');
+			if (!c) return;
+			c.innerHTML = '<div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">' +
+				'<div class="ai-chat-header" style="flex-shrink:0;">' +
+					'<span class="ai-chat-title" id="ai-model-name">AI Model</span>' +
+					'<button class="ai-chat-new-conversation-btn" id="ai-new-conversation-btn" title="' + I18N.t('newConversation') + '">' +
+						'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg>' +
+					'</button>' +
+					'<button class="ai-chat-settings-btn" id="ai-settings-trigger" title="' + I18N.t('chatSettings') + '">' +
+						'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>' +
+					'</button>' +
+				'</div>' +
+				'<div class="ai-chat-content" id="ai-chat-list" style="flex:1;overflow-y:auto;">' +
+					'<div class="ai-message ai-message-system">' +
+						'<div class="ai-message-bubble">' + I18N.t('aiWelcome') + '</div>' +
+					'</div>' +
+				'</div>' +
+				'<div class="ai-chat-footer" style="flex-shrink:0;">' +
+					'<textarea id="ai-input" placeholder="' + I18N.t('aiPlaceholder') + '" rows="1"></textarea>' +
+					'<button id="ai-send-btn">' + I18N.t('send') + '</button>' +
+				'</div>' +
+			'</div>';
+			I18N.applyI18n();
+		})();
+	</script>
+	<script src="/iframe/script/User_config/Ai_Chat.js"></script>
+	<script>
+		// 初始化主题（不广播，避免消息循环）
+		ThemeEngine.init();
+		// 监听主题同步（被动接收，不再次广播）
+		try {
+			eda.sys_MessageBus.subscribePublic('theme-changed', function(msg) {
+				if (msg && msg.theme) {
+					ThemeEngine.apply(msg.theme, { broadcast: false });
+				}
+			});
+		} catch (e) {}
+	</script>
+</body>
+</html>

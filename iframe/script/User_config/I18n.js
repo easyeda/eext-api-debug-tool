@@ -55,6 +55,9 @@ var I18N = (function() {
       // ACE_Config - Theme
       themeSwitched: '主题已切换为{0}',
       themeDark: '暗色',
+      theme_light: '亮色',
+      theme_dark: '暗色',
+      theme_mono: '黑底白图',
       themeLight: '亮色',
       // ACE_Config - Editor execution
       editorEmptyExec: '编辑器为空，未执行任何代码。',
@@ -116,6 +119,12 @@ var I18N = (function() {
       deleting: '删除中...',
       startupItemDeleted: '启动项 "{0}" 已删除',
       failedToLoadStartupItems: '加载启动项失败: {0}',
+      // AI panel settings
+      aiAssistant: 'AI助手',
+      panelDisplayMode: '面板展开方式',
+      inlineMode: '内置',
+      popoutMode: '弹出',
+      themeSync: '主题同步',
       editorEmptyCannotSave: '编辑器为空，无法保存',
       saveToStartupItems: '保存到启动项',
       startupItemSaved: '启动项 "{0}" 已保存',
@@ -493,6 +502,9 @@ var I18N = (function() {
       // ACE_Config - Theme
       themeSwitched: 'Theme switched to {0}',
       themeDark: 'dark',
+      theme_light: 'Light',
+      theme_dark: 'Dark',
+      theme_mono: 'Mono',
       themeLight: 'light',
       // ACE_Config - Editor execution
       editorEmptyExec: 'Editor is empty, no code executed.',
@@ -554,6 +566,12 @@ var I18N = (function() {
       deleting: 'Deleting...',
       startupItemDeleted: 'Startup item "{0}" deleted',
       failedToLoadStartupItems: 'Failed to load startup items: {0}',
+      // AI panel settings
+      aiAssistant: 'AI Assistant',
+      panelDisplayMode: 'Panel Display Mode',
+      inlineMode: 'Inline',
+      popoutMode: 'Popout',
+      themeSync: 'Theme Sync',
       editorEmptyCannotSave: 'Editor is empty, cannot save',
       saveToStartupItems: 'Save to Startup Items',
       startupItemSaved: 'Startup item "{0}" saved',
