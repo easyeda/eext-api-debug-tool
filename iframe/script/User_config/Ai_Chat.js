@@ -6,13 +6,13 @@ async function SetVibeCodingConfig() {
 		const chatEl = document.getElementById('ai-chat');
 		if (chatEl) chatEl.style.display = 'none';
 		const btn = document.getElementById('ai-btn');
-		if (btn) btn.innerText = 'Copilot: Off';
+		if (btn) btn.innerText = I18N.t('copilotOff');
 	} else {
 		try { eda.sys_Storage.setExtensionUserConfig('Vibe_Coding_Config', 'true'); } catch (e) {}
 		const chatEl = document.getElementById('ai-chat');
 		if (chatEl) chatEl.style.display = '';
 		const btn = document.getElementById('ai-btn');
-		if (btn) btn.innerText = 'Copilot: On';
+		if (btn) btn.innerText = I18N.t('copilotOn');
 	}
 }
 
@@ -23,10 +23,10 @@ async function GetVibeCodingConfig() {
 	if (!btn) return;
 	const chatEl = document.getElementById('ai-chat');
 	if (flag == 'true') {
-		btn.innerText = 'Copilot: On';
+		btn.innerText = I18N.t('copilotOn');
 		if (chatEl) chatEl.style.display = '';
 	} else {
-		btn.innerText = 'Copilot: Off';
+		btn.innerText = I18N.t('copilotOff');
 		if (chatEl) chatEl.style.display = 'none';
 	}
 }
@@ -95,7 +95,7 @@ function initAiChat() {
 	const chatList = document.getElementById('ai-chat-list');
 	const modelNameDisplay = document.getElementById('ai-model-name');
 
-	function updateModelDisplay() { if (modelNameDisplay) modelNameDisplay.textContent = getActive().model || 'AI Model'; }
+	function updateModelDisplay() { if (modelNameDisplay) modelNameDisplay.textContent = getActive().model || I18N.t('aiModelLabel'); }
 	updateModelDisplay();
 
 	if (messageHistory.length > 0 && chatList) {
@@ -112,14 +112,14 @@ function initAiChat() {
 			if (!codeElement) return;
 			const btn = document.createElement('button');
 			btn.className = 'code-copy-btn';
-			btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>`;
+			btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>${I18N.t('copy')}</span>`;
 			btn.onclick = async () => {
 				const text = codeElement.innerText;
 				try {
 					await navigator.clipboard.writeText(text);
 					btn.classList.add('copied');
-					btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Copied</span>`;
-					setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>`; }, 2000);
+					btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>${I18N.t('copied')}</span>`;
+					setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>${I18N.t('copy')}</span>`; }, 2000);
 				} catch (err) { console.error('Copy failed:', err); }
 			};
 			pre.appendChild(btn);
@@ -131,13 +131,13 @@ function initAiChat() {
 		const cfg = getActive();
 		let opts = '';
 		profiles.forEach((p, i) => {
-			opts += `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${p.name || 'Profile ' + (i + 1)}</option>`;
+			opts += `<option value="${i}" ${i === activeIdx ? 'selected' : ''}>${p.name || I18N.format('defaultProfileName', i + 1)}</option>`;
 		});
-		return `<div class="ai-form-group"><label class="ai-form-label">Profile</label>
+		return `<div class="ai-form-group"><label class="ai-form-label">${I18N.t('profile')}</label>
 			<div style="display:flex;gap:6px;align-items:center;">
 				<select id="cfg-profile-select" style="flex:1;height:24px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;background:var(--eext-bg-input);color:var(--eext-text-primary);padding:0 4px;">${opts}</select>
-				<button id="cfg-profile-new" title="New" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;">New</button>
-				<button id="cfg-profile-del" title="Delete" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;${profiles.length <= 1 ? 'display:none;' : ''}">Delete</button>
+				<button id="cfg-profile-new" title="${I18N.t('newProfile')}" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;">${I18N.t('newProfile')}</button>
+				<button id="cfg-profile-del" title="${I18N.t('deleteProfile')}" style="height:24px;padding:0 8px;border:1px solid var(--eext-border);border-radius:2px;font-size:12px;cursor:pointer;background:var(--eext-btn-bg);color:var(--eext-btn-color);white-space:nowrap;${profiles.length <= 1 ? 'display:none;' : ''}">${I18N.t('deleteProfile')}</button>
 			</div></div>`;
 	}
 
@@ -148,9 +148,9 @@ function initAiChat() {
 		overlay.id = 'ai-settings-modal-overlay';
 		overlay.innerHTML = `<div class="ai-modal">
 			<div class="ai-modal-header">
-				<span class="ai-modal-title">AI Settings</span>
+				<span class="ai-modal-title">${I18N.t('aiSettings')}</span>
 				<div style="display:flex;align-items:center;gap:8px;">
-					<button class="ai-modal-close" id="ai-modal-close-btn" title="Close">
+					<button class="ai-modal-close" id="ai-modal-close-btn" title="${I18N.t('close')}">
 						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
 					</button>
 				</div>
@@ -158,28 +158,28 @@ function initAiChat() {
 			<div class="ai-modal-body">
 				${buildProfileSelector()}
 				<div class="ai-form-group">
-					<label class="ai-form-label">API Key</label>
+					<label class="ai-form-label">${I18N.t('apiKey')}</label>
 					<div style="position:relative;flex:1;">
 						<input type="password" id="cfg-api-key" class="ai-form-input" value="${cfg.apiKey || ''}" style="width:100%;padding-right:40px;">
-						<button id="toggle-api-key-visibility" class="api-key-eye-btn" type="button" title="Show/Hide">
+						<button id="toggle-api-key-visibility" class="api-key-eye-btn" type="button" title="${I18N.t('showHide')}">
 							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 						</button>
 					</div>
 				</div>
 				<div class="ai-form-group">
-					<label class="ai-form-label">Base URL</label>
+					<label class="ai-form-label">${I18N.t('baseUrl')}</label>
 					<input type="text" id="cfg-base-url" class="ai-form-input" value="${cfg.baseUrl || ''}">
 				</div>
 				<div class="ai-form-group">
-					<label class="ai-form-label">Model Name</label>
+					<label class="ai-form-label">${I18N.t('modelName')}</label>
 					<input type="text" id="cfg-model" class="ai-form-input" value="${cfg.model || ''}">
 				</div>
 				<div class="ai-form-group">
-					<label class="ai-form-label">Profile Name</label>
-					<input type="text" id="cfg-profile-name" class="ai-form-input" value="${cfg.name || ''}" placeholder="Name this profile">
+					<label class="ai-form-label">${I18N.t('profileName')}</label>
+					<input type="text" id="cfg-profile-name" class="ai-form-input" value="${cfg.name || ''}" placeholder="${I18N.t('profileNamePlaceholder')}">
 				</div>
 				<div class="ai-form-group">
-					<label class="ai-form-label">Temperature</label>
+					<label class="ai-form-label">${I18N.t('temperature')}</label>
 					<input type="number" id="cfg-temperature" class="ai-form-input" min="0" max="2" step="0.05" value="${cfg.temperature ?? 0.7}">
 				</div>
 				<hr style="border:0;border-top:1px solid var(--eext-border-light);margin:4px 0;">
@@ -187,18 +187,18 @@ function initAiChat() {
 						<label class="ai-checkbox-label">
 							<input type="checkbox" id="cfg-multi-turn" ${cfg.multiTurn ? 'checked' : ''}>
 							<span class="ai-checkbox"></span>
-							<span class="ai-checkbox-text">Multi-turn conversation</span>
+							<span class="ai-checkbox-text">${I18N.t('multiTurn')}</span>
 						</label>
 						<label class="ai-checkbox-label">
 							<input type="checkbox" id="cfg-stream" ${cfg.stream ? 'checked' : ''}>
 							<span class="ai-checkbox"></span>
-							<span class="ai-checkbox-text">Stream output</span>
+							<span class="ai-checkbox-text">${I18N.t('streamOutput')}</span>
 						</label>
 					</div>
 				</div>
 			<div class="ai-modal-footer">
-				<button class="ai-btn ai-btn-cancel" id="ai-modal-cancel-btn">Cancel</button>
-				<button class="ai-btn ai-btn-save" id="ai-modal-save-btn">Save</button>
+				<button class="ai-btn ai-btn-cancel" id="ai-modal-cancel-btn">${I18N.t('cancel')}</button>
+				<button class="ai-btn ai-btn-save" id="ai-modal-save-btn">${I18N.t('save')}</button>
 			</div></div>`;
 
 		const style = document.createElement('style');
@@ -264,7 +264,7 @@ function initAiChat() {
 	}
 
 	function createNewProfile() {
-		const newProfile = { name: 'Profile ' + (profiles.length + 1), apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4', multiTurn: true, stream: true, temperature: 0.7 };
+		const newProfile = { name: I18N.format('defaultProfileName', profiles.length + 1), apiKey: '', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4', multiTurn: true, stream: true, temperature: 0.7 };
 		profiles.push(newProfile);
 		saveProfiles();
 		switchProfile(profiles.length - 1);
@@ -279,7 +279,7 @@ function initAiChat() {
 		cfg.multiTurn = document.getElementById('cfg-multi-turn').checked;
 		cfg.stream = document.getElementById('cfg-stream').checked;
 		cfg.temperature = parseFloat(document.getElementById('cfg-temperature').value) || 0.7;
-		if (!cfg.apiKey) { eda.sys_Message.showToastMessage('Please fill in the API Key', 'warn', 2); return; }
+		if (!cfg.apiKey) { eda.sys_Message.showToastMessage(I18N.t('fillApiKey'), 'warn', 2); return; }
 		saveProfiles();
 		if (!cfg.multiTurn) {
 			messageHistory = [];
@@ -287,7 +287,7 @@ function initAiChat() {
 			localStorage.removeItem('ai_chat_history');
 		}
 		updateModelDisplay();
-		eda.sys_Message.showToastMessage('Configuration saved', 'success', 1);
+		eda.sys_Message.showToastMessage(I18N.t('configSaved'), 'success', 1);
 		// 重建 modal 使下拉选项名称同步
 		closeModal();
 		modalOverlay.remove(); modalOverlay = null;
@@ -368,7 +368,7 @@ function initAiChat() {
 		if (!rawText) return;
 		const cfg = getActive();
 		if (!cfg.apiKey) {
-			eda.sys_Message.showToastMessage('Please configure the API Key first', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('configureApiKeyFirst'), 'warn', 2);
 			openModal();
 			return;
 		}
@@ -396,7 +396,7 @@ function initAiChat() {
 				body: JSON.stringify({ model: cfg.model, messages: currentMessages, stream: false, temperature: cfg.temperature }),
 			});
 			if (!response.ok) {
-				const errData = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
+				const errData = await response.json().catch(() => ({ error: { message: I18N.t('unknownError') } }));
 				throw new Error(errData.error?.message || `HTTP ${response.status}`);
 			}
 			const data = await response.json();
@@ -523,7 +523,7 @@ function initAiChat() {
 		function showError(msg) {
 			const errDiv = document.createElement('div');
 			errDiv.className = 'ai-message ai-message-system';
-			errDiv.innerHTML = `<div class="ai-message-bubble" style="background:var(--eext-error-bg);border-color:var(--eext-btn-color);color:var(--eext-error-text);">Error: ${msg}</div>`;
+			errDiv.innerHTML = `<div class="ai-message-bubble" style="background:var(--eext-error-bg);border-color:var(--eext-btn-color);color:var(--eext-error-text);">${I18N.t('errorPrefix')}: ${msg}</div>`;
 			chatList.appendChild(errDiv);
 			chatList.scrollTop = chatList.scrollHeight;
 		}

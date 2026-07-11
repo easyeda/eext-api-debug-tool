@@ -22,23 +22,23 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 	// 头部
 	const header = document.createElement('div');
 	header.className = 'cs-header';
-	header.textContent = 'Completer Store';
+	header.textContent = I18N.t('completerStoreTitle');
 
 	const headerRight = document.createElement('div');
 	headerRight.className = 'cs-header-right';
 
 	const clearBtn = document.createElement('button');
 	clearBtn.className = 'eext-modal-btn-delete';
-	clearBtn.textContent = 'Clear All';
+	clearBtn.textContent = I18N.t('clearAll');
 	clearBtn.onclick = () => {
-		eda.sys_Dialog.showConfirmationMessage('Clear all custom completions? This cannot be undone.', 'Tip', 'OK', 'Cancel', async (confirmed) => {
+		eda.sys_Dialog.showConfirmationMessage(I18N.t('clearAllConfirm'), I18N.t('tip'), I18N.t('ok'), I18N.t('cancel'), async (confirmed) => {
 			if (!confirmed) return;
 			try {
 				await _clearAllCompleters();
 				_removeUserCompleterFromEditor(editor);
 				await renderList(listEl);
 				if (window.leftNavPanel) await window.leftNavPanel.loadCompleterStore();
-				_toast('All custom completions cleared', 'success', 2);
+				_toast(I18N.t('allCleared'), 'success', 2);
 			} catch (err) {
 				_toast('Clear failed: ' + err.message, 'error', 2);
 			}
@@ -49,7 +49,7 @@ async function showCompleterStoreModal(editor, onBackCallback) {
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'cs-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = onBackCallback ? 'Back' : 'Close';
+	closeBtn.title = onBackCallback ? I18N.t('back') : I18N.t('close');
 	closeBtn.onclick = () => {
 		modal.remove();
 		if (onBackCallback) onBackCallback();
@@ -164,16 +164,16 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 	// 编辑按钮
 	const editBtn = document.createElement('button');
 	editBtn.className = 'cs-btn cs-btn-edit';
-	editBtn.textContent = 'Edit';
+	editBtn.textContent = I18N.t('edit');
 	editBtn.onclick = () => _showEditCompleterForm(editor, rec, item, listEl, renderList);
 	actions.appendChild(editBtn);
 
 	// 删除按钮
 	const delBtn = document.createElement('button');
 	delBtn.className = 'eext-modal-btn-delete';
-	delBtn.textContent = 'Delete';
+	delBtn.textContent = I18N.t('delete');
 	delBtn.onclick = async () => {
-		delBtn.textContent = 'Deleting...';
+		delBtn.textContent = I18N.t('deleting');
 		delBtn.disabled = true;
 		try {
 			await _deleteCompleterById(rec.id);
@@ -196,7 +196,7 @@ function _createCompleterItem(editor, rec, listEl, renderList) {
 			_toast('Deleted: ' + rec.caption, 'success', 2);
 		} catch (err) {
 			_toast('Delete failed: ' + err.message, 'error', 2);
-			delBtn.textContent = 'Delete';
+			delBtn.textContent = I18N.t('delete');
 			delBtn.disabled = false;
 		}
 	};
@@ -219,7 +219,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const row1 = document.createElement('div');
 	row1.className = 'cs-edit-row';
 	const labelCaption = document.createElement('label');
-	labelCaption.textContent = 'Name:';
+	labelCaption.textContent = I18N.t('nameColon');
 	const inputCaption = document.createElement('input');
 	inputCaption.className = 'cs-edit-input';
 	inputCaption.value = rec.caption;
@@ -230,11 +230,11 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const row2 = document.createElement('div');
 	row2.className = 'cs-edit-row';
 	const labelValue = document.createElement('label');
-	labelValue.textContent = 'Value:';
+	labelValue.textContent = I18N.t('valueColon');
 	const inputValue = document.createElement('input');
 	inputValue.className = 'cs-edit-input';
 	inputValue.value = rec.value;
-	inputValue.placeholder = 'Full content inserted when completion is selected';
+	inputValue.placeholder = I18N.t('fullContentPlaceholder');
 	row2.appendChild(labelValue);
 	row2.appendChild(inputValue);
 	form.appendChild(row2);
@@ -242,11 +242,11 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 	const row3 = document.createElement('div');
 	row3.className = 'cs-edit-row';
 	const labelDesc = document.createElement('label');
-	labelDesc.textContent = 'Description:';
+	labelDesc.textContent = I18N.t('descriptionColon');
 	const inputDesc = document.createElement('input');
 	inputDesc.className = 'cs-edit-input';
 	inputDesc.value = rec.description || '';
-	inputDesc.placeholder = 'Completion hint (triggers via description)';
+	inputDesc.placeholder = I18N.t('completionHint');
 	row3.appendChild(labelDesc);
 	row3.appendChild(inputDesc);
 	form.appendChild(row3);
@@ -256,18 +256,18 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 
 	const saveBtn = document.createElement('button');
 	saveBtn.className = 'cs-btn cs-btn-save';
-	saveBtn.textContent = 'Save';
+	saveBtn.textContent = I18N.t('save');
 	saveBtn.onclick = async () => {
 		const newCaption = inputCaption.value.trim();
 		const newValue = inputValue.value.trim();
 		const newDescription = inputDesc.value.trim();
 
 		if (!newCaption) {
-			_toast('Name cannot be empty', 'warn', 2);
+			_toast(I18N.t('nameCannotBeEmpty'), 'warn', 2);
 			return;
 		}
 		if (!newValue) {
-			_toast('Value cannot be empty', 'warn', 2);
+			_toast(I18N.t('valueCannotBeEmpty'), 'warn', 2);
 			return;
 		}
 
@@ -275,7 +275,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 		const parsed = _parseLineForCompletion(newValue);
 		const newParams = parsed ? parsed.params : [];
 
-		saveBtn.textContent = 'Saving...';
+		saveBtn.textContent = I18N.t('saving');
 		saveBtn.disabled = true;
 		try {
 			await _updateCompleter(rec.id, {
@@ -304,7 +304,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 			_toast('Updated: ' + newCaption, 'success', 2);
 		} catch (err) {
 			_toast('Update failed: ' + err.message, 'error', 2);
-			saveBtn.textContent = 'Save';
+			saveBtn.textContent = I18N.t('save');
 			saveBtn.disabled = false;
 		}
 	};
@@ -312,7 +312,7 @@ function _showEditCompleterForm(editor, rec, itemEl, listEl, renderList) {
 
 	const cancelBtn = document.createElement('button');
 	cancelBtn.className = 'cs-btn cs-btn-cancel';
-	cancelBtn.textContent = 'Cancel';
+	cancelBtn.textContent = I18N.t('cancel');
 	cancelBtn.onclick = () => form.remove();
 	btnRow.appendChild(cancelBtn);
 
@@ -349,7 +349,7 @@ async function _updateCompleter(id, fields) {
 		const getReq = store.get(id);
 		getReq.onsuccess = () => {
 			const record = getReq.result;
-			if (!record) return reject(new Error('Record does not exist'));
+			if (!record) return reject(new Error(I18N.t('recordNotExist')));
 			Object.assign(record, fields);
 			const putReq = store.put(record);
 			putReq.onsuccess = resolve;

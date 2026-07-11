@@ -150,7 +150,7 @@ async function SetTheme(editor, light_theme, dark_theme) {
 	const next = current === 'dark' ? 'light' : current === 'light' ? 'dark' : 'light';
 	ThemeEngine.apply(next);
 	if (window.fileTreeUI) window.fileTreeUI.applyTheme();
-	await eda.sys_Message.showToastMessage('Theme switched to ' + (next === 'dark' ? 'dark' : next === 'light' ? 'light' : next), 'info', 1);
+	await eda.sys_Message.showToastMessage(I18N.format('themeSwitched', I18N.t(next === 'dark' ? 'themeDark' : next === 'light' ? 'themeLight' : next)), 'info', 1);
 	return next;
 }
 
@@ -394,12 +394,12 @@ function buildDocText(item) {
 
 	// 附加 @remarks 说明
 	if (item.remarks) {
-		doc += '\nRemarks: ' + item.remarks;
+		doc += '\\n' + I18N.t('remarks') + ': ' + item.remarks;
 	}
 
 	// 枚举成员：显示所属枚举类型
 	if (item.isEnumMember) {
-		doc += '\nEnum: ' + (item.enumType || '');
+		doc += '\\n' + I18N.t('enumDoc') + ': ' + (item.enumType || '');
 		return doc.trim();
 	}
 
@@ -409,22 +409,22 @@ function buildDocText(item) {
 	}
 
 	// 方法/属性
-	doc += '\nUsage: ' + item.methodPath + '()\n';
+	doc += '\\n' + I18N.t('usage') + ': ' + item.methodPath + '()\n';
 	if (item.parameters && item.parameters.length > 0) {
-		doc += 'Parameters:\n';
+		doc += I18N.t('parameters') + ':\n';
 		item.parameters.forEach((p) => {
 			doc += `  • ${p.name}: ${p.description}\n`;
 		});
 	} else {
-		doc += '\nNo parameters, can be called directly';
+		doc += I18N.t('noParams');
 	}
 	if (item.returns) {
-		doc += '\n\nReturns:' + item.returns;
+		doc += '\\n\\n' + I18N.t('returns') + ':' + item.returns;
 	}
 	if (item.isAsync) {
-		doc += '\n\n★ Async method — requires await';
+		doc += I18N.t('asyncMethod');
 	} else if (item.isAsync === false) {
-		doc += '\n\n★ Sync method — no await needed';
+		doc += I18N.t('syncMethod');
 	}
 	return doc.trim();
 }
@@ -462,7 +462,7 @@ function ACE_ChangeCodeSize(editor, currentFontSize, showToast, step = 1) {
 function ACE_RunCode(editor) {
 	const code = editor.getValue().trim();
 	if (!code) {
-		console.log('Editor is empty, no code executed.');
+		console.log(I18N.t('editorEmptyExec'));
 		return;
 	}
 	try {
@@ -470,8 +470,8 @@ function ACE_RunCode(editor) {
 		const newcode = `(async () => {\n ${code}\n})();`;
 		eval(newcode);
 	} catch (error) {
-		eda.sys_Message.showToastMessage('Execution failed: content is not valid JS, HTML, or MD format.', 'error', 2);
-		console.error('Execution error:', error);
+		eda.sys_Message.showToastMessage(I18N.t('execFailedFormat'), 'error', 2);
+		console.error(I18N.t('execError'), error);
 	}
 }
 
@@ -482,7 +482,7 @@ async function previewHtmlInPopupWindow(data) {
 	try {
 		const htmlContent = data.content;
 		if (!htmlContent) {
-			eda.sys_Message.showToastMessage('HTML content is empty', 'error', 2);
+			eda.sys_Message.showToastMessage(I18N.t('htmlEmpty'), 'error', 2);
 			return;
 		}
 
@@ -514,9 +514,9 @@ async function previewHtmlInPopupWindow(data) {
 			}
 		);
 
-		eda.sys_Message.showToastMessage('Preview window opened', 'success', 2);
+		eda.sys_Message.showToastMessage(I18N.t('previewOpened'), 'success', 2);
 	} catch (error) {
-		eda.sys_Message.showToastMessage('Failed to open preview window: ' + error.message, 'error', 2);
+		eda.sys_Message.showToastMessage(I18N.format('previewOpenFailed', error.message), 'error', 2);
 	}
 }
 
@@ -553,7 +553,7 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			var project = await window.projectManager.loadProjectById(projectId);
 			if (!project) { project = await window.projectManager.loadProjectByUuid(uuid); }
 			if (!project) {
-				eda.sys_Message.showToastMessage("Project not found", "error", 2);
+				eda.sys_Message.showToastMessage(I18N.t('projectNotFound'), "error", 2);
 				return;
 			}
 			var sf = startupFile || btn.getAttribute("data-startup-file");
@@ -564,9 +564,9 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			if (ext === "js" || (!ext && isScript)) {
 				var code = project.files[0].content;
 				if (code && code.trim()) {
-					try { eval(code); } catch(e) { eda.sys_Message.showToastMessage("Execution failed: " + e.message, "error", 2); }
+					try { eval(code); } catch(e) { eda.sys_Message.showToastMessage(I18N.format('execFailed', e.message), "error", 2); }
 				} else {
-					eda.sys_Message.showToastMessage("Script content is empty", "warn", 2);
+					eda.sys_Message.showToastMessage(I18N.t('scriptEmpty'), "warn", 2);
 				}
 				return;
 			}
@@ -575,12 +575,12 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			var htmlFiles = project.files.filter(function(f) { return f.fileName.toLowerCase().endsWith(".html"); });
 			var entryFileName = sf || (htmlFiles.length > 0 ? htmlFiles[0].fileName : null);
 			if (!entryFileName) {
-				eda.sys_Message.showToastMessage("No runnable files in project", "warn", 2);
+				eda.sys_Message.showToastMessage(I18N.t('noRunnableFiles'), "warn", 2);
 				return;
 			}
 			var entryFile = project.files.find(function(f) { return f.fileName === entryFileName; });
 			if (!entryFile) {
-				eda.sys_Message.showToastMessage("Startup file not found", "error", 2);
+				eda.sys_Message.showToastMessage(I18N.t('startupFileNotFound'), "error", 2);
 				return;
 			}
 
@@ -605,10 +605,10 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 					content: finalHTML
 				});
 			} else {
-				eda.sys_Message.showToastMessage("previewHtmlInPopupWindow is not defined", "error", 2);
+				eda.sys_Message.showToastMessage(I18N.t('previewNotDefined'), "error", 2);
 			}
 		} catch(e) {
-			eda.sys_Message.showToastMessage("Load failed: " + e.message, "error", 2);
+			eda.sys_Message.showToastMessage(I18N.format('loadFailed', e.message), "error", 2);
 		}
 	};
 
@@ -639,11 +639,11 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 			menu.appendChild(item);
 		}
 		menu.innerHTML = "";
-		showItem("Load Project", async function() {
+		showItem(I18N.t("loadProject"), async function() {
 			try {
 				var project = await window.projectManager.loadProjectById(projectId);
 				if (!project) { project = await window.projectManager.loadProjectByUuid(uuid); }
-				if (!project) { eda.sys_Message.showToastMessage("Project not found", "error", 2); return; }
+				if (!project) { eda.sys_Message.showToastMessage(I18N.t('projectNotFound'), "error", 2); return; }
 				var isScript = !!(project.isScript || (project.files && project.files.length === 1 && project.files[0].fileName.endsWith(".js")));
 				if (isScript) {
 					await window.leftNavPanel.openScriptProject(project.id);
@@ -653,16 +653,16 @@ function createQuickButton(editor, name, uuid, projectId, startupFile) {
 					if (sf && window.fileTreeUI) { await window.fileTreeUI.loadFile(sf); }
 				}
 			} catch(e) {
-				eda.sys_Message.showToastMessage("Failed to load project: " + e.message, "error", 2);
+				eda.sys_Message.showToastMessage(I18N.format('loadProjectFailed', e.message), "error", 2);
 			}
 		});
-		showItem("Delete", function() {
+		showItem(I18N.t("delete"), function() {
 			deleteBtnFromDB(uuid).then(function() {
 				li.remove();
-				eda.sys_Message.showToastMessage("Deleted quick button: " + name, "info", 1);
+				eda.sys_Message.showToastMessage(I18N.format('deletedQuickButton', name), "info", 1);
 			}).catch(function(err) {
 				console.error("Delete failed:", err);
-				eda.sys_Message.showToastMessage("Delete failed: " + err.message, "error", 1);
+				eda.sys_Message.showToastMessage(I18N.format('deleteFailed', err.message), "error", 1);
 			});
 		});
 		menu.style.left = Math.min(e.pageX, window.innerWidth - 130) + "px";
@@ -730,12 +730,12 @@ async function _selectStartupFile(project) {
 		modal.style.cssText = "background:" + bg + ";color:" + fg + ";border-radius:8px;padding:20px;min-width:380px;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,0.3);display:flex;flex-direction:column;gap:12px;";
 
 		var title = document.createElement("div");
-		title.textContent = "Select Startup File";
+		title.textContent = I18N.t("selectStartupFile");
 		title.style.cssText = "font-size:16px;font-weight:600;";
 
 		var search = document.createElement("input");
 		search.type = "text";
-		search.placeholder = "Search files...";
+		search.placeholder = I18N.t("searchFiles");
 		search.style.cssText = "width:100%;padding:6px 10px;border:1px solid " + border + ";border-radius:4px;background:" + bg + ";color:" + fg + ";font-size:13px;box-sizing:border-box;";
 
 		var list = document.createElement("div");
@@ -745,11 +745,11 @@ async function _selectStartupFile(project) {
 		btnRow.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
 
 		var cancelBtn = document.createElement("button");
-		cancelBtn.textContent = "Cancel";
+		cancelBtn.textContent = I18N.t("cancel");
 		cancelBtn.style.cssText = "padding:6px 16px;border:none;border-radius:4px;cursor:pointer;background:" + btnCancelBg + ";color:" + fg + ";font-size:13px;";
 
 		var confirmBtn = document.createElement("button");
-		confirmBtn.textContent = "OK";
+		confirmBtn.textContent = I18N.t("ok");
 		confirmBtn.style.cssText = "padding:6px 16px;border:none;border-radius:4px;cursor:pointer;background:" + btnBg + ";color:#fff;font-size:13px;";
 
 		var selectedFile = null;
@@ -788,7 +788,7 @@ async function _selectStartupFile(project) {
 		cancelBtn.onclick = function() { close(null); };
 		confirmBtn.onclick = function() {
 			if (!selectedFile) {
-				eda.sys_Message.showToastMessage("Please select a startup file", "warn", 1);
+				eda.sys_Message.showToastMessage(I18N.t("pleaseSelectStartupFile"), "warn", 1);
 				return;
 			}
 			close(selectedFile);
@@ -812,7 +812,7 @@ async function _selectStartupFile(project) {
 async function Project_SaveToBtnList(projectId) {
 	var project = await window.projectManager.loadProjectById(projectId);
 	if (!project) {
-		eda.sys_Message.showToastMessage("Project not found", "error", 2);
+		eda.sys_Message.showToastMessage(I18N.t('projectNotFound'), "error", 2);
 		return;
 	}
 
@@ -834,21 +834,21 @@ async function Project_SaveToBtnList(projectId) {
 		var existing = allRecords.find(function(r) { return r.projectId === projectId || r.uuid === project.uuid; });
 		if (existing) {
 			db.close();
-			eda.sys_Message.showToastMessage("Current project " + project.projectName + " is already mapped to header menu: " + existing.name, "info", 2);
+			eda.sys_Message.showToastMessage(I18N.format("projectAlreadyMapped", project.projectName, existing.name), "info", 2);
 			return;
 		}
 
 		var nameResult = await Swal.fire({
-			title: "Map to Header Menu",
+			title: I18N.t("mapToHeaderMenu"),
 			input: "text",
-			inputLabel: "Button Name",
+			inputLabel: I18N.t("buttonName"),
 			inputValue: project.projectName,
-			inputPlaceholder: "e.g.: My Project",
+			inputPlaceholder: I18N.t("egMyProject"),
 			showCancelButton: true,
-			confirmButtonText: "Next",
-			cancelButtonText: "Cancel",
+			confirmButtonText: I18N.t("nextStep"),
+			cancelButtonText: I18N.t("cancel"),
 			inputValidator: function(value) {
-				if (!value || !value.trim()) return "Please enter a button name";
+				if (!value || !value.trim()) return I18N.t("enterButtonName");
 			},
 		});
 		if (!nameResult.isConfirmed) { db.close(); return; }
@@ -876,12 +876,12 @@ async function Project_SaveToBtnList(projectId) {
 		var ul = document.getElementById("quick-btn-list");
 		if (ul) ul.appendChild(li);
 		if (startupFile) {
-			eda.sys_Message.showToastMessage("Mapped to header menu, startup file: " + startupFile, "success", 2);
+			eda.sys_Message.showToastMessage(I18N.format("mappedWithStartup", startupFile), "success", 2);
 		} else {
-			eda.sys_Message.showToastMessage("Mapped to header menu", "success", 2);
+			eda.sys_Message.showToastMessage(I18N.t("mappedToMenu"), "success", 2);
 		}
 	} catch(e) {
-		eda.sys_Message.showToastMessage("Save failed: " + e.message, "error", 2);
+		eda.sys_Message.showToastMessage(I18N.format("saveFailed", e.message), "error", 2);
 	}
 }
 
@@ -889,8 +889,8 @@ async function Code_SaveToBtnList(editor) {
 	// 新架构：提示用户先创建项目
 	eda.sys_Dialog.showConfirmationMessage(
 		'Please save the current code as a project first, then use the project\'s "Map to Header Menu" feature.\n\nThis ensures that button effects sync in real-time after code modifications.',
-		'Tip',
-		'Go Create Project',
+		I18N.t('tip'),
+		I18N.t('goCreateProject'),
 		'Cancel',
 		(confirmed) => {
 			if (confirmed) {
@@ -898,7 +898,7 @@ async function Code_SaveToBtnList(editor) {
 				if (window.fileTreeUI) {
 					window.fileTreeUI.createNewProject();
 				} else {
-					eda.sys_Message.showToastMessage('Please create a project first', 'info', 2);
+					eda.sys_Message.showToastMessage(I18N.t('pleaseCreateProjectFirst'), 'info', 2);
 				}
 			}
 		}
@@ -925,7 +925,7 @@ async function Code_LoadBtnListFromDB(editor) {
 			ul.appendChild(li);
 		});
 	} catch (error) {
-		console.error('Failed to load quick buttons:', error);
+		console.error(I18N.t('failedToLoadQuickBtns'), error);
 		eda.sys_Message.showToastMessage(`Load failed: ${error.message}`, 'error', 1);
 	}
 }
@@ -948,7 +948,7 @@ function ExtStore_Init() {
 			resolve(result);
 		};
 		request.onerror = (e) => {
-			console.error('Failed to open database:', e.target.error);
+			console.error(I18N.t('failedToOpenDb'), e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -977,16 +977,16 @@ async function ExtStore_SaveExt(name, code) {
 			const putRequest = store.put(record); // put 会根据 id 自动 insert 或 update
 			putRequest.onsuccess = (ev) => {
 				const id = ev.target.result;
-				console.log('Save/update succeeded, ID:', id);
+				console.log(I18N.t('saveUpdateSucceeded'), id);
 				resolve(id);
 			};
 			putRequest.onerror = (ev) => {
-				console.error('Save/update failed:', ev.target.error);
+				console.error(I18N.t('saveUpdateFailed'), ev.target.error);
 				reject(ev.target.error);
 			};
 		};
 		getRequest.onerror = (e) => {
-			console.error('Failed to query plugin name:', e.target.error);
+			console.error(I18N.t('failedToQueryPlugin'), e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -1020,7 +1020,7 @@ async function ExtStore_DeleteExt(name) {
 			};
 		};
 		getRequest.onerror = (e) => {
-			console.error('Failed to query name index:', e.target.error);
+			console.error(I18N.t('failedToQueryIndex'), e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -1078,7 +1078,7 @@ async function ExtStore_GetExtList() {
 			}
 		};
 		request.onerror = (e) => {
-			console.error('Failed to query plugin list:', e.target.error);
+			console.error(I18N.t('failedToQueryPluginList'), e.target.error);
 			reject(e.target.error);
 		};
 	});
@@ -1185,11 +1185,11 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	// 3. 头部
 	const header = document.createElement('div');
 	header.className = 'plugin-manager-header';
-	header.textContent = 'Startup Item Manager';
+	header.textContent = I18N.t('startupItemManager');
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'plugin-manager-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = onBackCallback ? 'Back' : 'Close';
+	closeBtn.title = onBackCallback ? I18N.t('back') : I18N.t('close');
 	closeBtn.onclick = () => {
 		if (modal.parentNode) modal.parentNode.removeChild(modal);
 		if (onBackCallback) onBackCallback();
@@ -1205,21 +1205,21 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	saveSection.className = 'plugin-manager-save-section';
 	const saveLabel = document.createElement('div');
 	saveLabel.className = 'plugin-manager-label';
-	saveLabel.textContent = 'Add Startup Item:';
+	saveLabel.textContent = I18N.t('addStartupItem');
 	saveSection.appendChild(saveLabel);
 	const inputGroup = document.createElement('div');
 	inputGroup.className = 'plugin-manager-input-group';
 	const nameInput = document.createElement('input');
 	nameInput.type = 'text';
-	nameInput.placeholder = 'Startup item name (must be unique)';
+	nameInput.placeholder = I18N.t('startupItemNamePlaceholder');
 	nameInput.className = 'plugin-manager-input';
 	inputGroup.appendChild(nameInput);
 	const saveBtn = document.createElement('button');
-	saveBtn.textContent = 'Add';
+	saveBtn.textContent = I18N.t('add');
 	saveBtn.className = 'eext-modal-btn-primary';
 	saveBtn.onclick = async () => {
 		const originalText = saveBtn.textContent;
-		saveBtn.textContent = 'Adding...';
+		saveBtn.textContent = I18N.t('adding');
 		saveBtn.disabled = true;
 		try {
 			await saveCurrentCodeAsPlugin(editor, nameInput, (msg, type) => {
@@ -1240,7 +1240,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 	// --- 启动项列表标题 ---
 	const listTitle = document.createElement('div');
 	listTitle.className = 'plugin-manager-list-title';
-	listTitle.textContent = 'Existing Startup Items:';
+	listTitle.textContent = I18N.t('existingStartupItems');
 	body.appendChild(listTitle);
 	const pluginList = document.createElement('div');
 	pluginList.className = 'plugin-manager-list';
@@ -1263,12 +1263,12 @@ async function showPluginManagerModal(editor, onBackCallback) {
 					nameSpan.title = plugin.name;
 					item.appendChild(nameSpan);
 					const renameBtn = document.createElement('button');
-					renameBtn.textContent = 'Rename';
+					renameBtn.textContent = I18N.t('rename');
 					renameBtn.className = 'eext-modal-btn';
 					renameBtn.onclick = async (e) => {
 						e.stopPropagation();
 						const result = await Swal.fire({
-							title: 'Rename Startup Item',
+							title: I18N.t('renameStartupItem'),
 							input: 'text',
 							inputValue: plugin.name,
 							inputLabel: 'New Name',
@@ -1284,15 +1284,15 @@ async function showPluginManagerModal(editor, onBackCallback) {
 							try {
 								await ExtStore_RenameExt(plugin.name, result.value.trim());
 								await renderPluginList(pluginList);
-								eda.sys_Message.showToastMessage('Renamed successfully', 'success', 1);
+								eda.sys_Message.showToastMessage(I18N.t('renamedSuccessfully'), 'success', 1);
 							} catch (err) {
-								eda.sys_Message.showToastMessage('Rename failed: ' + err.message, 'error', 2);
+								eda.sys_Message.showToastMessage(I18N.format('renameFailed', err.message), 'error', 2);
 							}
 						}
 					};
 					item.appendChild(renameBtn);
 					const loadBtn = document.createElement('button');
-					loadBtn.textContent = 'Load';
+					loadBtn.textContent = I18N.t('load');
 					loadBtn.className = 'eext-modal-btn-primary';
 					loadBtn.onclick = async (e) => {
 						e.stopPropagation();
@@ -1309,17 +1309,17 @@ async function showPluginManagerModal(editor, onBackCallback) {
 								}
 							};
 						} catch (err) {
-							eda.sys_Message.showToastMessage('Load failed: ' + err.message, 'error', 2);
+							eda.sys_Message.showToastMessage(I18N.format('loadFailed', err.message), 'error', 2);
 						}
 					};
 					item.appendChild(loadBtn);
 					const delBtn = document.createElement('button');
-					delBtn.textContent = 'Delete';
+					delBtn.textContent = I18N.t('delete');
 					delBtn.className = 'eext-modal-btn-delete';
 					delBtn.onclick = async (e) => {
 						e.stopPropagation();
 						const confirmResult = await Swal.fire({
-							title: 'Confirm Delete',
+							title: I18N.t('confirmDelete'),
 							html: `Are you sure you want to delete startup item "<strong>${plugin.name}</strong>"?`,
 							icon: 'warning',
 							showCancelButton: true,
@@ -1328,7 +1328,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 							confirmButtonColor: '#d33',
 						});
 						if (!confirmResult.isConfirmed) return;
-						delBtn.textContent = 'Deleting...';
+						delBtn.textContent = I18N.t('deleting');
 						delBtn.disabled = true;
 						try {
 							await ExtStore_DeleteExt(plugin.name);
@@ -1341,7 +1341,7 @@ async function showPluginManagerModal(editor, onBackCallback) {
 							if (eda && eda.sys_Message) {
 								eda.sys_Message.showToastMessage(`Delete failed: ${err.message}`, 'error', 2);
 							}
-							delBtn.textContent = 'Delete';
+							delBtn.textContent = I18N.t('delete');
 							delBtn.disabled = false;
 						}
 					};
@@ -1392,7 +1392,7 @@ async function saveCurrentCodeAsPlugin(editor, nameInput, messageCallback) {
 		return;
 	}
 	if (!code) {
-		messageCallback('Editor is empty, cannot save', 'info');
+		messageCallback(I18N.t('editorEmptyCannotSave'), 'info');
 		return;
 	}
 
@@ -1410,12 +1410,12 @@ async function saveCurrentCodeAsPlugin(editor, nameInput, messageCallback) {
 async function ExtStore_SavePlugin(editor) {
 	const code = editor.getValue().trim();
 	if (!code) {
-		eda.sys_Message.showToastMessage('Editor is empty, cannot save', 'info', 2);
+		eda.sys_Message.showToastMessage(I18N.t('editorEmptyCannotSave'), 'info', 2);
 		return;
 	}
 
 	const result = await Swal.fire({
-		title: 'Save to Startup Items',
+		title: I18N.t('saveToStartupItems'),
 		input: 'text',
 		inputLabel: 'Startup Item Name',
 		inputPlaceholder: 'e.g.: Auto-init script',
@@ -1524,7 +1524,7 @@ function ImportFile(editor) {
 		if (!file) return;
 
 		if (!file.name.endsWith('.js')) {
-			eda.sys_Message.showToastMessage('Please select a valid JavaScript (.js) file.', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('selectJsFile'), 'warn', 2);
 			return;
 		}
 
@@ -1535,7 +1535,7 @@ function ImportFile(editor) {
 		};
 		reader.onerror = () => {
 			console.error('Error reading file');
-			eda.sys_Message.showToastMessage('Failed to read file, please try again.', 'error', 2);
+			eda.sys_Message.showToastMessage(I18N.t('failedToReadFile'), 'error', 2);
 		};
 
 		reader.readAsText(file);
@@ -1672,7 +1672,7 @@ function _formatMethodDoc(info) {
 	let doc = `Method path: ${info.methodPath}\n`;
 	doc += `Description: ${info.description || 'None'}\n`;
 	if (info.parameters && info.parameters.length > 0) {
-		doc += 'Parameters:\n';
+		doc += I18N.t('parameters') + ':\n';
 		info.parameters.forEach((p) => {
 			doc += `  - ${p.name}: ${p.description || ''}\n`;
 		});
@@ -1849,9 +1849,9 @@ async function generateTestCase(editor, methodPath) {
 
 	if (!chatConfig || !chatConfig.apiKey) {
 		if (typeof eda !== 'undefined' && eda.sys_Message) {
-			eda.sys_Message.showToastMessage('Please fill in the API Key in the AI configuration settings first', 'warn', 3);
+			eda.sys_Message.showToastMessage(I18N.t('fillApiKeyAiConfig'), 'warn', 3);
 		} else {
-			eda.sys_Message.showToastMessage('Please fill in the API Key in the AI configuration settings first', 'warn', 3);
+			eda.sys_Message.showToastMessage(I18N.t('fillApiKeyAiConfig'), 'warn', 3);
 		}
 		return;
 	}

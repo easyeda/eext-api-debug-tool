@@ -220,11 +220,11 @@ window.addEventListener("beforeunload", function() {
 
 async function saveCurrentProjectFile() {
 	if (!window.projectManager.currentFile || !window.projectManager.currentProject) {
-		eda.sys_Message.showToastMessage("No project file open", "warn", 1);
+		eda.sys_Message.showToastMessage(I18N.t("noProjectFileOpen"), "warn", 1);
 		return;
 	}
 	if (window.projectManager.currentProject.isBuiltIn) {
-		eda.sys_Message.showToastMessage("Built-in projects cannot be saved", "warn", 1);
+		eda.sys_Message.showToastMessage(I18N.t("builtinCannotSave"), "warn", 1);
 		return;
 	}
 	try {
@@ -236,9 +236,9 @@ async function saveCurrentProjectFile() {
 			window.fileTreeUI._registerDirtyListener();
 			await window.fileTreeUI.render();
 		}
-		eda.sys_Message.showToastMessage("Saved: " + window.projectManager.currentFile, "success", 1);
+		eda.sys_Message.showToastMessage(I18N.format("savedFile", window.projectManager.currentFile), "success", 1);
 	} catch(e) {
-		eda.sys_Message.showToastMessage("Save failed: " + e.message, "error", 2);
+		eda.sys_Message.showToastMessage(I18N.format("saveFailed", e.message), "error", 2);
 	}
 }
 
@@ -292,19 +292,19 @@ var TabManager = {
 
 		if (tab.dirty) {
 			var result = await Swal.fire({
-				title: "Unsaved Changes",
+				title: I18N.t("unsavedChanges"),
 				html: "File <strong>" + tab.label + "</strong> has unsaved changes. Save it?",
 				icon: "warning",
 				showDenyButton: true,
 				showCancelButton: true,
-				confirmButtonText: "Save",
-				denyButtonText: "Don't Save",
-				cancelButtonText: "Cancel",
+				confirmButtonText: I18N.t("save"),
+				denyButtonText: I18N.t("dontSave"),
+				cancelButtonText: I18N.t("cancel"),
 			});
 			if (result.isConfirmed) {
 				await window.projectManager.saveFileContent(tab.fileName, editor.getValue());
 				if (window.fileTreeUI) { window.fileTreeUI._dirty = false; window.fileTreeUI._registerDirtyListener(); }
-				eda.sys_Message.showToastMessage("Saved: " + tab.label, "success", 1);
+				eda.sys_Message.showToastMessage(I18N.format("savedFile", tab.label), "success", 1);
 			} else if (result.isDenied) {
 			} else { return; }
 		}
@@ -466,10 +466,10 @@ async function handleRunAction() {
 
 		if (window.projectManager && window.projectManager.currentFile) {
 			const ext = window.projectManager.currentFile.split('.').pop().toLowerCase();
-			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? 'Preview' : 'Run';
+			runBtn.textContent = (ext === 'md' || ext === 'markdown') ? I18N.t('previewLabel') : I18N.t('runText');
 		} else {
 			const currentMode = editor.session.getMode().$id || '';
-			runBtn.textContent = currentMode.indexOf('markdown') !== -1 ? 'Preview' : 'Run';
+			runBtn.textContent = currentMode.indexOf('markdown') !== -1 ? I18N.t('previewLabel') : I18N.t('runText');
 		}
 
 		previewFrame.src = 'about:blank';
@@ -498,9 +498,9 @@ async function handleRunAction() {
 			previewFrame.src = url;
 			editorDiv.style.display = 'none';
 			previewContainer.classList.add('active');
-			runBtn.textContent = 'Stop';
+			runBtn.textContent = I18N.t('stop');
 
-			eda.sys_Message.showToastMessage('HTML preview opened', 'success', 2);
+			eda.sys_Message.showToastMessage(I18N.t('htmlPreviewOpened'), 'success', 2);
 
 			previewFrame.addEventListener('load', () => {
 				URL.revokeObjectURL(url);
@@ -514,9 +514,9 @@ async function handleRunAction() {
 			previewFrame.src = url;
 			editorDiv.style.display = 'none';
 			previewContainer.classList.add('active');
-			runBtn.textContent = 'Stop';
+			runBtn.textContent = I18N.t('stop');
 
-			eda.sys_Message.showToastMessage('Markdown preview opened', 'success', 2);
+			eda.sys_Message.showToastMessage(I18N.t('mdPreviewOpened'), 'success', 2);
 
 			previewFrame.addEventListener('load', () => {
 				URL.revokeObjectURL(url);
@@ -551,9 +551,9 @@ async function handleRunAction() {
 				previewFrame.src = url;
 				editorDiv.style.display = 'none';
 				previewContainer.classList.add('active');
-				runBtn.textContent = 'Stop';
+				runBtn.textContent = I18N.t('stop');
 
-				eda.sys_Message.showToastMessage('HTML preview opened', 'success', 2);
+				eda.sys_Message.showToastMessage(I18N.t('htmlPreviewOpened'), 'success', 2);
 
 				previewFrame.addEventListener('load', () => {
 					URL.revokeObjectURL(url);
@@ -575,9 +575,9 @@ async function handleRunAction() {
 					previewFrame.src = url;
 					editorDiv.style.display = 'none';
 					previewContainer.classList.add('active');
-					runBtn.textContent = 'Stop';
+					runBtn.textContent = I18N.t('stop');
 
-					eda.sys_Message.showToastMessage('Markdown preview opened', 'success', 2);
+					eda.sys_Message.showToastMessage(I18N.t('mdPreviewOpened'), 'success', 2);
 
 					previewFrame.addEventListener('load', () => {
 						URL.revokeObjectURL(url);

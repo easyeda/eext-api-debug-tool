@@ -79,12 +79,12 @@ class ProjectCompleter {
 	getFileMeta(fileName) {
 		const ext = fileName.split('.').pop().toLowerCase();
 		const metaMap = {
-			js: 'JavaScript',
-			css: 'CSS',
-			json: 'JSON',
-			html: 'HTML',
+			js: I18N.t('jsLabel'),
+			css: I18N.t('cssLabel'),
+			json: I18N.t('jsonLabel'),
+			html: I18N.t('htmlLabel'),
 		};
-		return metaMap[ext] || 'File';
+		return metaMap[ext] || I18N.t('fileLabel');
 	}
 
 	// 更新文件列表（当文件添加/删除时调用）

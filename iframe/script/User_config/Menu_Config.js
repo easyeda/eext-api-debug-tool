@@ -26,8 +26,8 @@ function showFileContextMenu(e, editor) {
 	`;
 
 	const menuItems = [
-		{ text: 'New Project', action: () => showNewProjectDialog(editor) },
-	{ text: 'New Script', action: () => showNewScriptDialog(editor) },
+		{ text: I18N.t('newProjectMenu'), action: () => showNewProjectDialog(editor) },
+	{ text: I18N.t('newScriptMenu'), action: () => showNewScriptDialog(editor) },
 	];
 
 	menu.innerHTML = '';
@@ -136,12 +136,12 @@ async function migrateCodeStoreToProjects() {
  */
 function showNewProjectDialog(editor) {
 	eda.sys_Dialog.showInputDialog(
-		"Please enter project name", // beforeContent
-		"Project name must be at least 2 characters", // afterContent
-		"New Project", // title
+		I18N.t("enterProjectName"), // beforeContent
+		I18N.t("projectNameMinLen"), // afterContent
+		I18N.t("newProject"), // title
 		"text", // type
 		"", // value
-		{ placeholder: "e.g. MyProject", minlength: 2, maxlength: 50 }, // otherProperty
+		{ placeholder: I18N.t("egMyProject2"), minlength: 2, maxlength: 50 }, // otherProperty
 		async function(value) {
 			// 用户点击确认后的回调
 			// 用户点击取消时不执行任何操作
@@ -149,7 +149,7 @@ function showNewProjectDialog(editor) {
 
 			// 用户点击确定但输入为空或太短
 			if (!value || value.length < 2) {
-				eda.sys_Message.showToastMessage("Project name must be at least 2 characters", "warn", 2);
+				eda.sys_Message.showToastMessage(I18N.t("projectNameMinLen"), "warn", 2);
 				return;
 			}
 
@@ -174,9 +174,9 @@ function showNewProjectDialog(editor) {
 					window.projectManager.currentFile = firstFile.fileName;
 				}
 
-				eda.sys_Message.showToastMessage("Project created successfully", "success", 2);
+				eda.sys_Message.showToastMessage(I18N.t("projectCreated"), "success", 2);
 			} catch (error) {
-				eda.sys_Message.showToastMessage("Project creation failed: " + error.message, "error", 3);
+				eda.sys_Message.showToastMessage(I18N.format("projectCreateFailed", error.message), "error", 3);
 			}
 		}
 	);
@@ -187,19 +187,19 @@ function showNewProjectDialog(editor) {
  */
 function showNewScriptDialog(editor) {
 	eda.sys_Dialog.showInputDialog(
-		"Please enter script name", // beforeContent
-		"Script name must be at least 2 characters", // afterContent
-		"New Script", // title
+		I18N.t("enterScriptName"), // beforeContent
+		I18N.t("scriptNameMinLen"), // afterContent
+		I18N.t("newScript"), // title
 		"text", // type
 		"", // value
-		{ placeholder: "e.g. my-script", minlength: 2, maxlength: 50 }, // otherProperty
+		{ placeholder: I18N.t("egMyScript"), minlength: 2, maxlength: 50 }, // otherProperty
 		async function(value) {
 			// 用户点击取消时不执行任何操作
 			if (typeof value !== "string") return;
 
 			// 用户点击确定但输入为空或太短
 			if (!value || value.length < 2) {
-				eda.sys_Message.showToastMessage("Script name must be at least 2 characters", "warn", 2);
+				eda.sys_Message.showToastMessage(I18N.t("scriptNameMinLen"), "warn", 2);
 				return;
 			}
 
@@ -250,9 +250,9 @@ function showNewScriptDialog(editor) {
 				window.leftNavPanel.switchView("all-projects");
 			}
 
-			eda.sys_Message.showToastMessage("Script created successfully", "success", 2);
+			eda.sys_Message.showToastMessage(I18N.t("scriptCreated"), "success", 2);
 		} catch (error) {
-			eda.sys_Message.showToastMessage("Script creation failed: " + error.message, "error", 3);
+			eda.sys_Message.showToastMessage(I18N.format("scriptCreateFailed", error.message), "error", 3);
 		}
 		}
 		);
@@ -319,7 +319,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	/* Header */
 	const header = document.createElement('div');
 	header.style.cssText = 'padding:8px 16px;border-bottom:1px solid var(--eext-border);display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:12px;flex-shrink:0;';
-	header.innerHTML = `<span>Settings</span><button id="settings-modal-close" style="background:transparent;border:none;color:var(--eext-text-primary);cursor:pointer;font-size:12px;padding:0 8px;border-radius:2px;">×</button>`;
+	header.innerHTML = `<span>${I18N.t('settingsModal')}</span><button id="settings-modal-close" style="background:transparent;border:none;color:var(--eext-text-primary);cursor:pointer;font-size:12px;padding:0 8px;border-radius:2px;">&times;</button>`;
 
 	/* Body: left menu + right content */
 	const bodyWrap = document.createElement('div');
@@ -330,11 +330,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	menuPane.style.cssText = `width:140px;flex-shrink:0;border-right:1px solid var(--eext-border);padding:8px 0;display:flex;flex-direction:column;gap:0;background:var(--eext-bg-item);`;
 
 	const menuItems = [
-		{ id: 'general', label: 'General' },
-		{ id: 'editor', label: 'Editor' },
-		{ id: 'shortcuts', label: 'Shortcuts' },
-		{ id: 'plugins', label: 'Plugins' },
-		{ id: 'completer', label: 'Completer Store' },
+		{ id: 'general', label: I18N.t('general') },
+		{ id: 'editor', label: I18N.t('editor') },
+		{ id: 'shortcuts', label: I18N.t('shortcuts') },
+		{ id: 'plugins', label: I18N.t('plugins') },
+		{ id: 'completer', label: I18N.t('completerStore') },
 	];
 
 	/* Right content */
@@ -345,11 +345,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	const footer = document.createElement('div');
 	footer.style.cssText = 'padding:8px 16px;border-top:1px solid var(--eext-border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;';
 	const cancelBtn = document.createElement('button');
-	cancelBtn.textContent = 'Cancel';
+	cancelBtn.textContent = I18N.t('cancel');
 	cancelBtn.className = 'eext-modal-btn';
 	cancelBtn.onclick = () => overlay.remove();
 	const confirmBtn = document.createElement('button');
-	confirmBtn.textContent = 'OK';
+	confirmBtn.textContent = I18N.t('ok');
 	confirmBtn.className = 'eext-modal-btn-primary';
 		confirmBtn.onclick = async () => {
 			var w = document.getElementById("ui-width-input"), h = document.getElementById("ui-height-input");
@@ -398,7 +398,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 		if (activeMenu === 'general') {
 			/* Theme cards */
-			const sec = section('Theme');
+			const sec = section(I18N.t('theme'));
 			ThemeEngine.listThemes().filter(t => t.preset).forEach(t => {
 				const active = ThemeEngine.getCurrent() === t.id;
 				const card = document.createElement('div');
@@ -414,7 +414,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 
 			/* Window size */
-			const sec2 = section('Window Size');
+			const sec2 = section(I18N.t('windowSize'));
 			const row = document.createElement('div');
 			row.style.cssText = 'display:flex;align-items:center;gap:8px;';
 			const makeInput = (label, id, ph) => {
@@ -431,9 +431,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			contentPane.appendChild(row);
 
 			/* Color customization */
-			const sec3 = section('Element Colors');
+			const sec3 = section(I18N.t('elementColors'));
 			const keys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
-			const labels = {'bg-toolbar':'Top Menu','bg-panel':'Left Panel Background','bg-input':'Input Box','editor-bg':'Editor Background','editor-line-bg':'Editor Selected Line','text-primary':'Left Panel Text','border':'Border'};
+			const labels = {'bg-toolbar':I18N.t('topMenu'),'bg-panel':I18N.t('leftPanelBg'),'bg-input':I18N.t('inputBox'),'editor-bg':I18N.t('editorBg'),'editor-line-bg':I18N.t('editorSelLine'),'text-primary':I18N.t('leftPanelText'),'border':I18N.t('border')};
 			keys.forEach(k => {
 				const cr = document.createElement('div');
 				cr.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
@@ -454,7 +454,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 
 			/* Close panel on render */
-			const sec4 = section("Render Behavior");
+			const sec4 = section(I18N.t("renderBehavior"));
 			const cbRow = document.createElement("div");
 			cbRow.style.cssText = "display:flex;align-items:center;gap:12px;";
 			const cbPanel = document.createElement("input"); cbPanel.type = "checkbox"; cbPanel.id = "close-panel-on-render-checkbox";
@@ -466,7 +466,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig("close_panel_on_render");
 				cbPanel.checked = (saved === true || saved === "true");
 			} catch(e) { cbPanel.checked = true; }
-			const cbLabel = document.createElement("span"); cbLabel.textContent = "Close panel when rendering page";
+			const cbLabel = document.createElement("span"); cbLabel.textContent = I18N.t("closePanelOnRender");
 			cbLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			cbLabel.onclick = function() { cbPanel.checked = !cbPanel.checked; cbPanel.onchange(); };
 			cbRow.appendChild(cbPanel); cbRow.appendChild(cbLabel);
@@ -484,13 +484,13 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig("builtin_separate_render");
 				cbSep.checked = (saved === true || saved === "true");
 			} catch(e) { cbSep.checked = false; }
-			const cbLabel2 = document.createElement("span"); cbLabel2.textContent = "Render built-in projects separately";
+			const cbLabel2 = document.createElement("span"); cbLabel2.textContent = I18N.t("builtinSeparateRender");
 			cbLabel2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			cbLabel2.onclick = function() { cbSep.checked = !cbSep.checked; cbSep.onchange(); };
 			cbRow2.appendChild(cbSep); cbRow2.appendChild(cbLabel2);
 			contentPane.appendChild(cbRow2);
 		} else if (activeMenu === 'editor') {
-			const sec = section('Completion Mode');
+			const sec = section(I18N.t('completionMode'));
 
 			// 带注释补全
 			const row = document.createElement('div');
@@ -505,7 +505,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const saved = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
 				cb.checked = (saved === true || saved === 'true');
 			} catch(e) { cb.checked = false; }
-			const label = document.createElement('span'); label.textContent = 'Completion with comment';
+			const label = document.createElement('span'); label.textContent = I18N.t('completionWithComment');
 			label.style.cssText = 'font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;';
 			label.onclick = () => { cb.checked = !cb.checked; cb.onchange(); };
 			row.appendChild(cb); row.appendChild(label);
@@ -514,7 +514,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 随机分配变量
 			var row2 = document.createElement("div");
 			row2.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
-			var label2 = document.createElement("span"); label2.textContent = "Random variable assignment";
+			var label2 = document.createElement("span"); label2.textContent = I18N.t("randomVarAssignment");
 			label2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			label2.onclick = function() { cb2.checked = !cb2.checked; cb2.onchange(); };
 			var cb2 = document.createElement("input"); cb2.type = 'checkbox';
@@ -533,7 +533,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 异步函数标识补全
 			var rowAwait = document.createElement("div");
 			rowAwait.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
-			var labelAwait = document.createElement("span"); labelAwait.textContent = "Async function identifier completion";
+			var labelAwait = document.createElement("span"); labelAwait.textContent = I18N.t("asyncCompletion");
 			labelAwait.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			labelAwait.onclick = function() { cbAwait.checked = !cbAwait.checked; cbAwait.onchange(); };
 			var cbAwait = document.createElement("input"); cbAwait.type = 'checkbox';
@@ -551,7 +551,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 新建文件带文件名注释
 			var row3 = document.createElement("div");
 			row3.style.cssText = "display:flex;align-items:center;gap:12px;margin-top:8px;";
-			var label3 = document.createElement("span"); label3.textContent = "New file with filename comment";
+			var label3 = document.createElement("span"); label3.textContent = I18N.t("newFileWithComment");
 			label3.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			label3.onclick = function() { cb3.checked = !cb3.checked; cb3.onchange(); };
 			var cb3 = document.createElement("input"); cb3.type = 'checkbox';
@@ -571,7 +571,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var previewWrap = document.createElement('div');
 			previewWrap.style.cssText = 'margin-top:14px;padding:10px 12px;border:1px solid var(--eext-border);border-radius:4px;background:var(--eext-bg-input);';
 			var previewTitle = document.createElement('div');
-			previewTitle.textContent = 'Preview';
+			previewTitle.textContent = I18N.t('preview');
 			previewTitle.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);margin-bottom:6px;';
 			previewWrap.appendChild(previewTitle);
 			var previewCode = document.createElement('pre');
@@ -663,7 +663,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			});
 			renderCompletionPreview();
 		} else if (activeMenu === 'shortcuts') {
-			section('Shortcuts');
+			section(I18N.t('shortcuts'));
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
 
 			var tableWrapper = document.createElement('div');
@@ -679,11 +679,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var shortcutsData = null;
 
 			async function renderShortcuts() {
-				tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">Loading...</td></tr>';
+				tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">' + I18N.t('loading') + '</td></tr>';
 				try {
 					shortcutsData = typeof loadShortcuts === 'function' ? await loadShortcuts() : null;
 					if (!shortcutsData) {
-						tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">Unable to load shortcut configuration</td></tr>';
+						tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">' + I18N.t('loadShortcutsFailed') + '</td></tr>';
 						return;
 					}
 					tbody.innerHTML = '';
@@ -714,7 +714,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 						tbody.appendChild(tr);
 					});
 				} catch(e) {
-					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-error);font-size:12px;padding:24px;">Load failed: ' + e.message + '</td></tr>';
+					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-error);font-size:12px;padding:24px;">' + I18N.format('loadFailedMsg', e.message) + '</td></tr>';
 				}
 			}
 			renderShortcuts();
@@ -723,16 +723,16 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			btnRow.style.cssText = 'display:flex;gap:8px;margin-top:12px;';
 
 			var resetBtn = document.createElement('button');
-			resetBtn.textContent = 'Reset to Default';
+			resetBtn.textContent = I18N.t('resetToDefault');
 			resetBtn.className = 'eext-modal-btn';
 			resetBtn.onclick = async function() {
 				var result = await Swal.fire({
-					title: 'Confirm Reset to Default',
-					html: 'Are you sure you want to restore default shortcut settings? Current custom settings will be lost.',
+					title: I18N.t('confirmResetShortcuts'),
+					html: I18N.t('resetShortcutsConfirmMsg'),
 					icon: 'warning',
 					showCancelButton: true,
-					confirmButtonText: 'Confirm',
-					cancelButtonText: 'Cancel',
+					confirmButtonText: I18N.t('confirm'),
+					cancelButtonText: I18N.t('cancel'),
 				});
 				if (!result.isConfirmed) return;
 				if (typeof resetShortcuts === 'function') {
@@ -742,21 +742,21 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				}
 				await renderShortcuts();
 				var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
-				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('Shortcuts reset to default', 'success', 1);
+				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(I18N.t('shortcutsResetDone'), 'success', 1);
 			};
 			btnRow.appendChild(resetBtn);
 
 			var saveBtn = document.createElement('button');
-			saveBtn.textContent = 'Save';
+			saveBtn.textContent = I18N.t('save');
 			saveBtn.className = 'eext-modal-btn-primary';
 			saveBtn.onclick = async function() {
 				if (typeof saveShortcuts === 'function') {
 					var success = await saveShortcuts(shortcutsData);
 					var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
 					if (success) {
-						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('Shortcuts saved, please reopen the window to apply changes', 'success', 3);
+						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(I18N.t('shortcutsSaved'), 'success', 3);
 					} else {
-						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage('Save failed', 'error', 2);
+						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(I18N.t('saveFailed'), 'error', 2);
 					}
 				}
 			};
@@ -764,17 +764,17 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			contentPane.appendChild(btnRow);
 		} else if (activeMenu === 'plugins') {
-			section('Plugins');
+			section(I18N.t('plugins'));
 			var list = document.createElement('div');
 			list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
 			contentPane.appendChild(list);
 
 			async function loadPluginList() {
-				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">Loading...</div>';
+				list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">' + I18N.t('loading') + '</div>';
 				try {
 					var plugins = typeof ExtStore_GetExtList === 'function' ? await ExtStore_GetExtList() : [];
 					if (!plugins || plugins.length === 0) {
-						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">No saved plugins</div>';
+						list.innerHTML = '<div style="font-size:12px;color:var(--eext-text-secondary);text-align:center;padding:12px;">' + I18N.t('noSavedPlugins') + '</div>';
 					} else {
 						list.innerHTML = '';
 						plugins.forEach(function(p) {
@@ -787,7 +787,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 							// Plugin name
 							var nameSpan = document.createElement('span');
-							nameSpan.textContent = p.name || 'Unnamed';
+							nameSpan.textContent = p.name || I18N.t('unnamed');
 							nameSpan.title = p.name;
 							nameSpan.style.cssText = 'flex:1;font-size:12px;color:var(--eext-text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
 							row1.appendChild(nameSpan);
@@ -836,22 +836,22 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 								}
 								try {
 									await ExtStore_TogglePlugin(p.name, newState);
-									eda.sys_Message.showToastMessage('Plugin "' + p.name + '" ' + (newState ? 'enabled' : 'disabled'), 'success', 1);
+									eda.sys_Message.showToastMessage(I18N.format('pluginStatus', p.name, (newState ? I18N.t('enabled') : I18N.t('disabled'))), 'success', 1);
 								} catch(err) {
 									cb.checked = !newState;
 									customCheckbox.style.background = cb.checked ? '#1890ff' : '#fff';
 									customCheckbox.style.borderColor = cb.checked ? '#1890ff' : '#d9d9d9';
 									checkmark.style.opacity = cb.checked ? '1' : '0';
-									eda.sys_Message.showToastMessage('Operation failed: ' + err.message, 'error', 2);
+									eda.sys_Message.showToastMessage(I18N.format('pluginOpFailed', err.message), 'error', 2);
 								}
 							};
 							var checkboxText = document.createElement('span');
-							checkboxText.textContent = 'Enable';
+							checkboxText.textContent = I18N.t('enable');
 							checkboxText.style.cssText = 'font-size:12px;color:var(--eext-text-primary);';
 							checkboxLabel.appendChild(checkboxText);
 							row2.appendChild(checkboxLabel);
 							var timingLabel = document.createElement('span');
-							timingLabel.textContent = 'Startup timing:';
+							timingLabel.textContent = I18N.t('startupTiming');
 							timingLabel.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);';
 							row2.appendChild(timingLabel);
 
@@ -867,7 +867,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							rp.checked = currentTiming === 'onPluginOpen';
 							rp.style.cssText = 'margin:0;';
 							radioPlugin.appendChild(rp);
-							radioPlugin.appendChild(document.createTextNode('On window open'));
+							radioPlugin.appendChild(document.createTextNode(I18N.t('onWindowOpen')));
 							row2.appendChild(radioPlugin);
 
 							var radioEda = document.createElement('label');
@@ -879,39 +879,39 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 							re.checked = currentTiming === 'onEdaStartup';
 							re.style.cssText = 'margin:0;';
 							radioEda.appendChild(re);
-							radioEda.appendChild(document.createTextNode('On EDA open'));
+							radioEda.appendChild(document.createTextNode(I18N.t('onEdaOpen')));
 							row2.appendChild(radioEda);
 
 
 						// Buttons: rename, load, delete
 							// Rename button
 							var renameBtn = document.createElement('button');
-							renameBtn.textContent = 'Rename';
+							renameBtn.textContent = I18N.t('rename');
 							renameBtn.className = 'eext-modal-btn';
 							renameBtn.onclick = async function() {
 								eda.sys_Dialog.showInputDialog(
-									'Please enter a new name',
-									'Plugin name',
-									'Rename Plugin',
+									I18N.t('pleaseEnterNewName'),
+									I18N.t('pluginName'),
+									I18N.t('renamePlugin'),
 									'text',
 									p.name,
 									{ minlength: 1, maxlength: 50 },
 									async function(value) {
 										if (typeof value !== 'string') return;
 										if (!value || !value.trim()) {
-											eda.sys_Message.showToastMessage('Please enter a name', 'warn', 2);
+											eda.sys_Message.showToastMessage(I18N.t('pleaseEnterName'), 'warn', 2);
 											return;
 										}
 										if (value.trim() === p.name) {
-											eda.sys_Message.showToastMessage('Name unchanged', 'warn', 2);
+											eda.sys_Message.showToastMessage(I18N.t('nameUnchanged'), 'warn', 2);
 											return;
 										}
 										try {
 											await ExtStore_RenameExt(p.name, value.trim());
 											await loadPluginList();
-											eda.sys_Message.showToastMessage('Rename successful', 'success', 1);
+											eda.sys_Message.showToastMessage(I18N.t('renameSuccessful'), 'success', 1);
 										} catch(err) {
-											eda.sys_Message.showToastMessage('Rename failed: ' + err.message, 'error', 2);
+											eda.sys_Message.showToastMessage(I18N.format('renameFailed2', err.message), 'error', 2);
 										}
 									}
 								);
@@ -920,7 +920,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 							// Load button
 							var loadBtn = document.createElement('button');
-							loadBtn.textContent = 'Load';
+							loadBtn.textContent = I18N.t('load');
 							loadBtn.className = 'eext-modal-btn-primary';
 							loadBtn.onclick = async function() {
 								try {
@@ -932,22 +932,22 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 										if (req.result && req.result.code) {
 											editor.setValue(req.result.code, -1);
 											editor.clearSelection();
-											eda.sys_Message.showToastMessage('Loaded: ' + p.name, 'success', 1);
+											eda.sys_Message.showToastMessage(I18N.format('loadedMsg', p.name), 'success', 1);
 										}
 									};
 								} catch(err) {
-									eda.sys_Message.showToastMessage('Load failed: ' + err.message, 'error', 2);
+									eda.sys_Message.showToastMessage(I18N.format('loadFailed', err.message), 'error', 2);
 								}
 							};
 							row2.appendChild(loadBtn);
 
 							// Delete button
 							var delBtn = document.createElement('button');
-							delBtn.textContent = 'Delete';
+							delBtn.textContent = I18N.t('delete');
 							delBtn.className = 'eext-modal-btn-delete';
 							delBtn.onclick = async function() {
 								eda.sys_Dialog.showConfirmationMessage(
-									'Delete plugin "' + p.name + '"?',
+									I18N.format('deletePluginConfirm', p.name),
 									'Confirm Delete',
 									'Delete',
 									'Cancel',
@@ -956,9 +956,9 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 										try {
 											await ExtStore_DeleteExt(p.name);
 											await loadPluginList();
-											eda.sys_Message.showToastMessage('Plugin "' + p.name + '" deleted', 'info', 1);
+											eda.sys_Message.showToastMessage(I18N.format('startupItemDeleted', p.name), 'info', 1);
 										} catch(err) {
-											eda.sys_Message.showToastMessage('Delete failed: ' + err.message, 'error', 2);
+											eda.sys_Message.showToastMessage(I18N.format('deleteFailed', err.message), 'error', 2);
 										}
 									}
 								);
@@ -972,7 +972,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 										try {
 											await ExtStore_UpdateStartupConfig(p.name, newTiming);
 										} catch(e) {
-											eda.sys_Message.showToastMessage('Failed to save startup config: ' + e.message, 'error', 2);
+											eda.sys_Message.showToastMessage(I18N.format('pluginOpFailed', e.message), 'error', 2);
 										}
 									}
 								};
@@ -986,21 +986,21 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 						});
 					}
 				} catch(err) {
-					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">Load failed: ' + err.message + '</div>';
+					list.innerHTML = '<div style="font-size:12px;color:var(--eext-error);text-align:center;padding:12px;">' + I18N.format('loadFailedMsg', err.message) + '</div>';
 				}
 			}
 
 			loadPluginList();
 		} else if (activeMenu === 'completer') {
-			section('Completer Store');
+			section(I18N.t('completerStore'));
 			const toolbar = document.createElement('div');
 			toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;';
 			const hint = document.createElement('div');
 			hint.style.cssText = 'font-size:11px;color:var(--eext-text-secondary);';
-			hint.textContent = 'Tip: Double-click a completer item to edit';
+			hint.textContent = I18N.t('tipDoubleClickToEdit');
 			toolbar.appendChild(hint);
 			const addBtn = document.createElement('button');
-			addBtn.textContent = 'New Completer Item';
+			addBtn.textContent = I18N.t('newCompleterItem');
 			addBtn.style.cssText = 'padding:5px 14px;font-size:11px;border:1px solid var(--eext-brand);border-radius:4px;background:var(--eext-brand);color:#fff;cursor:pointer;white-space:nowrap;transition:opacity 0.15s;';
 			addBtn.onmouseenter = function() { addBtn.style.opacity = '0.85'; };
 			addBtn.onmouseleave = function() { addBtn.style.opacity = '1'; };
@@ -1014,10 +1014,10 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const thead = document.createElement('thead');
 			thead.style.cssText = 'background:var(--eext-bg-item);';
 			thead.innerHTML = '<tr>' +
-				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:20%;\'>Name</th>' +
-				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:28%;\'>Description</th>' +
-				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:34%;\'>Value</th>' +
-				'<th style=\'padding:8px 12px;text-align:right;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:18%;\'>Actions</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:20%;\'>' + I18N.t('nameCol') + '</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:28%;\'>' + I18N.t('descriptionCol') + '</th>' +
+				'<th style=\'padding:8px 12px;text-align:left;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:34%;\'>' + I18N.t('valueCol') + '</th>' +
+				'<th style=\'padding:8px 12px;text-align:right;font-weight:600;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);width:18%;\'>' + I18N.t('actionsCol') + '</th>' +
 				'</tr>';
 			table.appendChild(thead);
 			const tbody = document.createElement('tbody');
@@ -1035,7 +1035,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 					tbody.innerHTML = '';
 					items.forEach(function(c, idx) { tbody.appendChild(_buildCompleterRow(c, editor, loadCompleters, idx)); });
 				} catch(e) {
-					tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-error);font-size:12px;\'>Load failed: ' + e.message + '</td></tr>';
+					tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-error);font-size:12px;\'>' + I18N.format('loadFailedMsg', e.message) + '</td></tr>';
 				}
 			}
 			loadCompleters();
@@ -1060,7 +1060,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			contentPane.querySelectorAll('input[type=color]').forEach(el => nv[el.getAttribute('data-key')] = el.value);
 			if (Object.keys(nv).length === 0) return;
 			const cur = ThemeEngine.getCurrent();
-			const nm = cur === 'dark' ? 'Custom Dark' : cur === 'light' ? 'Custom Light' : 'Custom';
+			const nm = cur === 'dark' ? I18N.t('customDark') : cur === 'light' ? I18N.t('customLight') : I18N.t('custom');
 var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom(nm, {...cv, ...nv}, nm).then(function(n) { if (n) ThemeEngine.apply(n); });
 		}, 500);
 	}
@@ -1114,7 +1114,7 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	header.className = 'shortcut-edit-header';
 	var title = document.createElement('span');
 	title.className = 'shortcut-edit-title';
-	title.textContent = 'Settings';
+	title.textContent = I18N.t('shortcutSettings');
 	header.appendChild(title);
 	var closeBtn = document.createElement('button');
 	closeBtn.className = 'shortcut-edit-close';
@@ -1147,21 +1147,21 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 		return input;
 	}
 
-	var nameInput = buildField('Function', 'shortcut-edit-name', name, true);
-	var keyInput = buildField('Shortcut', 'shortcut-edit-key', currentShortcut, false);
+	var nameInput = buildField(I18N.t('functionLabel'), 'shortcut-edit-name', name, true);
+	var keyInput = buildField(I18N.t('shortcutLabel'), 'shortcut-edit-key', currentShortcut, false);
 
 	keyInput.classList.add('shortcut-key-input');
-	keyInput.placeholder = 'Click here then press a key combination';
+	keyInput.placeholder = I18N.t('clickToRecord');
 	keyInput.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
 	keyInput.style.textAlign = 'center';
 
 	keyInput.addEventListener('focus', function() {
 		keyInput.style.borderColor = 'var(--eext-brand)';
-		keyInput.placeholder = 'Press a key combination...';
+		keyInput.placeholder = I18N.t('pressCombo');
 	});
 	keyInput.addEventListener('blur', function() {
 		keyInput.style.borderColor = 'var(--eext-border)';
-		keyInput.placeholder = 'Click here then press a key combination';
+		keyInput.placeholder = I18N.t('clickToRecord');
 	});
 	keyInput.addEventListener('keydown', function(e) {
 		e.preventDefault();
@@ -1188,7 +1188,7 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	footer.className = 'shortcut-edit-footer';
 
 	var confirmBtn = document.createElement('button');
-	confirmBtn.textContent = 'OK';
+	confirmBtn.textContent = I18N.t('ok');
 	confirmBtn.className = 'eext-modal-btn-primary';
 	confirmBtn.onclick = function() {
 		var newShortcut = keyInput.value.trim();
@@ -1197,7 +1197,7 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	};
 
 	var cancelBtn = document.createElement('button');
-	cancelBtn.textContent = 'Cancel';
+	cancelBtn.textContent = I18N.t('cancel');
 	cancelBtn.className = 'eext-modal-btn';
 	cancelBtn.onclick = closeDialog;
 
@@ -1260,8 +1260,8 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	/* 名称单元格 */
 	const tdCaption = document.createElement("td");
 	tdCaption.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-	tdCaption.textContent = rec.caption || "Unnamed";
-	bindTruncateTitle(tdCaption, "Name: " + (rec.caption || "Unnamed"));
+	tdCaption.textContent = rec.caption || I18N.t("unnamed");
+	bindTruncateTitle(tdCaption, "Name: " + (rec.caption || I18N.t("unnamed")));
 	tr.appendChild(tdCaption);
 
 	/* 描述单元格 */
@@ -1284,12 +1284,12 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	const delBtn = document.createElement("button");
 	delBtn.className = "eext-modal-btn-delete";
 	delBtn.style.cssText = "padding:4px 12px;font-size:11px;min-width:auto;height:auto;";
-	delBtn.textContent = "Delete";
+	delBtn.textContent = I18N.t("delete");
 	delBtn.onclick = function(ev) {
 		ev.stopPropagation();
 		eda.sys_Dialog.showConfirmationMessage(
-			"Delete completer item \"" + (rec.caption || "Unnamed") + "\"? This action cannot be undone.",
-			"Tip", "Confirm", "Cancel",
+			I18N.format("deleteCompleterConfirm", (rec.caption || I18N.t("unnamed"))),
+			I18N.t("tip"), I18N.t("confirm"), I18N.t("cancel"),
 			async function(confirmed) {
 				if (!confirmed) return;
 				try {
@@ -1313,9 +1313,9 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 						window.leftNavPanel.loadCompleterStore();
 					}
 					reloadFn();
-					eda.sys_Message.showToastMessage("Deleted: " + (rec.caption || "Unnamed"), "success", 1);
+					eda.sys_Message.showToastMessage(I18N.format("addedMsg", (rec.caption || I18N.t("unnamed"))), "success", 1);
 				} catch(err) {
-					eda.sys_Message.showToastMessage("Delete failed: " + err.message, "error", 1);
+					eda.sys_Message.showToastMessage(I18N.format("deleteFailed", err.message), "error", 1);
 				}
 			}
 		);
@@ -1409,11 +1409,11 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		return input;
 	}
 
-	const captionInput = buildField("Name", "Enter name", "eext-cs-edit-caption", "text");
-	const valueInput = buildField("Value", "Enter completion value (code to insert when selected)", "eext-cs-edit-value", "text");
+	const captionInput = buildField("Name", I18N.t("enterName"), "eext-cs-edit-caption", "text");
+	const valueInput = buildField("Value", I18N.t("enterValue"), "eext-cs-edit-value", "text");
 	valueInput.style.fontFamily = "Consolas,Monaco,'Courier New',monospace";
 	valueInput.style.fontSize = "12px";
-	const descInput = buildField("Description", "Enter description (completion tooltip, optional)", "eext-cs-edit-desc", "text");
+	const descInput = buildField("Description", I18N.t("enterDesc"), "eext-cs-edit-desc", "text");
 
 	captionInput.value = (rec && rec.caption) || "";
 	valueInput.value = (rec && rec.value) || "";
@@ -1469,8 +1469,8 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		var newCaption = captionInput.value.trim();
 		var newValue = valueInput.value.trim();
 		var newDesc = descInput.value.trim();
-		if (!newCaption) { captionInput.focus(); eda.sys_Message.showToastMessage("Name cannot be empty", "error", 1); return; }
-		if (!newValue) { valueInput.focus(); eda.sys_Message.showToastMessage("Value cannot be empty", "error", 1); return; }
+		if (!newCaption) { captionInput.focus(); eda.sys_Message.showToastMessage(I18N.t("nameCannotBeEmpty"), "error", 1); return; }
+		if (!newValue) { valueInput.focus(); eda.sys_Message.showToastMessage(I18N.t("valueCannotBeEmpty"), "error", 1); return; }
 
 		/* 自动提取参数 */
 		var newParams = [];
@@ -1480,7 +1480,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		}
 
 		saveBtn.disabled = true;
-		saveBtn.textContent = "Saving...";
+		saveBtn.textContent = I18N.t("saving");
 		cancelBtn.disabled = true;
 		try {
 			if (isAdd) {
@@ -1497,7 +1497,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 					saveBtn.textContent = "Save";
 					cancelBtn.disabled = false;
 					captionInput.focus();
-					eda.sys_Message.showToastMessage("Name \"" + newCaption + "\" already exists", "error", 1);
+					eda.sys_Message.showToastMessage(I18N.format("nameAlreadyExists", newCaption), "error", 1);
 					return;
 				}
 				await new Promise(function(resolve, reject) {
@@ -1529,7 +1529,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 						const getReq = store.get(rec.id);
 						getReq.onsuccess = function() {
 							const record = getReq.result;
-							if (!record) return reject(new Error("Record does not exist"));
+							if (!record) return reject(new Error(I18N.t("recordNotExist")));
 							Object.assign(record, { caption: newCaption, value: newValue, params: newParams, description: newDesc });
 							const putReq = store.put(record);
 							putReq.onsuccess = resolve;
@@ -1559,12 +1559,12 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 			}
 			closeDialog();
 			reloadFn();
-			eda.sys_Message.showToastMessage((isAdd ? "Added: " : "Updated: ") + newCaption, "success", 1);
+			eda.sys_Message.showToastMessage(I18N.format(isAdd ? "addedMsg" : "updatedMsg", newCaption), "success", 1);
 		} catch(err) {
 			saveBtn.disabled = false;
 			saveBtn.textContent = "Save";
 			cancelBtn.disabled = false;
-			eda.sys_Message.showToastMessage((isAdd ? "Add failed: " : "Update failed: ") + err.message, "error", 1);
+			eda.sys_Message.showToastMessage(I18N.format(isAdd ? "addFailedMsg" : "updateFailedMsg", err.message), "error", 1);
 		}
 	};
 }

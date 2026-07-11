@@ -141,7 +141,7 @@ if (activeBuiltInProjectId) {
 	if (panelType === 'common-code' && popoutPanel.insertEdcodeMethod) {
 		popoutPanel.insertEdcodeMethod = function(methodPath) {
 			try { eda.sys_MessageBus.publishPublic('popout-insert-code', { methodPath: methodPath }); } catch (e) {}
-			eda.sys_Message.showToastMessage('Inserted: ' + methodPath, 'success', 1);
+			eda.sys_Message.showToastMessage(I18N.format('inserted', methodPath), 'success', 1);
 		};
 	}
 

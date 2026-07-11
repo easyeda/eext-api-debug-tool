@@ -11,7 +11,7 @@ class HTMLRenderer {
 	// 渲染 HTML 预览
 	async renderHTML(projectManager, editor) {
 		if (!projectManager.currentProject) {
-			eda.sys_Message.showToastMessage('Please create or open a project first', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('createProjectFirst'), 'warn', 2);
 			return;
 		}
 
@@ -19,7 +19,7 @@ class HTMLRenderer {
 		const htmlFiles = projectManager.currentProject.files.filter((f) => f.fileName.toLowerCase().endsWith('.html'));
 
 		if (htmlFiles.length === 0) {
-			eda.sys_Message.showToastMessage('No HTML file in the project', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('noHtmlFile'), 'warn', 2);
 			return;
 		}
 
@@ -34,12 +34,12 @@ class HTMLRenderer {
 			});
 
 			const result = await Swal.fire({
-				title: 'Select an HTML file to preview',
+				title: I18N.t('selectHtmlPreview'),
 				input: 'select',
 				inputOptions: options,
 				showCancelButton: true,
-				confirmButtonText: 'Preview',
-				cancelButtonText: 'Cancel',
+				confirmButtonText: I18N.t('previewLabel'),
+				cancelButtonText: I18N.t('cancel'),
 			});
 
 			if (!result.isConfirmed) return;

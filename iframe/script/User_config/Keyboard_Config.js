@@ -5,15 +5,15 @@
 
 // 默认快捷键配置
 const DEFAULT_SHORTCUTS = {
-	run: { win: 'Ctrl+Enter', mac: 'Command+Enter', description: 'Run Code' },
-	saveFile: { win: 'Ctrl+S', mac: 'Command+S', description: 'Save Current File' },
-	format: { win: 'Ctrl+K', mac: 'Command+K', description: 'Format Code' },
-	find: { win: 'Ctrl+F', mac: 'Command+F', description: 'Find' },
-	replace: { win: 'Ctrl+H', mac: 'Command+H', description: 'Replace' },
-	import: { win: 'Ctrl+O', mac: 'Command+O', description: 'Import File' },
-	export: { win: 'Ctrl+E', mac: 'Command+E', description: 'Export File' },
-	saveToList: { win: 'Ctrl+Shift+S', mac: 'Command+Shift+S', description: 'Save to Shortcut Button' },
-	saveAsPlugin: { win: 'Ctrl+Shift+P', mac: 'Command+Shift+P', description: 'Save as Plugin' },
+	run: { win: 'Ctrl+Enter', mac: 'Command+Enter', description: I18N.t('runCode') },
+	saveFile: { win: 'Ctrl+S', mac: 'Command+S', description: I18N.t('saveCurrentFile') },
+	format: { win: 'Ctrl+K', mac: 'Command+K', description: I18N.t('formatCode') },
+	find: { win: 'Ctrl+F', mac: 'Command+F', description: I18N.t('find') },
+	replace: { win: 'Ctrl+H', mac: 'Command+H', description: I18N.t('replace') },
+	import: { win: 'Ctrl+O', mac: 'Command+O', description: I18N.t('importFile') },
+	export: { win: 'Ctrl+E', mac: 'Command+E', description: I18N.t('exportFile') },
+	saveToList: { win: 'Ctrl+Shift+S', mac: 'Command+Shift+S', description: I18N.t('saveToShortcutBtn') },
+	saveAsPlugin: { win: 'Ctrl+Shift+P', mac: 'Command+Shift+P', description: I18N.t('saveAsPlugin') },
 };
 
 /**
@@ -121,14 +121,14 @@ function showConfirmModal(title, message, onConfirm, isDark) {
 	confirmFooter.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:flex-end;gap:8px;`;
 
 	const cancelBtn = document.createElement('button');
-	cancelBtn.textContent = 'Cancel';
+	cancelBtn.textContent = I18N.t('cancel');
 	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;transition:background 0.2s,border-color 0.2s;`;
 	cancelBtn.onmouseenter = () => (cancelBtn.style.backgroundColor = isDark ? '#353535' : '#f5f5f5');
 	cancelBtn.onmouseleave = () => (cancelBtn.style.backgroundColor = 'transparent');
 	cancelBtn.onclick = () => confirmOverlay.remove();
 
 	const confirmBtn = document.createElement('button');
-	confirmBtn.textContent = 'OK';
+	confirmBtn.textContent = I18N.t('ok');
 	confirmBtn.style.cssText = `padding:8px 16px;background:#1890ff;color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;transition:background 0.2s,border-color 0.2s;`;
 	confirmBtn.onmouseenter = () => (confirmBtn.style.backgroundColor = '#40a9ff');
 	confirmBtn.onmouseleave = () => (confirmBtn.style.backgroundColor = '#1890ff');
@@ -211,18 +211,18 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 		const input = document.createElement('input');
 		input.type = 'text';
 		input.value = config[platform];
-		input.placeholder = 'Press a shortcut...';
+		input.placeholder = I18N.t('pressShortcut');
 		input.readOnly = true;
 		input.style.cssText = `width:180px;padding:8px 12px;background:${isDark ? '#404040' : '#fff'};color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;font-size:12px;text-align:center;font-family:monospace;cursor:pointer;user-select:none;`;
 
 		input.addEventListener('focus', () => {
 			input.style.borderColor = isDark ? '#1890ff' : '#1890ff';
-			input.placeholder = 'Press any key...';
+			input.placeholder = I18N.t('pressAnyKey');
 		});
 
 		input.addEventListener('blur', () => {
 			input.style.borderColor = isDark ? '#222' : '#d9d9d9';
-			input.placeholder = 'Press a shortcut...';
+			input.placeholder = I18N.t('pressShortcut');
 		});
 
 		input.addEventListener('keydown', (e) => {
@@ -256,12 +256,12 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	footer.style.cssText = `padding:16px 20px;border-top:1px solid ${isDark ? '#222' : '#d9d9d9'};display:flex;justify-content:space-between;gap:12px;`;
 
 	const resetBtn = document.createElement('button');
-	resetBtn.textContent = 'Reset to Default';
+	resetBtn.textContent = I18N.t('resetToDefault');
 	resetBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;transition:background 0.2s,border-color 0.2s;`;
 	resetBtn.onclick = () => {
 		showConfirmModal(
-			'Confirm Reset to Default',
-			'Reset shortcuts to default? Your custom settings will be lost.',
+			I18N.t('confirmResetShortcuts'),
+			I18N.t('resetShortcutsConfirm'),
 			async () => {
 				shortcuts = await resetShortcuts();
 				overlay.remove();
@@ -275,7 +275,7 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	buttonGroup.style.cssText = `display:flex;gap:8px;`;
 
 	const cancelBtn = document.createElement('button');
-	cancelBtn.textContent = 'Cancel';
+	cancelBtn.textContent = I18N.t('cancel');
 	cancelBtn.style.cssText = `padding:8px 16px;background:transparent;color:${isDark ? '#e5e5e5' : '#333'};border:1px solid ${isDark ? '#222' : '#d9d9d9'};border-radius:4px;cursor:pointer;font-size:12px;`;
 	cancelBtn.onclick = () => {
 		window.keyboardShortcutsModalOpen = false;
@@ -284,17 +284,17 @@ async function showKeyboardShortcutsModal(editor, onClose) {
 	};
 
 	const saveBtn = document.createElement('button');
-	saveBtn.textContent = 'Save';
+	saveBtn.textContent = I18N.t('save');
 	saveBtn.style.cssText = `padding:8px 16px;background:${isDark ? '#1890ff' : '#1890ff'};color:#ffffff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;`;
 	saveBtn.onclick = async () => {
 		const success = await saveShortcuts(shortcuts);
 		if (success) {
-			eda.sys_Message.showToastMessage('Shortcuts saved. Please reopen the window to apply changes.', 'success', 3);
+			eda.sys_Message.showToastMessage(I18N.t('shortcutsSaved2'), 'success', 3);
 			window.keyboardShortcutsModalOpen = false;
 			overlay.remove();
 			if (onClose) onClose();
 		} else {
-			eda.sys_Message.showToastMessage('Save failed', 'error', 2);
+			eda.sys_Message.showToastMessage(I18N.t('saveFailed'), 'error', 2);
 		}
 	};
 

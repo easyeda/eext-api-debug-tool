@@ -30,7 +30,7 @@
 
 ## 一种全新的基于工作流的插件开发方式
 
-![alt text](imagess/工作流.png)
+![img6](images/README/workflow.png)
 
 ## 特性
 

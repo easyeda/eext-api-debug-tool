@@ -5,9 +5,9 @@
  */
 
 const POPOUT_VIEW_MAP = {
-	"all-projects": { btnId: "nav-all-projects", viewId: "project-list-view", title: "All Projects" },
-	"project-design": { btnId: "nav-project-design", viewId: "file-tree", title: "Project Design" },
-	"common-code": { btnId: "nav-common-code", viewId: "completer-store-view", title: "Common Code" },
+	"all-projects": { btnId: "nav-all-projects", viewId: "project-list-view", title: I18N.t("popoutAllProjects") },
+	"project-design": { btnId: "nav-project-design", viewId: "file-tree", title: I18N.t("popoutProjectDesign") },
+	"common-code": { btnId: "nav-common-code", viewId: "completer-store-view", title: I18N.t("popoutCommonCode") },
 };
 
 const POPOUT_DRAG_BTN_MAP = {
@@ -156,7 +156,7 @@ const PopoutManager = {
 		delete this._poppedOutPanels[viewName];
 
 		if (window.leftNavPanel) window.leftNavPanel.switchView(viewName);
-		eda.sys_Message.showToastMessage('Panel restored', 'success', 1);
+		eda.sys_Message.showToastMessage(I18N.t('panelRestored'), 'success', 1);
 	},
 
 	// 主 iframe 侧 MessageBus

@@ -181,24 +181,24 @@ function CodeStore_Get_CodeList(db) {
 async function Code_SaveCode(editor) {
 	const currentCode = editor.getValue();
 	if (!currentCode.trim()) {
-		eda.sys_Message.showToastMessage('No code content to save.', 'info', 1);
+		eda.sys_Message.showToastMessage(I18N.t('noCodeToSave'), 'info', 1);
 		return;
 	}
 
 	eda.sys_Dialog.showInputDialog(
-		'Please enter a code name:',
+		I18N.t('enterCodeName'),
 		'If the name already exists, its code content will be automatically overwritten and updated.',
-		'Save/Update Code',
+		I18N.t('saveUpdateCode'),
 		'text',
 		'',
 		{
-			placeholder: 'e.g.: Quick Sort Algorithm',
+			placeholder: I18N.t('egQuickSort'),
 			minlength: 1,
 			maxlength: 100,
 		},
 		async (inputValue) => {
 			if (inputValue == null || inputValue.trim() === '') {
-				eda.sys_Message.showToastMessage('User cancelled or no name entered', 'info', 1);
+				eda.sys_Message.showToastMessage(I18N.t('userCancelled'), 'info', 1);
 				return;
 			}
 
@@ -259,13 +259,13 @@ async function Code_OpenLoadWindow(editor) {
 	// 3. 标题栏
 	const header = document.createElement('div');
 	header.className = 'code-load-header';
-	header.textContent = 'Load Code Snippet';
+	header.textContent = I18N.t('loadCodeSnippet');
 
 	// 4. 关闭按钮
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'code-load-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = 'Close';
+	closeBtn.title = I18N.t('close');
 	closeBtn.onclick = () => {
 		// 添加淡出效果可选，这里直接移除
 		if (backdrop.parentNode) {
@@ -279,7 +279,7 @@ async function Code_OpenLoadWindow(editor) {
 	// 5. 搜索框
 	const searchBox = document.createElement('input');
 	searchBox.type = 'text';
-	searchBox.placeholder = 'Search code name...';
+	searchBox.placeholder = I18N.t('searchCodeName');
 	searchBox.className = 'code-load-search'; // 应用 CSS 类
 
 	modal.appendChild(searchBox);
@@ -307,7 +307,7 @@ async function Code_OpenLoadWindow(editor) {
 		console.error(err);
 		// 假设 eda.sys_Message 存在，如果不存在请替换为你的提示逻辑
 		if (eda && eda.sys_Message) {
-			eda.sys_Message.showToastMessage('Failed to load code list', 'info', 1);
+			eda.sys_Message.showToastMessage(I18N.t('failedToLoadCodeList'), 'info', 1);
 		}
 		listContainer.innerHTML = '<div class="code-load-error">Load failed</div>';
 	}
@@ -417,13 +417,13 @@ async function Code_OpenDeleteWindow(editor) {
 	// 标题栏
 	const header = document.createElement('div');
 	header.className = 'code-load-header';
-	header.textContent = 'Delete Code Snippet';
+	header.textContent = I18N.t('deleteCodeSnippet');
 
 	// 关闭按钮
 	const closeBtn = document.createElement('button');
 	closeBtn.className = 'code-load-close-btn';
 	closeBtn.textContent = '×';
-	closeBtn.title = 'Close';
+	closeBtn.title = I18N.t('close');
 	closeBtn.onclick = () => {
 		if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
 	};
@@ -434,7 +434,7 @@ async function Code_OpenDeleteWindow(editor) {
 	// 搜索框
 	const searchBox = document.createElement('input');
 	searchBox.type = 'text';
-	searchBox.placeholder = 'Search code name...';
+	searchBox.placeholder = I18N.t('searchCodeName');
 	searchBox.className = 'code-load-search';
 	modal.appendChild(searchBox);
 
@@ -457,7 +457,7 @@ async function Code_OpenDeleteWindow(editor) {
 		allItems = await CodeStore_Get_CodeList(dbInstance);
 		renderList(allItems);
 	} catch (err) {
-		eda.sys_Message.showToastMessage('Failed to load code list', 'info', 1);
+		eda.sys_Message.showToastMessage(I18N.t('failedToLoadCodeList'), 'info', 1);
 		listContainer.innerHTML = '<div class="code-load-error">Load failed</div>';
 	}
 
@@ -478,10 +478,10 @@ async function Code_OpenDeleteWindow(editor) {
 
 			itemEl.onclick = async () => {
 				if (!dbInstance) {
-					eda.sys_Message.showToastMessage('Database connection lost, cannot delete', 'info', 1);
+					eda.sys_Message.showToastMessage(I18N.t('dbLostCannotDelete'), 'info', 1);
 					return;
 				}
-				eda.sys_Dialog.showConfirmationMessage(`Confirm delete code "${item.name}"?`, 'Prompt', 'Confirm', 'Cancel', async (confirmed) => {
+				eda.sys_Dialog.showConfirmationMessage(`Confirm delete code "${item.name}"?`, I18N.t('prompt'), I18N.t('confirm'), I18N.t('cancel'), async (confirmed) => {
 				if (!confirmed) return;
 				try {
 					const deleted = await CodeStore_DeleteCode(dbInstance, item.name);

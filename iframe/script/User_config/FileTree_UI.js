@@ -112,8 +112,8 @@ class FileTreeUI {
 		if (!this.projectManager.currentProject) {
 			this.container.innerHTML = `
 				<div class="file-tree-empty">
-					<p>No project open</p>
-					<p>Click "File > New" to create a project</p>
+					<p>${I18N.t('noProjectOpen')}</p>
+					<p>${I18N.t('clickFileNewToCreate')}</p>
 				</div>
 			`;
 			return;
@@ -305,13 +305,13 @@ class FileTreeUI {
 			// 检查当前文件是否有未保存修改
 			if (!skipDirtyCheck && this._isFileModified()) {
 				var result = await Swal.fire({
-					title: "Unsaved Changes",
+					title: I18N.t("unsavedChanges"),
 					html: "The current file <strong>" + (this.projectManager.currentFile || "") + "</strong> has unsaved changes. Save it?",
 					icon: "warning",
 					showDenyButton: true,
 					showCancelButton: true,
 					confirmButtonText: "Save",
-					denyButtonText: "Don't Save",
+					denyButtonText: I18N.t("dontSave"),
 					cancelButtonText: "Cancel",
 				});
 				if (result.isConfirmed) {
@@ -348,7 +348,7 @@ class FileTreeUI {
 			// 根据文件类型更新运行按钮文本
 			var ext = fileName.split(".").pop().toLowerCase();
 			var runBtn = document.getElementById("run-btn");
-			if (runBtn) runBtn.textContent = (ext === "md" || ext === "markdown") ? "Preview" : "Run";
+			if (runBtn) runBtn.textContent = (ext === "md" || ext === "markdown") ? I18N.t('previewLabel') : I18N.t('runText');
 
 			// 注册脏标记监听器（用户编辑时触发）
 			this._registerDirtyListener();
@@ -440,8 +440,8 @@ class FileTreeUI {
 				menuItems = [{ text: `Delete ${selectedCount} items`, action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
-					{ text: 'Rename', action: () => this.showRenameDialog(target) },
-					{ text: 'Delete', action: () => this.showDeleteConfirm(target) },
+					{ text: I18N.t('rename'), action: () => this.showRenameDialog(target) },
+					{ text: I18N.t('delete'), action: () => this.showDeleteConfirm(target) },
 				];
 				const fileExt = target.split(".").pop().toLowerCase();
 				if (fileExt === "html") {
@@ -456,17 +456,17 @@ class FileTreeUI {
 				menuItems = [{ text: `Delete ${selectedCount} items`, action: () => this.showBatchDeleteConfirm() }];
 			} else {
 				menuItems = [
-					{ text: 'New File', action: () => this.showAddFileDialog(target) },
-					{ text: 'New Folder', action: () => this.showAddFolderDialog(target) },
+					{ text: I18N.t('newFileDialog'), action: () => this.showAddFileDialog(target) },
+					{ text: I18N.t('newFolder'), action: () => this.showAddFolderDialog(target) },
 					{ text: '---', action: null },
-					{ text: 'Delete Folder', action: () => this.showDeleteFolderConfirm(target) },
+					{ text: I18N.t('deleteFolder'), action: () => this.showDeleteFolderConfirm(target) },
 				];
 			}
 		} else if (type === 'blank') {
 			// 空白区域右键菜单（根目录）
 			menuItems = [
-				{ text: 'New File', action: () => this.showAddFileDialog('') },
-				{ text: 'New Folder', action: () => this.showAddFolderDialog('') },
+				{ text: I18N.t('newFileDialog'), action: () => this.showAddFileDialog('') },
+				{ text: I18N.t('newFolder'), action: () => this.showAddFolderDialog('') },
 			];
 		}
 
@@ -515,16 +515,16 @@ class FileTreeUI {
 	async showAddFolderDialog(basePath = '') {
 		const placeholder = basePath ? `e.g.: ${basePath}/components` : 'e.g.: src or src/components';
 		const result = await Swal.fire({
-			title: 'New Folder',
+			title: I18N.t('newFolder'),
 			input: 'text',
 			inputLabel: 'Folder path',
 			inputPlaceholder: placeholder,
 			showCancelButton: true,
-			confirmButtonText: 'Create',
-			cancelButtonText: 'Cancel',
+			confirmButtonText: I18N.t('create'),
+			cancelButtonText: I18N.t('cancel'),
 			inputValidator: (value) => {
-				if (!value) return 'Please enter a folder path';
-				if (/[<>:"|?*]/.test(value)) return 'Folder name contains invalid characters';
+				if (!value) return I18N.t('enterFolderPath');
+				if (/[<>:"|?*]/.test(value)) return I18N.t('folderNameInvalid');
 			},
 		});
 
@@ -539,7 +539,7 @@ class FileTreeUI {
 			this.expandedFolders.add(folderPath);
 
 			await this.render();
-			eda.sys_Message.showToastMessage('Folder created. Add files to it.', 'success', 2);
+			eda.sys_Message.showToastMessage(I18N.t('folderCreated'), 'success', 2);
 		}
 	}
 
@@ -547,20 +547,20 @@ class FileTreeUI {
 	async showAddFileDialog(basePath = '') {
 		const placeholder = basePath ? `e.g.: ${basePath}/app.js` : 'e.g.: index.html or src/app.js';
 		const result = await Swal.fire({
-			title: 'New File',
+			title: I18N.t('newFileDialog'),
 			input: 'text',
 			inputLabel: 'File path',
 			inputPlaceholder: placeholder,
 			showCancelButton: true,
-			confirmButtonText: 'Create',
-			cancelButtonText: 'Cancel',
+			confirmButtonText: I18N.t('create'),
+			cancelButtonText: I18N.t('cancel'),
 			inputValidator: (value) => {
-				if (!value) return 'Please enter a file name';
-				if (!/\.[a-zA-Z0-9]+$/.test(value)) return 'File name must include an extension';
-				if (/[<>:"|?*]/.test(value)) return 'File name contains invalid characters';
+				if (!value) return I18N.t('enterFileName');
+				if (!/\.[a-zA-Z0-9]+$/.test(value)) return I18N.t('fileNameNeedsExt');
+				if (/[<>:"|?*]/.test(value)) return I18N.t('fileNameInvalid');
 				const fullPath = basePath ? `${basePath}/${value}` : value;
 				const exists = this.projectManager.currentProject.files.some((f) => f.fileName === fullPath);
-				if (exists) return 'File already exists';
+				if (exists) return I18N.t('fileAlreadyExists');
 			},
 		});
 
@@ -587,7 +587,7 @@ class FileTreeUI {
 			}
 
 			await this.render();
-			eda.sys_Message.showToastMessage('File created', 'success', 2);
+			eda.sys_Message.showToastMessage(I18N.t('fileCreated'), 'success', 2);
 		}
 	}
 
@@ -599,15 +599,15 @@ class FileTreeUI {
 			inputValue: oldName,
 			inputLabel: 'New file path',
 			showCancelButton: true,
-			confirmButtonText: 'Rename',
-			cancelButtonText: 'Cancel',
+			confirmButtonText: I18N.t('rename'),
+			cancelButtonText: I18N.t('cancel'),
 			inputValidator: (value) => {
-				if (!value) return 'Please enter a file name';
-				if (!/.[a-zA-Z0-9]+$/.test(value)) return 'File name must include an extension';
-				if (value === oldName) return 'File name unchanged';
-				if (/[<>:"|?*]/.test(value)) return 'File name contains invalid characters';
+				if (!value) return I18N.t('enterFileName');
+				if (!/.[a-zA-Z0-9]+$/.test(value)) return I18N.t('fileNameNeedsExt');
+				if (value === oldName) return I18N.t('fileNameUnchanged');
+				if (/[<>:"|?*]/.test(value)) return I18N.t('fileNameInvalid');
 				const exists = this.projectManager.currentProject.files.some((f) => f.fileName === value);
-				if (exists) return 'File already exists';
+				if (exists) return I18N.t('fileAlreadyExists');
 			},
 		});
 
@@ -632,19 +632,19 @@ class FileTreeUI {
 			}
 
 			await this.render();
-			eda.sys_Message.showToastMessage('File renamed', 'success', 2);
+			eda.sys_Message.showToastMessage(I18N.t('fileRenamed'), 'success', 2);
 		}
 	}
 
 	// 显示删除确认
 	async showDeleteConfirm(fileName) {
 		const result = await Swal.fire({
-			title: 'Confirm Delete',
+			title: I18N.t('confirmDelete'),
 			text: `Delete file "${fileName}"?`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: 'Delete',
-			cancelButtonText: 'Cancel',
+			confirmButtonText: I18N.t('delete'),
+			cancelButtonText: I18N.t('cancel'),
 			confirmButtonColor: '#1890ff',
 		});
 
@@ -661,7 +661,7 @@ class FileTreeUI {
 			}
 
 			await this.render();
-			eda.sys_Message.showToastMessage('File deleted', 'success', 2);
+			eda.sys_Message.showToastMessage(I18N.t('fileDeleted'), 'success', 2);
 		}
 	}
 
@@ -669,20 +669,20 @@ class FileTreeUI {
 	async popupPreviewHtml(fileName) {
 		const project = this.projectManager.currentProject;
 		if (!project) {
-			eda.sys_Message.showToastMessage('No project open', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('noProjectOpen'), 'warn', 2);
 			return;
 		}
 		if (project.isBuiltIn) {
-			eda.sys_Message.showToastMessage('Built-in projects do not support popup preview', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('builtinNoPopup'), 'warn', 2);
 			return;
 		}
 		if (!project.files || !Array.isArray(project.files)) {
-			eda.sys_Message.showToastMessage('Invalid project file list', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('invalidProjectFileList'), 'warn', 2);
 			return;
 		}
 		let htmlFile = project.files.find(f => f.fileName === fileName);
 		if (!htmlFile) {
-			eda.sys_Message.showToastMessage('File not found', 'warn', 2);
+			eda.sys_Message.showToastMessage(I18N.t('fileNotFound'), 'warn', 2);
 			return;
 		}
 		let content;
@@ -715,12 +715,12 @@ class FileTreeUI {
 		const filesInFolder = this.projectManager.currentProject.files.filter((f) => f.fileName.startsWith(folderPath + '/'));
 
 		const result = await Swal.fire({
-			title: 'Confirm Delete Folder',
+			title: I18N.t('confirmDeleteFolder'),
 			html: `Delete folder "<strong>${folderPath}</strong>"?<br><br>This will delete <strong>${filesInFolder.length}</strong> file(s) inside it.`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: 'Delete',
-			cancelButtonText: 'Cancel',
+			confirmButtonText: I18N.t('delete'),
+			cancelButtonText: I18N.t('cancel'),
 			confirmButtonColor: '#1890ff',
 		});
 
@@ -767,12 +767,12 @@ class FileTreeUI {
 		});
 
 		const result = await Swal.fire({
-			title: 'Confirm Bulk Delete',
+			title: I18N.t('confirmBulkDelete'),
 			html: `Delete the <strong>${selectedArray.length}</strong> selected item(s)?<br><br>This will delete <strong>${totalFiles}</strong> file(s).`,
 			icon: 'warning',
 			showCancelButton: true,
-			confirmButtonText: 'Delete',
-			cancelButtonText: 'Cancel',
+			confirmButtonText: I18N.t('delete'),
+			cancelButtonText: I18N.t('cancel'),
 			confirmButtonColor: '#1890ff',
 		});
 
