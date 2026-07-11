@@ -215,4 +215,13 @@ if (activeBuiltInProjectId) {
 			}
 		});
 	} catch (e) {}
+
+	// 监听主题切换同步
+	try {
+		eda.sys_MessageBus.subscribePublic("theme-changed", function(msg) {
+			if (msg && msg.theme && typeof ThemeEngine !== "undefined") {
+				ThemeEngine.apply(msg.theme, { broadcast: false });
+			}
+		});
+	} catch (e) {}
 })();

@@ -138,13 +138,13 @@ const ThemeEngine = {
 	},
 
 /** 应用主题到 DOM */
-	apply(name) {
+	apply(name, opts) {
 		const preset = THEME_PRESETS[name];
 		const custom = this._customThemes[name];
 		const config = preset || custom;
 		if (!config) {
 			// 主题不存在，回退到 dark
-			return this.apply('dark');
+			return this.apply('dark', opts);
 		}
 
 		const vars = this.getVars(name);
@@ -173,6 +173,11 @@ const ThemeEngine = {
 		this._currentTheme = name;
 		try {
 			eda.sys_Storage.setExtensionUserConfig('theme-name', name);
+
+			// 通知弹出面板同步主题
+			try {
+				if (!opts || opts.broadcast !== false) { eda.sys_MessageBus.publishPublic('theme-changed', { theme: name }); }
+			} catch (e) { /* silent */ }
 		} catch (e) { /* silent */ }
 
 		return name;
@@ -191,11 +196,10 @@ const ThemeEngine = {
 	/** 获取所有可用主题列表 */
 	listThemes() {
 		const presets = Object.entries(THEME_PRESETS).map(([id, cfg]) => ({
-			id, name: cfg.name, preset: true, readonly: true,
+			id, name: { light: '亮色', dark: '暗色', 'dark-editor': '黑底白图' }[id] || cfg.name, preset: true, readonly: true,
 		}));
-		const customs = Object.entries(this._customThemes).map(([id, cfg]) => ({
-			id, name: cfg.name, preset: false, readonly: false,
-		}));
+		const customTheme = this._customThemes["Custom"];
+		const customs = customTheme ? [{ id: "Custom", name: I18N.t('custom'), preset: false, readonly: false }] : [];
 		return [...presets, ...customs];
 	},
 
@@ -206,8 +210,7 @@ const ThemeEngine = {
 
 	/** 保存自定义主题 */
 	async saveCustom(name, vars, label) {
-		const safeName = name.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '-') || 'custom-theme';
-		if (THEME_PRESETS[safeName]) return false;
+		const safeName = 'Custom';
 		// 根据编辑器背景亮度自动选择 Ace 主题
 		const editorBg = vars['editor-bg'] || '#fff';
 		const isEditorDark = parseInt(editorBg.replace('#',''), 16) < 0x888888;
