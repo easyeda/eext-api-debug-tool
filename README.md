@@ -26,11 +26,11 @@
 
 ## 带路径引用的html在线预览(支持在html内直接引入JS文件)
 
-![1783749336755](images/README/Quick-preview.png)
+![img5](images/README/Quick-preview.png)
 
 ## 一种全新的基于工作流的插件开发方式
 
-![1783749640170](images/README/ext.png)
+![img6](images/README/ext.png)
 
 ## 特性
 
