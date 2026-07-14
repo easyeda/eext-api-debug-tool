@@ -1615,7 +1615,7 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 
 		// 1. 跳转方法文档
 		menu.appendChild(
-			createMenuItem(matchedMethod ? 'Jump to Method Docs' : 'No jumpable method found', !!matchedMethod, () => {
+			createMenuItem(matchedMethod ? I18N.t('jumpToMethodDocs') : I18N.t('noJumpableMethod'), !!matchedMethod, () => {
 				let clean = matchedMethod.startsWith('eda.') ? matchedMethod.substring(4) : matchedMethod;
 				const url = `https://prodocs.lceda.cn/cn/api/reference/pro-api.${clean.toLowerCase()}.html`;
 				window.open(url, '_blank');
@@ -1624,14 +1624,14 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 
 		// 2. 生成测试用例
 		menu.appendChild(
-			createMenuItem('Generate Test Case', !!matchedMethod, () => {
+			createMenuItem(I18N.t('generateTestCase'), !!matchedMethod, () => {
 				generateTestCase(editor, matchedMethod);
 			}),
 		);
 
 		// 3. 添加到补全
 		menu.appendChild(
-			createMenuItem('Add to Completions', true, () => {
+			createMenuItem(I18N.t('addToCompletions'), true, () => {
 				UserCompleter_Add(editor, lineText);
 			}),
 		);

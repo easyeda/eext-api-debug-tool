@@ -90,6 +90,11 @@ var I18N = (function() {
       selectStartupFile: '选择启动文件',
       searchFiles: '搜索文件...',
       ok: '确定',
+      // ACE_Config - Editor context menu
+      jumpToMethodDocs: '跳转方法文档',
+      noJumpableMethod: '无可跳转的方法',
+      generateTestCase: '生成测试用例',
+      addToCompletions: '添加到补全',
       // ACE_Config - Map to header menu dialog
       mapToHeaderMenu: '映射到顶部菜单',
       buttonName: '按钮名称',
@@ -537,6 +542,11 @@ var I18N = (function() {
       selectStartupFile: 'Select Startup File',
       searchFiles: 'Search files...',
       ok: 'OK',
+      // ACE_Config - Editor context menu
+      jumpToMethodDocs: 'Jump to Method Docs',
+      noJumpableMethod: 'No jumpable method found',
+      generateTestCase: 'Generate Test Case',
+      addToCompletions: 'Add to Completions',
       // ACE_Config - Map to header menu dialog
       mapToHeaderMenu: 'Map to Header Menu',
       buttonName: 'Button Name',
