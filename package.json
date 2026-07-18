@@ -1,6 +1,6 @@
 {
 	"name": "pro-api-sdk",
-	"version": "1.1.1",
+	"version": "0.3.6",
 	"description": "嘉立创EDA & EasyEDA 专业版扩展 API 开发工具",
 	"author": "JLCEDA <support@lceda.cn>",
 	"license": "Apache-2.0",
@@ -16,7 +16,7 @@
 		"dev": "node build.cjs && node build-ext-manifest.cjs && npm run sync-version && npm run build"
 	},
 	"devDependencies": {
-		"@jlceda/pro-api-types": "^0.1.175",
+		"@jlceda/pro-api-types": "0.3.6",
 		"@microsoft/tsdoc": "^0.15.1",
 		"@trivago/prettier-plugin-sort-imports": "^5.2.1",
 		"@types/fs-extra": "^11.0.4",

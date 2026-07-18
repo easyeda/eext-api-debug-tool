@@ -65,6 +65,39 @@ function readFileContent(filePath) {
 }
 
 /**
+ * Read existing ext_manifest.js and extract per-project / per-file timestamps.
+ * Preserves timestamps of already-known plugins so each build does not refresh
+ * them. Only newly added projects/files get today's date.
+ */
+function readExistingTimestamps() {
+	const map = new Map(); // projectName -> { createdAt, updatedAt, files: Map(fileName -> createdAt) }
+	if (!fs.existsSync(OUTPUT_FILE)) return map;
+	try {
+		const content = fs.readFileSync(OUTPUT_FILE, 'utf-8');
+		const startMarker = 'window.extManifest = ';
+		const startIdx = content.indexOf(startMarker);
+		if (startIdx === -1) return map;
+		const arrStart = startIdx + startMarker.length;
+		const endIdx = content.lastIndexOf('];');
+		if (endIdx <= arrStart) return map;
+		const parsed = JSON.parse(content.slice(arrStart, endIdx + 1));
+		for (const proj of parsed) {
+			if (!proj || typeof proj.projectName !== 'string') continue;
+			const fileMap = new Map();
+			if (Array.isArray(proj.files)) {
+				for (const f of proj.files) {
+					if (f && typeof f.fileName === 'string') fileMap.set(f.fileName, f.createdAt);
+				}
+			}
+			map.set(proj.projectName, { createdAt: proj.createdAt, updatedAt: proj.updatedAt, files: fileMap });
+		}
+	} catch (e) {
+		console.warn('无法解析已有的 ext_manifest.js，时间戳将重新生成。', e.message);
+	}
+	return map;
+}
+
+/**
  * Generate manifest
  */
 function generateManifest() {
@@ -87,20 +120,26 @@ function generateManifest() {
 	console.log(`Found ${projectNames.length} projects: ${projectNames.join(', ')}`);
 
 	// Build manifest
+	// 保留已存在项目/文件的时间戳，仅对新项目/新文件使用当天日期，
+	// 避免每次构建都刷新已有插件的时间戳
+	const existing = readExistingTimestamps();
+	const today = new Date().toISOString().split('T')[0];
 	const manifest = [];
 
 	for (const projectName of projectNames) {
 		const fileNames = projectGroups[projectName];
+		const existingProj = existing.get(projectName);
 		const files = [];
 
 		for (const fileName of fileNames) {
 			const fullPath = path.join(EXT_DIR, projectName, fileName);
 			const content = readFileContent(fullPath);
+			const existingFileCreatedAt = existingProj && existingProj.files.get(fileName);
 
 			files.push({
 				fileName,
 				content,
-				createdAt: new Date().toISOString().split('T')[0],
+				createdAt: existingFileCreatedAt || today,
 			});
 		}
 
@@ -108,8 +147,8 @@ function generateManifest() {
 			projectName,
 			files,
 			isBuiltIn: true,
-			createdAt: new Date().toISOString().split('T')[0],
-			updatedAt: new Date().toISOString().split('T')[0],
+			createdAt: (existingProj && existingProj.createdAt) || today,
+			updatedAt: (existingProj && existingProj.updatedAt) || today,
 		});
 
 		console.log(`  - ${projectName}: ${files.length} files`);

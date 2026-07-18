@@ -1416,7 +1416,7 @@ define(
 						(e.prototype.observeLayoutChanges = function () {
 							if (this.$elements || !this.editor) return;
 							window.addEventListener('resize', this.onLayoutChange, { passive: !0 }),
-								window.addEventListener('wheel', this.mousewheelListener);
+								window.addEventListener('wheel', this.mousewheelListener, { passive: !0 });
 							var e = this.editor.container.parentNode,
 								t = [];
 							while (e) t.push(e), e.addEventListener('scroll', this.onLayoutChange, { passive: !0 }), (e = e.parentNode);
@@ -1642,7 +1642,7 @@ define(
 								(this.tooltipNode.onclick = this.onTooltipClick.bind(this)),
 								(this.tooltipNode.id = 'doc-tooltip'),
 								this.tooltipNode.setAttribute('role', 'tooltip'),
-								this.tooltipNode.addEventListener('wheel', h.stopPropagation));
+								this.tooltipNode.addEventListener('wheel', h.stopPropagation, { passive: !0 }));
 							var t = this.editor.renderer.theme;
 							this.tooltipNode.className = 'ace_tooltip ace_doc-tooltip ' + (t.isDark ? 'ace_dark ' : '') + (t.cssClass || '');
 							var n = this.tooltipNode;

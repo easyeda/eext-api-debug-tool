@@ -1,5 +1,80 @@
 edcode = [
 	{
+		"methodPath": "eda.cellcontenttype",
+		"description": "单元格内容类型枚举",
+		"parameters": [],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.cellcontenttype.CHECKBOX",
+		"description": "勾选框",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.cellcontenttype.CUSTOM",
+		"description": "自定义单元格",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.cellcontenttype.INPUT",
+		"description": "输入框",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.cellcontenttype.SELECT",
+		"description": "下拉框",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.cellcontenttype.TEXT",
+		"description": "纯文本",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.cellcontenttype.TEXTAREA",
+		"description": "文本域",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.cellcontenttype.UNDEFINED",
+		"description": "未定义单元格",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.cellcontenttype"
+	},
+	{
+		"methodPath": "eda.celltype",
+		"description": "单元格类型枚举",
+		"parameters": [],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.celltype.TD",
+		"description": "数据单元格",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.celltype"
+	},
+	{
+		"methodPath": "eda.celltype.TH",
+		"description": "表头单元格",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.celltype"
+	},
+	{
 		"methodPath": "eda.dmt_Board",
 		"description": "文档树 / 板子管理类",
 		"parameters": [],
@@ -383,6 +458,26 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.dmt_EditorControl.zoom",
+		"description": "设置缩放比例",
+		"parameters": [
+			{
+				"name": "percent",
+				"description": "缩放百分比"
+			},
+			{
+				"name": "tabId",
+				"description": "标签页 ID，如若未传入，则为最后输入焦点的画布"
+			}
+		],
+		"returns": "缩放到的区域数据，`false` 表示画布不支持该缩放操作或 `tabId` 不存在",
+		"remarks": "在返回数据中，原理图、符号画布坐标单位跨度为 0.01inch，PCB、封装画布坐标单位跨度为 mil",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.dmt_EditorControl.zoomTo",
 		"description": "缩放到坐标",
 		"parameters": [
@@ -473,6 +568,71 @@ edcode = [
 			"beta"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.dmt_Event",
+		"description": "文档树 / 事件类",
+		"parameters": [],
+		"remarks": "注册事件回调",
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.dmt_Event.addEditorTabEventListener",
+		"description": "新增编辑器标签页事件监听",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID，用以防止重复注册事件"
+			},
+			{
+				"name": "eventType",
+				"description": "事件类型"
+			},
+			{
+				"name": "callFn",
+				"description": "事件触发时的回调函数"
+			},
+			{
+				"name": "onlyOnce",
+				"description": "是否仅监听一次"
+			}
+		],
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.dmt_Event.isEventListenerAlreadyExist",
+		"description": "查询事件监听是否存在",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID"
+			}
+		],
+		"returns": "事件监听是否存在",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.dmt_Event.removeEventListener",
+		"description": "移除事件监听",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID"
+			}
+		],
+		"returns": "是否移除指定事件监听",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.dmt_Folder",
@@ -863,6 +1023,37 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.dmt_Project.copyProject",
+		"description": "复制工程",
+		"parameters": [
+			{
+				"name": "sourceProjectUuid",
+				"description": "源工程 UUID"
+			},
+			{
+				"name": "targetTeamUuid",
+				"description": "目标团队 UUID，如若不指定，则默认为个人，在私有化部署等不存在个人工程的情况下不存在默认值"
+			},
+			{
+				"name": "targetFolderUuid",
+				"description": "目标文件夹 UUID，如若不指定，则默认为根文件夹"
+			},
+			{
+				"name": "newProjectFriendlyName",
+				"description": "新工程的友好名称，如若不指定，则根据源工程名称自动生成"
+			},
+			{
+				"name": "newProjectName",
+				"description": "新工程名称，仅支持字母 `a-zA-Z`、数字 `0-9`、中划线 `-`，如若不指定，则根据工程友好名称自动生成"
+			}
+		],
+		"returns": "新工程 UUID，如若为 `undefined` 则复制失败",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.dmt_Project.createProject",
 		"description": "创建工程",
 		"parameters": [
@@ -896,6 +1087,21 @@ edcode = [
 			"beta"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.dmt_Project.deleteProject",
+		"description": "删除工程",
+		"parameters": [
+			{
+				"name": "projectUuid",
+				"description": "工程 UUID"
+			}
+		],
+		"returns": "操作是否成功",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.dmt_Project.getAllProjectsUuid",
@@ -946,6 +1152,87 @@ edcode = [
 			"public"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.dmt_Project.modifyProjectCollaborationMode",
+		"description": "修改工程协作模式",
+		"parameters": [
+			{
+				"name": "projectUuid",
+				"description": "工程 UUID"
+			},
+			{
+				"name": "collaborationMode",
+				"description": "工程协作模式"
+			}
+		],
+		"returns": "是否修改成功",
+		"remarks": "如若团队权限无需工程设置协作模式，则将返回 `false`",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.dmt_Project.modifyProjectDescription",
+		"description": "修改工程描述",
+		"parameters": [
+			{
+				"name": "projectUuid",
+				"description": "工程 UUID"
+			},
+			{
+				"name": "description",
+				"description": "工程描述，如若为 `undefined` 则清空工程现有描述"
+			}
+		],
+		"returns": "是否修改成功",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.dmt_Project.modifyProjectFriendlyName",
+		"description": "修改工程友好名称",
+		"parameters": [
+			{
+				"name": "projectUuid",
+				"description": "工程 UUID"
+			},
+			{
+				"name": "projectFriendlyName",
+				"description": "工程友好名称"
+			}
+		],
+		"returns": "是否修改成功",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.dmt_Project.moveProject",
+		"description": "移动工程",
+		"parameters": [
+			{
+				"name": "projectUuid",
+				"description": "工程 UUID"
+			},
+			{
+				"name": "teamUuid",
+				"description": "团队 UUID"
+			},
+			{
+				"name": "folderUuid",
+				"description": "文件夹 UUID，如若为 `undefined` 则移动到根文件夹"
+			}
+		],
+		"returns": "是否移动成功",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.dmt_Project.moveProjectToFolder",
@@ -1358,7 +1645,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.eda",
-		"description": "嘉立创 EDA 专业版 API 接口",
+		"description": "嘉立创 EDA 专业版用户 API 接口",
 		"parameters": [],
 		"tags": [
 			"public"
@@ -1437,8 +1724,43 @@ edcode = [
 		"enumType": "eda.edmt_EditorDocumentType"
 	},
 	{
+		"methodPath": "eda.edmt_EditorDocumentType.PROJECT",
+		"description": "工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorDocumentType"
+	},
+	{
 		"methodPath": "eda.edmt_EditorDocumentType.SCHEMATIC_PAGE",
 		"description": "原理图图页",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorDocumentType"
+	},
+	{
+		"methodPath": "eda.edmt_EditorDocumentType.SIMULATION_SCHEMATIC_PAGE_NGSPICE",
+		"description": "仿真原理图图页：NGspice",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorDocumentType"
+	},
+	{
+		"methodPath": "eda.edmt_EditorDocumentType.SIMULATION_SCHEMATIC_PAGE_SIMULIDE",
+		"description": "仿真原理图图页：SimulIDE",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorDocumentType"
+	},
+	{
+		"methodPath": "eda.edmt_EditorDocumentType.SIMULATION_SYMBOL_COMPONENT_NGSPICE",
+		"description": "仿真元件符号：NGspice",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorDocumentType"
+	},
+	{
+		"methodPath": "eda.edmt_EditorDocumentType.SIMULATION_SYMBOL_COMPONENT_SIMULIDE",
+		"description": "仿真元件符号：SimulIDE",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.edmt_EditorDocumentType"
@@ -1486,6 +1808,13 @@ edcode = [
 		"enumType": "eda.edmt_EditorDocumentType"
 	},
 	{
+		"methodPath": "eda.edmt_EditorDocumentType.SYMBOL_OFF_PAGE_CONNECTOR_FLAG",
+		"description": "跨页连接标识符号",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorDocumentType"
+	},
+	{
 		"methodPath": "eda.edmt_EditorDocumentType.SYMBOL_SHORT_CIRCUIT_FLAG",
 		"description": "短接标识符号",
 		"parameters": [],
@@ -1514,6 +1843,37 @@ edcode = [
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.edmt_EditorSplitScreenDirection"
+	},
+	{
+		"methodPath": "eda.edmt_EditorTabEventType",
+		"description": "编辑器标签页事件类型",
+		"parameters": [],
+		"remarks": "在类型为 {@link EDMT_EditorTabEventType.CLOSE | 关闭} 或 {@link EDMT_EditorTabEventType.OPEN | 打开} 时，均会同时触发 {@link EDMT_EditorTabEventType.TOGGLE | 切换} 事件",
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.edmt_EditorTabEventType.CLOSE",
+		"description": "关闭",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorTabEventType"
+	},
+	{
+		"methodPath": "eda.edmt_EditorTabEventType.OPEN",
+		"description": "打开",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorTabEventType"
+	},
+	{
+		"methodPath": "eda.edmt_EditorTabEventType.TOGGLE",
+		"description": "切换",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.edmt_EditorTabEventType"
 	},
 	{
 		"methodPath": "eda.edmt_IndicatorMarkerType",
@@ -1770,6 +2130,20 @@ edcode = [
 		"enumType": "eda.elib_LibraryType"
 	},
 	{
+		"methodPath": "eda.elib_LibraryType.SIMULATION_MODEL_NGSPICE",
+		"description": "仿真模型：Ngspice",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.elib_LibraryType"
+	},
+	{
+		"methodPath": "eda.elib_LibraryType.SIMULATION_MODEL_SIMULIDE",
+		"description": "仿真模型：SimulIDE",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.elib_LibraryType"
+	},
+	{
 		"methodPath": "eda.elib_LibraryType.SYMBOL",
 		"description": "符号",
 		"parameters": [],
@@ -1812,6 +2186,15 @@ edcode = [
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.elib_PreviewType"
+	},
+	{
+		"methodPath": "eda.elib_SimulationModelType",
+		"description": "仿真模型类型",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
 	},
 	{
 		"methodPath": "eda.elib_SymbolType",
@@ -1884,6 +2267,75 @@ edcode = [
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.elib_SymbolType"
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingCornerStyle",
+		"description": "自动布线拐角风格 (PCB)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingCornerStyle.DEGREE_45",
+		"description": "45 度 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_AutoRoutingCornerStyle"
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingCornerStyle.DEGREE_90",
+		"description": "90 度 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_AutoRoutingCornerStyle"
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingExistingPrimitiveMode",
+		"description": "自动布线对已有导线/过孔的处理方式 (PCB)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingExistingPrimitiveMode.KEEP",
+		"description": "保留已有导线和过孔（在其基础上继续布线） (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_AutoRoutingExistingPrimitiveMode"
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingExistingPrimitiveMode.REMOVE",
+		"description": "移除已有导线和过孔（推倒重布） (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_AutoRoutingExistingPrimitiveMode"
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingOptimization",
+		"description": "自动布线效果优先级 (PCB)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingOptimization.COMPLETION",
+		"description": "优先布通率（尽可能完成所有网络） (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_AutoRoutingOptimization"
+	},
+	{
+		"methodPath": "eda.epcb_AutoRoutingOptimization.FASTER",
+		"description": "优先布线速度 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_AutoRoutingOptimization"
 	},
 	{
 		"methodPath": "eda.epcb_DocumentRatlineCalculatingActiveStatus",
@@ -2462,14 +2914,14 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.epcb_LayerId.INNER_31",
-		"description": "内层 31 (PCB)",
+		"description": "内层 31 (PCB) (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_LayerId"
 	},
 	{
 		"methodPath": "eda.epcb_LayerId.INNER_32",
-		"description": "内层 32 (PCB)",
+		"description": "内层 32 (PCB) (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_LayerId"
@@ -2622,6 +3074,33 @@ edcode = [
 		"enumType": "eda.epcb_LayerId"
 	},
 	{
+		"methodPath": "eda.epcb_LayerStatus",
+		"description": "层状态 (PCB)",
+		"parameters": [],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.epcb_LayerStatus.HIDDEN",
+		"description": "使用但不展示 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_LayerStatus"
+	},
+	{
+		"methodPath": "eda.epcb_LayerStatus.NOT_USED",
+		"description": "不使用 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_LayerStatus"
+	},
+	{
+		"methodPath": "eda.epcb_LayerStatus.SHOW",
+		"description": "使用并展示 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_LayerStatus"
+	},
+	{
 		"methodPath": "eda.epcb_LayerType",
 		"description": "图层类型 (PCB)",
 		"parameters": [],
@@ -2703,11 +3182,48 @@ edcode = [
 		"enumType": "eda.epcb_MouseEventType"
 	},
 	{
+		"methodPath": "eda.epcb_MouseEventType.MOVE",
+		"description": "移动 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_MouseEventType"
+	},
+	{
 		"methodPath": "eda.epcb_MouseEventType.SELECTED",
 		"description": "选中 (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_MouseEventType"
+	},
+	{
+		"methodPath": "eda.epcb_NetEventType",
+		"description": "网络事件类型 (PCB)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.epcb_NetEventType.ADD",
+		"description": "新增 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_NetEventType"
+	},
+	{
+		"methodPath": "eda.epcb_NetEventType.REMOVE",
+		"description": "移除 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_NetEventType"
+	},
+	{
+		"methodPath": "eda.epcb_NetEventType.SELECTED",
+		"description": "选中（仅当选中整个网络时触发） (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_NetEventType"
 	},
 	{
 		"methodPath": "eda.epcb_PcbPlateType",
@@ -2826,7 +3342,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.epcb_PrimitiveEventType.CHANGE",
-		"description": "属性变更（除位置外的属性变更） (PCB)",
+		"description": "属性变更（除位置外的属性变更） (PCB) (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_PrimitiveEventType"
@@ -2846,8 +3362,15 @@ edcode = [
 		"enumType": "eda.epcb_PrimitiveEventType"
 	},
 	{
+		"methodPath": "eda.epcb_PrimitiveEventType.MODIFY",
+		"description": "属性变更 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_PrimitiveEventType"
+	},
+	{
 		"methodPath": "eda.epcb_PrimitiveEventType.MOVE",
-		"description": "移动 (PCB)",
+		"description": "移动 (PCB) (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_PrimitiveEventType"
@@ -2924,14 +3447,21 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.epcb_PrimitivePadHoleType.RECTANGLE",
-		"description": "矩形 (PCB)",
+		"description": "矩形（暂未开发） (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_PrimitivePadHoleType"
 	},
 	{
 		"methodPath": "eda.epcb_PrimitivePadHoleType.ROUND",
-		"description": "长圆形 (PCB)",
+		"description": "圆形 (PCB)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.epcb_PrimitivePadHoleType"
+	},
+	{
+		"methodPath": "eda.epcb_PrimitivePadHoleType.SLOT",
+		"description": "插槽 (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_PrimitivePadHoleType"
@@ -3087,7 +3617,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.epcb_PrimitiveRegionRuleType.NO_VIAS",
-		"description": "禁止过孔 (PCB)",
+		"description": "禁止过孔 (PCB) (PCB)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.epcb_PrimitiveRegionRuleType"
@@ -3323,6 +3853,138 @@ edcode = [
 		"enumType": "eda.epcb_PrimitiveViaType"
 	},
 	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType",
+		"description": "动态仿真引擎拉取事件类型 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.COMPONENT_UPDATE",
+		"description": "更新元件属性 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.SESSION_PAUSE",
+		"description": "暂停 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.SESSION_RESUME",
+		"description": "恢复 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.SESSION_START",
+		"description": "开始动态仿真会话 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.SESSION_STATE_QUERY",
+		"description": "查询动态仿真状态 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.SESSION_STOP",
+		"description": "停止并释放资源 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePullEventType.SPEED_SET",
+		"description": "设置速度 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePushEventType",
+		"description": "动态仿真引擎推送事件类型 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePushEventType.ENGINE_ERROR",
+		"description": "错误 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePushEventType.ENGINE_LOG",
+		"description": "实时日志 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePushEventType.SESSION_STATE",
+		"description": "状态变化（RUNNING/PAUSED/STOPPED...） (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePushEventType.STREAM_DATA",
+		"description": "实时数据帧（波形点/节点电压/内部量） (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_DynamicSimulationEnginePushEventType.STREAM_SNAPSHOT",
+		"description": "一次快照（可选，用于 UI 刷新） (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_DynamicSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_ExportDocumentFileType",
+		"description": "导出文档文件类型 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_ExportDocumentFileType.PDF",
+		"description": "PDF 文档 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_ExportDocumentFileType"
+	},
+	{
+		"methodPath": "eda.esch_ExportDocumentFileType.PNG",
+		"description": "PNG 位图 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_ExportDocumentFileType"
+	},
+	{
+		"methodPath": "eda.esch_ExportDocumentFileType.SVG",
+		"description": "SVG 矢量图 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_ExportDocumentFileType"
+	},
+	{
 		"methodPath": "eda.esch_MouseEventType",
 		"description": "鼠标事件类型 (原理图)",
 		"parameters": [],
@@ -3356,7 +4018,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2",
-		"description": "器件类型 (原理图)",
+		"description": "器件类型 (原理图) (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
@@ -3365,77 +4027,91 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.CBB_SYMBOL",
-		"description": "复用模块符号 (原理图)",
+		"description": "复用模块符号 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.COMPONENT",
-		"description": "元件符号 (原理图)",
+		"description": "元件符号 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.DIFFERENTIAL_PAIRS_FLAG",
-		"description": "差分对标识 (原理图)",
+		"description": "差分对标识 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.DRAWING",
-		"description": "图纸 (原理图)",
+		"description": "图纸 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.NET_FLAG",
-		"description": "网络标识 (原理图)",
+		"description": "网络标识 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.NET_LABEL",
-		"description": "网络标签 (原理图)",
+		"description": "网络标签 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.NET_PORT",
-		"description": "网络端口 (原理图)",
+		"description": "网络端口 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.NON_ELECTRICAL_FLAG",
-		"description": "无电气标识 (原理图)",
+		"description": "无电气标识 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.OFF_PAGE_CONNECTOR",
-		"description": "跨页连接标识 (原理图)",
+		"description": "跨页连接标识 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType_2.SHORT_CIRCUIT_FLAG",
-		"description": "短接标识 (原理图)",
+		"description": "短接标识 (原理图) (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType_2"
 	},
 	{
+		"methodPath": "eda.esch_PrimitiveComponentType.CBB_SYMBOL",
+		"description": "复用模块符号 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveComponentType"
+	},
+	{
 		"methodPath": "eda.esch_PrimitiveComponentType.COMPONENT",
-		"description": "元件 (原理图)",
+		"description": "元件符号 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveComponentType"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveComponentType.DIFFERENTIAL_PAIRS_FLAG",
+		"description": "差分对标识 (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType"
@@ -3471,6 +4147,13 @@ edcode = [
 	{
 		"methodPath": "eda.esch_PrimitiveComponentType.NON_ELECTRICAL_FLAG",
 		"description": "无电气标识 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveComponentType"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveComponentType.OFF_PAGE_CONNECTOR",
+		"description": "跨页连接标识 (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveComponentType"
@@ -3745,6 +4428,78 @@ edcode = [
 		"enumType": "eda.esch_PrimitivePinType"
 	},
 	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode",
+		"description": "文本对齐模式 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.CENTER",
+		"description": "中心 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.CENTER_BOTTOM",
+		"description": "中下 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.CENTER_TOP",
+		"description": "中上 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.LEFT_BOTTOM",
+		"description": "左下 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.LEFT_MIDDLE",
+		"description": "左中 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.LEFT_TOP",
+		"description": "左上 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.RIGHT_BOTTOM",
+		"description": "右下 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.RIGHT_MIDDLE",
+		"description": "右中 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveTextAlignMode.RIGHT_TOP",
+		"description": "右上 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveTextAlignMode"
+	},
+	{
 		"methodPath": "eda.esch_PrimitiveType",
 		"description": "图元类型 (原理图)",
 		"parameters": [],
@@ -3756,6 +4511,13 @@ edcode = [
 	{
 		"methodPath": "eda.esch_PrimitiveType.ARC",
 		"description": "圆弧 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_PrimitiveType"
+	},
+	{
+		"methodPath": "eda.esch_PrimitiveType.ATTRIBUTE",
+		"description": "属性 (原理图)",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esch_PrimitiveType"
@@ -3845,6 +4607,82 @@ edcode = [
 		"enumType": "eda.esch_PrimitiveType"
 	},
 	{
+		"methodPath": "eda.esch_SimulationNetlistType",
+		"description": "仿真网表类型 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_SimulationNetlistType.NGSPICE",
+		"description": "NGspice (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SimulationNetlistType"
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePullEventType",
+		"description": "Spice 仿真引擎拉取事件类型 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePullEventType.SIMULATE_NETLIST",
+		"description": "仿真网表 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SpiceSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePullEventType.VALIDATE_NETLIST",
+		"description": "验证网表 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SpiceSimulationEnginePullEventType"
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePushEventType",
+		"description": "Spice 仿真引擎推送事件类型 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePushEventType.ERROR_RESULT",
+		"description": "错误 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SpiceSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePushEventType.LOG_RESULT",
+		"description": "日志 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SpiceSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePushEventType.SIMULATION_RESULT",
+		"description": "仿真结果 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SpiceSimulationEnginePushEventType"
+	},
+	{
+		"methodPath": "eda.esch_SpiceSimulationEnginePushEventType.VALIDATION_RESULT",
+		"description": "验证结果 (原理图)",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esch_SpiceSimulationEnginePushEventType"
+	},
+	{
 		"methodPath": "eda.esys_BottomPanelTab",
 		"description": "底部面板标签页",
 		"parameters": [],
@@ -3926,6 +4764,13 @@ edcode = [
 		"enumType": "eda.esys_HeaderMenuEnvironment"
 	},
 	{
+		"methodPath": "eda.esys_HeaderMenuEnvironment.PANEL_LIBRARY",
+		"description": "面板库",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_HeaderMenuEnvironment"
+	},
+	{
 		"methodPath": "eda.esys_HeaderMenuEnvironment.PANEL_VIEW",
 		"description": "面板预览",
 		"parameters": [],
@@ -3949,6 +4794,20 @@ edcode = [
 	{
 		"methodPath": "eda.esys_HeaderMenuEnvironment.SCHEMATIC",
 		"description": "原理图",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_HeaderMenuEnvironment"
+	},
+	{
+		"methodPath": "eda.esys_HeaderMenuEnvironment.SIMULATION_SCHEMATIC_NGSPICE",
+		"description": "仿真原理图：NGspice",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_HeaderMenuEnvironment"
+	},
+	{
+		"methodPath": "eda.esys_HeaderMenuEnvironment.SIMULATION_SCHEMATIC_SIMULIDE",
+		"description": "仿真原理图：SimulIDE",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esys_HeaderMenuEnvironment"
@@ -4129,8 +4988,29 @@ edcode = [
 		"enumType": "eda.esys_LogType"
 	},
 	{
+		"methodPath": "eda.esys_LogType.FIND",
+		"description": "查找",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_LogType"
+	},
+	{
 		"methodPath": "eda.esys_LogType.INFO",
 		"description": "信息",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_LogType"
+	},
+	{
+		"methodPath": "eda.esys_LogType.OPEN_PROJECT",
+		"description": "打开工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_LogType"
+	},
+	{
+		"methodPath": "eda.esys_LogType.REPLACE",
+		"description": "替换",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esys_LogType"
@@ -4168,6 +5048,13 @@ edcode = [
 	{
 		"methodPath": "eda.esys_NetlistType.DISA",
 		"description": "数字化工业软件联盟",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_NetlistType"
+	},
+	{
+		"methodPath": "eda.esys_NetlistType.DISA_SIMULATION",
+		"description": "数字化工业软件联盟仿真",
 		"parameters": [],
 		"isEnumMember": true,
 		"enumType": "eda.esys_NetlistType"
@@ -4459,6 +5346,128 @@ edcode = [
 		"enumType": "eda.esys_ShortcutKeyEffectiveEditorScene"
 	},
 	{
+		"methodPath": "eda.esys_StartPageQuickStartItem",
+		"description": "开始页快速启动项",
+		"parameters": [],
+		"remarks": "对应开始页快速启动模块中的各个项",
+		"tags": [
+			"public"
+		],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.ABOUT",
+		"description": "关于",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.IMPORT_ALTIUM",
+		"description": "导入 Altium 工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.IMPORT_KICAD",
+		"description": "导入 KiCad 工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.IMPORT_OTHER",
+		"description": "导入其他格式工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.IMPORT_PROFESSIONAL",
+		"description": "导入专业版工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.IMPORT_STANDARD",
+		"description": "导入标准版工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.MIGRATE_STANDARD",
+		"description": "迁移标准版工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_3D_MODEL",
+		"description": "新建 3D 模型",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_COMPONENT",
+		"description": "新建元件",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_FOOTPRINT",
+		"description": "新建封装",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_LIBRARY",
+		"description": "新建库",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_PROJECT",
+		"description": "新建工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_REUSE_BLOCK",
+		"description": "新建复用块",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.NEW_SYMBOL",
+		"description": "新建符号",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.OPEN_PROJECT",
+		"description": "打开工程",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
+		"methodPath": "eda.esys_StartPageQuickStartItem.SETTING",
+		"description": "设置",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.esys_StartPageQuickStartItem"
+	},
+	{
 		"methodPath": "eda.esys_Theme",
 		"description": "主题",
 		"parameters": [],
@@ -4630,6 +5639,40 @@ edcode = [
 		"enumType": "eda.esys_WindowOpenTarget"
 	},
 	{
+		"methodPath": "eda.etabledatachangetype",
+		"description": "表格数据变更类型",
+		"parameters": [],
+		"isEnum": true
+	},
+	{
+		"methodPath": "eda.etabledatachangetype.ASC_SORT",
+		"description": "",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.etabledatachangetype"
+	},
+	{
+		"methodPath": "eda.etabledatachangetype.CHECKED",
+		"description": "",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.etabledatachangetype"
+	},
+	{
+		"methodPath": "eda.etabledatachangetype.DESC_SORT",
+		"description": "",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.etabledatachangetype"
+	},
+	{
+		"methodPath": "eda.etabledatachangetype.NORMAL",
+		"description": "",
+		"parameters": [],
+		"isEnumMember": true,
+		"enumType": "eda.etabledatachangetype"
+	},
+	{
 		"methodPath": "eda.ipcb_ComplexPolygon",
 		"description": "复杂多边形 (PCB)",
 		"parameters": [],
@@ -4649,6 +5692,16 @@ edcode = [
 		"returns": "复杂多边形对象",
 		"tags": [
 			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_ComplexPolygon.getCenter",
+		"description": "获取复杂多边形中心点 (PCB)",
+		"parameters": [],
+		"returns": "复杂多边形中心点",
+		"tags": [
+			"beta"
 		],
 		"isAsync": false
 	},
@@ -4675,12 +5728,49 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.ipcb_ComplexPolygon.toPolygon",
+		"description": "拆分为单多边形数组 (PCB)",
+		"parameters": [],
+		"returns": "单多边形数组",
+		"remarks": "将复杂多边形拆分为单多边形对象数组",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.ipcb_Polygon",
 		"description": "单多边形 (PCB)",
 		"parameters": [],
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_Polygon.discretize",
+		"description": "将单多边形离散化为点数据 (PCB)",
+		"parameters": [
+			{
+				"name": "options",
+				"description": "离散化选项"
+			}
+		],
+		"returns": "离散化点数据",
+		"remarks": "将单多边形的边界离散化为一系列点",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_Polygon.getCenter",
+		"description": "获取单多边形中心点 (PCB)",
+		"parameters": [],
+		"returns": "单多边形中心点",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_Polygon.getSource",
@@ -4700,6 +5790,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveArc.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "圆弧线图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveArc.done",
@@ -5071,6 +6171,27 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveAttribute.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"remarks": "属性图元不支持新建，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveAttribute.done",
+		"description": "将对图元的更改应用到画布 (PCB)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveAttribute.getState_AlignMode",
 		"description": "获取属性状态：对齐模式 (PCB)",
 		"parameters": [],
@@ -5271,6 +6392,16 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveAttribute.reset",
+		"description": "将异步图元重置为当前画布状态 (PCB)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveAttribute.setState_AlignMode",
 		"description": "设置属性状态：对齐模式 (PCB)",
 		"parameters": [
@@ -5430,6 +6561,7 @@ edcode = [
 			}
 		],
 		"returns": "属性图元对象",
+		"remarks": "默认字体不支持反相",
 		"tags": [
 			"beta"
 		],
@@ -5537,6 +6669,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponent.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "器件图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveComponent.done",
@@ -5773,6 +6915,33 @@ edcode = [
 		"description": "将异步图元重置为当前画布状态 (PCB)",
 		"parameters": [],
 		"returns": "器件图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponent.setAttribute",
+		"description": "设置属性 (PCB)",
+		"parameters": [
+			{
+				"name": "key",
+				"description": "属性名，如若器件不存在该属性名的属性，将会新增该属性"
+			},
+			{
+				"name": "value",
+				"description": "属性值"
+			},
+			{
+				"name": "keyVisible",
+				"description": "属性名可见性"
+			},
+			{
+				"name": "valueVisible",
+				"description": "属性值可见性"
+			}
+		],
+		"returns": "属性图元对象",
 		"tags": [
 			"beta"
 		],
@@ -6017,6 +7186,17 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "器件焊盘图元对象",
+		"remarks": "本器件焊盘图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveComponentPad.done",
 		"description": "将对图元的更改应用到画布 (PCB)",
 		"parameters": [],
@@ -6027,12 +7207,91 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.getConnectedPrimitives",
+		"description": "获取连接的图元 (PCB)",
+		"parameters": [
+			{
+				"name": "onlyCentreConnection",
+				"description": "是否仅中心连接，如若为 `true` 则仅获取中心连接的图元（直线、圆弧线、过孔），如若为 `false` 则获取所有接触的图元"
+			}
+		],
+		"remarks": "本接口可以获取到与焊盘直接接触的图元",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.getState_ParentComponentPrimitiveId",
+		"description": "获取属性状态：父器件图元 ID (PCB)",
+		"parameters": [],
+		"returns": "父器件图元 ID",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.reset",
+		"description": "将异步图元重置为当前画布状态 (PCB)",
+		"parameters": [],
+		"returns": "器件焊盘图元对象",
+		"remarks": "本器件焊盘图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.setState_Layer",
+		"description": "设置属性状态：层 (PCB)",
+		"parameters": [],
+		"returns": "器件焊盘图元对象",
+		"remarks": "本器件焊盘图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.setState_PadNumber",
+		"description": "设置属性状态：焊盘编号 (PCB)",
+		"parameters": [],
+		"returns": "器件焊盘图元对象",
+		"remarks": "本器件焊盘图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveComponentPad.setState_ParentComponentPrimitiveId",
+		"description": "设置属性状态：父器件图元 ID (PCB)",
+		"parameters": [],
+		"returns": "器件焊盘图元对象",
+		"remarks": "本器件焊盘图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveDimension",
 		"description": "尺寸标注图元 (PCB)",
 		"parameters": [],
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveDimension.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "尺寸标注图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveDimension.done",
@@ -6328,6 +7587,16 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveFill.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "填充图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveFill.done",
 		"description": "将对图元的更改应用到画布 (PCB)",
 		"parameters": [],
@@ -6554,6 +7823,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveImage.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "图像图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveImage.done",
@@ -6843,6 +8122,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveLine.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "直线图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveLine.done",
@@ -7162,6 +8451,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveObject.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveObject.done",
@@ -8025,6 +9324,16 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitivePolyline.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "折线图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitivePolyline.done",
 		"description": "将对图元的更改应用到画布 (PCB)",
 		"parameters": [],
@@ -8258,10 +9567,30 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitivePour.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "覆铜边框图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitivePour.done",
 		"description": "将对图元的更改应用到画布 (PCB)",
 		"parameters": [],
 		"returns": "覆铜边框图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePour.getCopperRegion",
+		"description": "获取铺铜区域覆铜填充图元 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元，如若不存在关联的覆铜填充图元则返回 `undefined`",
 		"tags": [
 			"beta"
 		],
@@ -8386,6 +9715,16 @@ edcode = [
 			"public"
 		],
 		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePour.rebuildCopperRegion",
+		"description": "重建铺铜区域覆铜填充 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元，如若未重建出覆铜填充图元则返回 `undefined`",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitivePour.reset",
@@ -8561,6 +9900,63 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitivePoured.addSolderMaskFill",
+		"description": "添加：阻焊区域 (PCB)",
+		"parameters": [],
+		"returns": "阻焊区域填充图元对象，无法转换或 ID 错误将返回 `undefined`",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.convertToFill",
+		"description": "转换到：填充图元 (PCB)",
+		"parameters": [],
+		"returns": "填充图元对象，无法转换或 ID 错误将返回 `undefined`",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元对象",
+		"remarks": "覆铜填充图元不支持新建，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.deletePourFills",
+		"description": "删除覆铜填充区域 (PCB)",
+		"parameters": [
+			{
+				"name": "pourFillIds",
+				"description": "覆铜填充区域 ID"
+			}
+		],
+		"returns": "删除操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.done",
+		"description": "将对图元的更改应用到画布 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元对象",
+		"remarks": "覆铜填充图元不支持更改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitivePoured.getState_PourFills",
 		"description": "获取属性状态：覆铜填充区域 (PCB)",
 		"parameters": [],
@@ -8601,6 +9997,49 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitivePoured.isAsync",
+		"description": "查询图元是否为异步图元 (PCB)",
+		"parameters": [],
+		"returns": "是否为异步图元",
+		"remarks": "覆铜填充图元不可编辑，本接口为格式接口，无作用",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.reset",
+		"description": "将异步图元重置为当前画布状态 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.toAsync",
+		"description": "将图元转换为异步图元 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元对象",
+		"remarks": "覆铜填充图元不可编辑，本接口为格式接口，无作用",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitivePoured.toSync",
+		"description": "将图元转换为同步图元 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元对象",
+		"remarks": "覆铜填充图元不可编辑，本接口为格式接口，无作用",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveRegion",
 		"description": "区域图元 (PCB)",
 		"parameters": [],
@@ -8635,6 +10074,16 @@ edcode = [
 		"returns": "覆铜边框图元对象",
 		"tags": [
 			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveRegion.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "禁止区域图元对象 | 约束区域图元对象",
+		"tags": [
+			"internal"
 		],
 		"isAsync": true
 	},
@@ -8867,6 +10316,26 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveString.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "文本图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveString.done",
+		"description": "将对图元的更改应用到画布 (PCB)",
+		"parameters": [],
+		"returns": "文本图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveString.getState_AlignMode",
 		"description": "获取属性状态：对齐模式 (PCB)",
 		"parameters": [],
@@ -9027,6 +10496,16 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.ipcb_PrimitiveString.reset",
+		"description": "将异步图元重置为当前画布状态 (PCB)",
+		"parameters": [],
+		"returns": "���本图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.ipcb_PrimitiveString.setState_AlignMode",
 		"description": "设置属性状态：对齐模式 (PCB)",
 		"parameters": [
@@ -9156,6 +10635,7 @@ edcode = [
 			}
 		],
 		"returns": "文本图元对象",
+		"remarks": "默认字体不支持反相",
 		"tags": [
 			"beta"
 		],
@@ -9248,6 +10728,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.ipcb_PrimitiveVia.create",
+		"description": "在 PCB 画布中创建图元 (PCB)",
+		"parameters": [],
+		"returns": "过孔图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.ipcb_PrimitiveVia.done",
@@ -9562,6 +11052,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveArc.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "圆弧图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveArc.done",
@@ -9884,12 +11384,496 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveAttribute",
+		"description": "属性图元 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"remarks": "属性图元不支持新建，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.done",
+		"description": "将对图元的更改应用到画布 (原理图)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_AlignMode",
+		"description": "获取属性状态：对齐模式 (原理图)",
+		"parameters": [],
+		"returns": "对齐模式",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Bold",
+		"description": "获取属性状态：是否加粗 (原理图)",
+		"parameters": [],
+		"returns": "是否加粗",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Color",
+		"description": "获取属性状态：文本颜色 (原理图)",
+		"parameters": [],
+		"returns": "文本颜色",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_FillColor",
+		"description": "获取属性状态：填充颜色 (原理图)",
+		"parameters": [],
+		"returns": "填充颜色",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_FontName",
+		"description": "获取属性状态：字体名称 (原理图)",
+		"parameters": [],
+		"returns": "字体名称",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_FontSize",
+		"description": "获取属性状态：字体大小 (原理图)",
+		"parameters": [],
+		"returns": "字体大小",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Italic",
+		"description": "获取属性状态：是否斜体 (原理图)",
+		"parameters": [],
+		"returns": "是否斜体",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Key",
+		"description": "获取属性状态：键 (原理图)",
+		"parameters": [],
+		"returns": "键",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_KeyVisible",
+		"description": "获取属性状态：键是否显示 (原理图)",
+		"parameters": [],
+		"returns": "键是否显示",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_ParentPrimitiveId",
+		"description": "获取属性状态：父图元 ID (原理图)",
+		"parameters": [],
+		"returns": "父图元 ID",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_PrimitiveId",
+		"description": "获取属性状态：图元 ID (原理图)",
+		"parameters": [],
+		"returns": "图元 ID",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_PrimitiveType",
+		"description": "获取属性状态：图元类型 (原理图)",
+		"parameters": [],
+		"returns": "图元类型",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Rotation",
+		"description": "获取属性状态：旋转角度 (原理图)",
+		"parameters": [],
+		"returns": "旋转角度",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_UnderLine",
+		"description": "获取属性状态：是否加下划线 (原理图)",
+		"parameters": [],
+		"returns": "是否加下划线",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Value",
+		"description": "获取属性状态：值 (原理图)",
+		"parameters": [],
+		"returns": "值",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_ValueVisible",
+		"description": "获取属性状态：值是否显示 (原理图)",
+		"parameters": [],
+		"returns": "值是否显示",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_X",
+		"description": "获取属性状态：坐标 X (原理图)",
+		"parameters": [],
+		"returns": "坐标 X",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.getState_Y",
+		"description": "获取属性状态：坐标 Y (原理图)",
+		"parameters": [],
+		"returns": "坐标 Y",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.isAsync",
+		"description": "查询图元是否为异步图元 (原理图)",
+		"parameters": [],
+		"returns": "是否为异步图元",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.reset",
+		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_AlignMode",
+		"description": "设置属性状态：对齐模式 (原理图)",
+		"parameters": [
+			{
+				"name": "alignMode",
+				"description": "对齐模式"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Bold",
+		"description": "设置属性状态：是否加粗 (原理图)",
+		"parameters": [
+			{
+				"name": "bold",
+				"description": "是否加粗"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Color",
+		"description": "设置属性状态：文本颜色 (原理图)",
+		"parameters": [
+			{
+				"name": "textColor",
+				"description": "文本颜色"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_FillColor",
+		"description": "设置属性状态：填充颜色 (原理图)",
+		"parameters": [
+			{
+				"name": "fillColor",
+				"description": "填充颜色"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_FontName",
+		"description": "设置属性状态：字体名称 (原理图)",
+		"parameters": [
+			{
+				"name": "fontName",
+				"description": "字体名称"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_FontSize",
+		"description": "设置属性状态：字体大小 (原理图)",
+		"parameters": [
+			{
+				"name": "fontSize",
+				"description": "字体大小"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Italic",
+		"description": "设置属性状态：是否斜体 (原理图)",
+		"parameters": [
+			{
+				"name": "italic",
+				"description": "是否斜体"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Key",
+		"description": "设置属性状态：键 (原理图)",
+		"parameters": [
+			{
+				"name": "key",
+				"description": "键"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_KeyVisible",
+		"description": "设置属性状态：键是否显示 (原理图)",
+		"parameters": [
+			{
+				"name": "keyVisible",
+				"description": "键是否显示"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Rotation",
+		"description": "设置属性状态：旋转角度 (原理图)",
+		"parameters": [
+			{
+				"name": "rotation",
+				"description": "旋转角度"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_UnderLine",
+		"description": "设置属性状态：是否加下划线 (原理图)",
+		"parameters": [
+			{
+				"name": "underLine",
+				"description": "是否加下划线"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Value",
+		"description": "设置属性状态：值 (原理图)",
+		"parameters": [
+			{
+				"name": "value",
+				"description": "值"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_ValueVisible",
+		"description": "设置属性状态：值是否显示 (原理图)",
+		"parameters": [
+			{
+				"name": "valueVisible",
+				"description": "值是否显示"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_X",
+		"description": "设置属性状态：坐标 X (原理图)",
+		"parameters": [
+			{
+				"name": "x",
+				"description": "坐标 X"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.setState_Y",
+		"description": "设置属性状态：坐标 Y (原理图)",
+		"parameters": [
+			{
+				"name": "y",
+				"description": "坐标 Y"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.toAsync",
+		"description": "将图元转换为异步图元 (原理图)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveAttribute.toSync",
+		"description": "将图元转换为同步图元 (原理图)",
+		"parameters": [],
+		"returns": "属性图元对象",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.isch_PrimitiveBus",
 		"description": "总线图元 (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveBus.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "总线图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveBus.done",
@@ -9980,6 +11964,16 @@ edcode = [
 			"public"
 		],
 		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveBus.reset",
+		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"parameters": [],
+		"returns": "总线图元对象",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveBus.setState_BusName",
@@ -10085,6 +12079,26 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveCbbSymbolComponent.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "器件图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveCbbSymbolComponent.done",
+		"description": "将对图元的更改应用到画布 (原理图)",
+		"parameters": [],
+		"returns": "复用模块符号图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.isch_PrimitiveCbbSymbolComponent.getState_Cbb",
 		"description": "获取属性状态：关联复用模块 (原理图)",
 		"parameters": [],
@@ -10105,12 +12119,32 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveCbbSymbolComponent.reset",
+		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"parameters": [],
+		"returns": "复用模块符号图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.isch_PrimitiveCircle",
 		"description": "圆图元 (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveCircle.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "圆图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveCircle.done",
@@ -10120,7 +12154,7 @@ edcode = [
 		"tags": [
 			"beta"
 		],
-		"isAsync": false
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveCircle.getState_CenterX",
@@ -10392,7 +12426,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2",
-		"description": "器件图元 (原理图)",
+		"description": "器件图元 (原理图) (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
@@ -10400,7 +12434,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.done",
-		"description": "将对图元的更改应用到画布 (原理图)",
+		"description": "将对图元的更改应用到画布 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "器件图元对象",
 		"tags": [
@@ -10410,7 +12444,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_AddIntoBom",
-		"description": "获取属性状态：是否加入 BOM (原理图)",
+		"description": "获取属性状态：是否加入 BOM (原理图) (原理图)",
 		"parameters": [],
 		"returns": "是否加入 BOM",
 		"tags": [
@@ -10420,7 +12454,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_AddIntoPcb",
-		"description": "获取属性状态：是否转到 PCB (原理图)",
+		"description": "获取属性状态：是否转到 PCB (原理图) (原理图)",
 		"parameters": [],
 		"returns": "是否转到 PCB",
 		"tags": [
@@ -10430,7 +12464,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Component",
-		"description": "获取属性状态：关联库器件 (原理图)",
+		"description": "获取属性状态：关联库器件 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "关联库器件",
 		"tags": [
@@ -10440,7 +12474,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_ComponentType",
-		"description": "获取属性状态：器件类型 (原理图)",
+		"description": "获取属性状态：器件类型 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "器件类型",
 		"tags": [
@@ -10450,7 +12484,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Designator",
-		"description": "获取属性状态：位号 (原理图)",
+		"description": "获取属性状态：位号 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "位号",
 		"tags": [
@@ -10460,7 +12494,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Footprint",
-		"description": "获取属性状态：关联库封装 (原理图)",
+		"description": "获取属性状态：关联库封装 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "关联库封装",
 		"tags": [
@@ -10470,7 +12504,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Manufacturer",
-		"description": "获取属性状态：制造商 (原理图)",
+		"description": "获取属性状态：制造商 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "制造商",
 		"tags": [
@@ -10480,7 +12514,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_ManufacturerId",
-		"description": "获取属性状态：制造商编号 (原理图)",
+		"description": "获取属性状态：制造商编号 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "制造商编号",
 		"tags": [
@@ -10490,7 +12524,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Mirror",
-		"description": "获取属性状态：是否镜像 (原理图)",
+		"description": "获取属性状态：是否镜像 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "是否镜像",
 		"tags": [
@@ -10500,7 +12534,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Name",
-		"description": "获取属性状态：名称 (原理图)",
+		"description": "获取属性状态：名称 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "名称",
 		"tags": [
@@ -10510,7 +12544,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Net",
-		"description": "获取属性状态：网络名称 (原理图)",
+		"description": "获取属性状态：网络名称 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "网络名称",
 		"tags": [
@@ -10520,7 +12554,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_OtherProperty",
-		"description": "获取属性状态：其它参数 (原理图)",
+		"description": "获取属性状态：其它参数 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "其它参数",
 		"tags": [
@@ -10530,7 +12564,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_PrimitiveId",
-		"description": "获取属性状态：图元 ID (原理图)",
+		"description": "获取属性状态：图元 ID (原理图) (原理图)",
 		"parameters": [],
 		"returns": "图元 ID",
 		"tags": [
@@ -10540,7 +12574,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_PrimitiveType",
-		"description": "获取属性状态：图元类型 (原理图)",
+		"description": "获取属性状态：图元类型 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "图元类型",
 		"tags": [
@@ -10550,7 +12584,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Rotation",
-		"description": "获取属性状态：旋转角度 (原理图)",
+		"description": "获取属性状态：旋转角度 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "旋转角度",
 		"tags": [
@@ -10560,7 +12594,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_SubPartName",
-		"description": "获取属性状态：子图块名称 (原理图)",
+		"description": "获取属性状态：子图块名称 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "子图块名称",
 		"tags": [
@@ -10570,7 +12604,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Supplier",
-		"description": "获取属性状态：供应商 (原理图)",
+		"description": "获取属性状态：供应商 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "供应商",
 		"tags": [
@@ -10580,7 +12614,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_SupplierId",
-		"description": "获取属性状态：供应商编号 (原理图)",
+		"description": "获取属性状态：供应商编号 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "供应商编号",
 		"tags": [
@@ -10590,7 +12624,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Symbol",
-		"description": "获取属性状态：关联库符号 (原理图)",
+		"description": "获取属性状态：关联库符号 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "关联库符号",
 		"tags": [
@@ -10600,7 +12634,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_UniqueId",
-		"description": "获取属性状态：唯一 ID (原理图)",
+		"description": "获取属性状态：唯一 ID (原理图) (原理图)",
 		"parameters": [],
 		"returns": "唯一 ID",
 		"tags": [
@@ -10610,7 +12644,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_X",
-		"description": "获取属性状态：坐标 X (原理图)",
+		"description": "获取属性状态：坐标 X (原理图) (原理图)",
 		"parameters": [],
 		"returns": "坐标 X",
 		"tags": [
@@ -10620,7 +12654,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.getState_Y",
-		"description": "获取属性状态：坐标 Y (原理图)",
+		"description": "获取属性状态：坐标 Y (原理图) (原理图)",
 		"parameters": [],
 		"returns": "坐标 Y",
 		"tags": [
@@ -10630,7 +12664,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.isAsync",
-		"description": "查询图元是否为异步图元 (原理图)",
+		"description": "查询图元是否为异步图元 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "是否为异步图元",
 		"tags": [
@@ -10640,7 +12674,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.reset",
-		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"description": "将异步图元重置为当前画布状态 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "器件图元对象",
 		"tags": [
@@ -10650,7 +12684,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_AddIntoBom",
-		"description": "设置属性状态：是否加入 BOM (原理图)",
+		"description": "设置属性状态：是否加入 BOM (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "addIntoBom",
@@ -10665,7 +12699,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_AddIntoPcb",
-		"description": "设置属性状态：是否转到 PCB (原理图)",
+		"description": "设置属性状态：是否转到 PCB (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "addIntoPcb",
@@ -10680,7 +12714,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Designator",
-		"description": "设置属性状态：位号 (原理图)",
+		"description": "设置属性状态：位号 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "designator",
@@ -10695,7 +12729,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Manufacturer",
-		"description": "设置属性状态：制造商 (原理图)",
+		"description": "设置属性状态：制造商 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "manufacturer",
@@ -10710,7 +12744,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_ManufacturerId",
-		"description": "设置属性状态：制造商编号 (原理图)",
+		"description": "设置属性状态：制造商编号 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "manufacturerId",
@@ -10725,7 +12759,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Mirror",
-		"description": "设置属性状态：是否镜像 (原理图)",
+		"description": "设置属性状态：是否镜像 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "mirror",
@@ -10740,7 +12774,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Name",
-		"description": "设置属性状态：名称 (原理图)",
+		"description": "设置属性状态：名称 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "name",
@@ -10755,7 +12789,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Net",
-		"description": "设置属性状态：网络名称 (原理图)",
+		"description": "设置属性状态：网络名称 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "net",
@@ -10770,7 +12804,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_OtherProperty",
-		"description": "设置属性状态：其它参数 (原理图)",
+		"description": "设置属性状态：其它参数 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "otherProperty",
@@ -10785,7 +12819,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Rotation",
-		"description": "设置属性状态：旋转角度 (原理图)",
+		"description": "设置属性状态：旋转角度 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "rotation",
@@ -10800,7 +12834,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Supplier",
-		"description": "设置属性状态：供应商 (原理图)",
+		"description": "设置属性状态：供应商 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "supplier",
@@ -10815,7 +12849,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_SupplierId",
-		"description": "设置属性状态：供应商编号 (原理图)",
+		"description": "设置属性状态：供应商编号 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "supplierId",
@@ -10830,7 +12864,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_UniqueId",
-		"description": "设置属性状态：唯一 ID (原理图)",
+		"description": "设置属性状态：唯一 ID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "uniqueId",
@@ -10845,7 +12879,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_X",
-		"description": "设置属性状态：坐标 X (原理图)",
+		"description": "设置属性状态：坐标 X (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "x",
@@ -10860,7 +12894,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.setState_Y",
-		"description": "设置属性状态：坐标 Y (原理图)",
+		"description": "设置属性状态：坐标 Y (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "y",
@@ -10875,7 +12909,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.toAsync",
-		"description": "将图元转换为异步图元 (原理图)",
+		"description": "将图元转换为异步图元 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "圆弧线图元对象",
 		"tags": [
@@ -10885,7 +12919,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent_2.toSync",
-		"description": "将图元转换为同步图元 (原理图)",
+		"description": "将图元转换为同步图元 (原理图) (原理图)",
 		"parameters": [],
 		"returns": "圆弧线图元对象",
 		"tags": [
@@ -10894,10 +12928,30 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveComponent.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "器件图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.isch_PrimitiveComponent.done",
 		"description": "将对图元的更改应用到画布 (原理图)",
 		"parameters": [],
 		"returns": "器件图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponent.getAllPins",
+		"description": "获取器件关联的所有引脚 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元数组",
 		"tags": [
 			"beta"
 		],
@@ -11055,9 +13109,9 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveComponent.getState_SubPartName",
-		"description": "获取属性状态：子图块名称 (原理图)",
+		"description": "获取属性状态：子部件名称 (原理图)",
 		"parameters": [],
-		"returns": "子图块名称",
+		"returns": "子部件名称",
 		"tags": [
 			"public"
 		],
@@ -11287,7 +13341,7 @@ edcode = [
 				"description": "旋转角度"
 			}
 		],
-		"returns": "器���图元对象",
+		"returns": "器件图元对象",
 		"tags": [
 			"beta"
 		],
@@ -11397,6 +13451,414 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.done",
+		"description": "将对图元的更改应用到画布 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.reset",
+		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_PinColor",
+		"description": "设置属性状态：引脚颜色 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_PinLength",
+		"description": "设置属性状态：引脚长度 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_PinName",
+		"description": "设置属性状态：引脚名称 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_PinShape",
+		"description": "设置属性状态：引脚形状 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_PinType",
+		"description": "设置属性状态：引脚类型 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_Rotation",
+		"description": "设置属性状态：旋转角度 (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_X",
+		"description": "设置属性状态：坐标 X (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveComponentPin.setState_Y",
+		"description": "设置属性状态：坐标 Y (原理图)",
+		"parameters": [],
+		"returns": "器件引脚图元对象",
+		"remarks": "本器件引脚图元属性不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject",
+		"description": "二进制内嵌对象图元 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.done",
+		"description": "将对图元的更改应用到画布 (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_Content",
+		"description": "获取属性状态：对象内容 (原理图)",
+		"parameters": [],
+		"returns": "对象内容",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_FileName",
+		"description": "获取属性状态：文件名称 (原理图)",
+		"parameters": [],
+		"returns": "文件名称",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_Height",
+		"description": "获取属性状态：高度 (原理图)",
+		"parameters": [],
+		"returns": "高度",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_Mirror",
+		"description": "获取属性状态：是否镜像 (原理图)",
+		"parameters": [],
+		"returns": "是否镜像",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_PrimitiveId",
+		"description": "获取属性状态：图元 ID (原理图)",
+		"parameters": [],
+		"returns": "图元 ID",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_PrimitiveType",
+		"description": "获取属性状态：图元类型 (原理图)",
+		"parameters": [],
+		"returns": "图元类型",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_Rotation",
+		"description": "获取属性状态：旋转角度 (原理图)",
+		"parameters": [],
+		"returns": "旋转角度",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_StartX",
+		"description": "获取属性状态：坐标 X (原理图)",
+		"parameters": [],
+		"returns": "坐标 X",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_StartY",
+		"description": "获取属性状态：坐标 Y (原理图)",
+		"parameters": [],
+		"returns": "坐标 Y",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.getState_Width",
+		"description": "获取属性状态：宽度 (原理图)",
+		"parameters": [],
+		"returns": "宽度",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.isAsync",
+		"description": "查询图元是否为异步图元 (原理图)",
+		"parameters": [],
+		"returns": "是否为异步图元",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.reset",
+		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_Content",
+		"description": "设置属性状态：对象内容 (原理图)",
+		"parameters": [
+			{
+				"name": "content",
+				"description": "对象内容"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_FileName",
+		"description": "设置属性状态：文件名称 (原理图)",
+		"parameters": [
+			{
+				"name": "fileName",
+				"description": "文件名称"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_Height",
+		"description": "设置属性状态：高度 (原理图)",
+		"parameters": [
+			{
+				"name": "height",
+				"description": "高度"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_Mirror",
+		"description": "设置属性状态：是否镜像 (原理图)",
+		"parameters": [
+			{
+				"name": "mirror",
+				"description": "是否镜像"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_Rotation",
+		"description": "设置属性状态：旋转角度 (原理图)",
+		"parameters": [
+			{
+				"name": "rotation",
+				"description": "旋转角度"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_StartX",
+		"description": "设置属性状态：起点坐标 X (原理图)",
+		"parameters": [
+			{
+				"name": "startX",
+				"description": "起点坐标 X"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_StartY",
+		"description": "设置属性状态：起点坐标 Y (原理图)",
+		"parameters": [
+			{
+				"name": "startY",
+				"description": "起点坐标 Y"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.setState_Width",
+		"description": "设置属性状态：宽度 (原理图)",
+		"parameters": [
+			{
+				"name": "width",
+				"description": "宽度"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.toAsync",
+		"description": "将图元转换为异步图元 (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveObject.toSync",
+		"description": "将图元转换为同步图元 (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.isch_PrimitivePin",
 		"description": "引脚图元 (原理图)",
 		"parameters": [],
@@ -11404,6 +13866,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitivePin.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "引脚图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitivePin.done",
@@ -11414,6 +13886,16 @@ edcode = [
 			"beta"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitivePin.getState_NoConnected",
+		"description": "获取属性状态：是否存在非连接标识 (原理图)",
+		"parameters": [],
+		"returns": "是否存在非连接标识",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.isch_PrimitivePin.getState_OtherProperty",
@@ -11554,6 +14036,21 @@ edcode = [
 			"beta"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.isch_PrimitivePin.setState_NoConnected",
+		"description": "设置属性状态：是否存在非连接标识 (原理图)",
+		"parameters": [
+			{
+				"name": "noConnected",
+				"description": "是否存在非连接标识"
+			}
+		],
+		"returns": "引脚图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.isch_PrimitivePin.setState_OtherProperty",
@@ -11734,6 +14231,16 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.isch_PrimitivePolygon.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "多边形图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.isch_PrimitivePolygon.done",
 		"description": "将对图元的更改应用到画布 (原理图)",
 		"parameters": [],
@@ -11741,7 +14248,7 @@ edcode = [
 		"tags": [
 			"beta"
 		],
-		"isAsync": false
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitivePolygon.getState_Color",
@@ -11937,6 +14444,16 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveRectangle.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "矩形图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.isch_PrimitiveRectangle.done",
 		"description": "将对图元的更改应用到画布 (原理图)",
 		"parameters": [],
@@ -11944,7 +14461,7 @@ edcode = [
 		"tags": [
 			"beta"
 		],
-		"isAsync": false
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveRectangle.getState_Color",
@@ -12288,6 +14805,16 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveText.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "文本图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveText.done",
@@ -12643,6 +15170,16 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.isch_PrimitiveWire.create",
+		"description": "在原理图画布中创建图元 (原理图)",
+		"parameters": [],
+		"returns": "导线图元对象",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.isch_PrimitiveWire.done",
 		"description": "将对图元的更改应用到画布 (原理图)",
 		"parameters": [],
@@ -12731,6 +15268,16 @@ edcode = [
 			"public"
 		],
 		"isAsync": false
+	},
+	{
+		"methodPath": "eda.isch_PrimitiveWire.reset",
+		"description": "将异步图元重置为当前画布状态 (原理图)",
+		"parameters": [],
+		"returns": "导线图元对象",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.isch_PrimitiveWire.setState_Color",
@@ -12926,7 +15473,7 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
 			}
 		],
 		"returns": "3D 模型属性",
@@ -13093,7 +15640,7 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
 			}
 		],
 		"returns": "复用模块属性",
@@ -13234,7 +15781,8 @@ edcode = [
 		],
 		"returns": "分类索引",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13261,7 +15809,8 @@ edcode = [
 		],
 		"returns": "分类索引",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13276,7 +15825,8 @@ edcode = [
 		],
 		"returns": "操作是否成功",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13303,7 +15853,8 @@ edcode = [
 		],
 		"returns": "操作是否成功",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13322,7 +15873,8 @@ edcode = [
 		],
 		"returns": "分类信息组成的树结构数据",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13350,7 +15902,8 @@ edcode = [
 		"returns": "分类索引",
 		"remarks": "分类索引内包含分类的 UUID，具体可查阅 {@link ILIB_ClassificationIndex}",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13365,7 +15918,8 @@ edcode = [
 		],
 		"returns": "两级分类的名称",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13392,7 +15946,8 @@ edcode = [
 		],
 		"returns": "两级分类的名称",
 		"tags": [
-			"beta"
+			"beta",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -13461,7 +16016,7 @@ edcode = [
 			},
 			{
 				"name": "property",
-				"description": "其它参数，仅 `designator`、`addIntoBom`、`addIntoPcb` 存在默认值"
+				"description": "其它属性，仅 `designator`、`addIntoBom`、`addIntoPcb` 存在默认值"
 			}
 		],
 		"returns": "器件 UUID",
@@ -13561,7 +16116,7 @@ edcode = [
 			},
 			{
 				"name": "property",
-				"description": "其它参数"
+				"description": "其它属性"
 			}
 		],
 		"returns": "操作是否成功",
@@ -13578,6 +16133,41 @@ edcode = [
 			{
 				"name": "key",
 				"description": "搜索关键字"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			},
+			{
+				"name": "classification",
+				"description": "分类，默认为全部"
+			},
+			{
+				"name": "symbolType",
+				"description": "符号类型，默认为全部"
+			},
+			{
+				"name": "itemsOfPage",
+				"description": "一页搜索结果的数量"
+			},
+			{
+				"name": "page",
+				"description": "页数"
+			}
+		],
+		"returns": "搜索到的器件属性的列表",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_Device.searchByProperties",
+		"description": "使用属性精确搜索器件",
+		"parameters": [
+			{
+				"name": "properties",
+				"description": "属性"
 			},
 			{
 				"name": "libraryUuid",
@@ -13701,10 +16291,25 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
 			}
 		],
 		"returns": "封装属性",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_Footprint.getRenderImage",
+		"description": "获取封装渲染图",
+		"parameters": [
+			{
+				"name": "footprint",
+				"description": "封装的索引"
+			}
+		],
+		"returns": "封装渲染图",
 		"tags": [
 			"beta"
 		],
@@ -13797,6 +16402,25 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.lib_Footprint.searchByProperties",
+		"description": "使用属性精确搜索封装",
+		"parameters": [
+			{
+				"name": "properties",
+				"description": "属性"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			}
+		],
+		"returns": "搜索到的封装属性的列表",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.lib_Footprint.updateDocumentSource",
 		"description": "更新封装的文档源码",
 		"parameters": [
@@ -13879,6 +16503,26 @@ edcode = [
 		"returns": "系统库的 UUID",
 		"tags": [
 			"public"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_LibrariesList.registerExtendLibrary",
+		"description": "注册外部库",
+		"parameters": [
+			{
+				"name": "title",
+				"description": "标题"
+			},
+			{
+				"name": "libFunctions",
+				"description": "库方法"
+			}
+		],
+		"returns": "库 UUID",
+		"remarks": "注意：本接口仅扩展有效，在独立脚本环境内调用将始终 `throw Error`",
+		"tags": [
+			"beta"
 		],
 		"isAsync": true
 	},
@@ -13977,7 +16621,7 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
 			}
 		],
 		"returns": "面板库属性",
@@ -14067,6 +16711,199 @@ edcode = [
 			}
 		],
 		"returns": "搜索到的面板库属性列表",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SelectControl",
+		"description": "综合库 / 选择控制类",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.lib_SelectControl.getSelectedLibraryRowInfo",
+		"description": "获取当前底部库选中行的信息",
+		"parameters": [],
+		"returns": "库属性对象，如若为 `undefined` 则获取失败",
+		"remarks": "将会获取当前底部库选中行的库类型、UUID、所属库 UUID",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel",
+		"description": "综合库 / 仿真模型类",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel.copy",
+		"description": "复制仿真模型",
+		"parameters": [
+			{
+				"name": "simulationModelUuid",
+				"description": "仿真模型 UUID"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			},
+			{
+				"name": "targetLibraryUuid",
+				"description": "目标库 UUID"
+			},
+			{
+				"name": "targetClassification",
+				"description": "目标库内的分类"
+			},
+			{
+				"name": "newSimulationModelName",
+				"description": "新仿真模型名称，如若目标库内存在重名符号将导致复制失败"
+			}
+		],
+		"returns": "目标库内新仿真模型的 UUID",
+		"remarks": "ADD since EDA v3.2.167",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel.create",
+		"description": "创建仿真模型",
+		"parameters": [
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			},
+			{
+				"name": "model",
+				"description": "仿真模型数据"
+			},
+			{
+				"name": "classification",
+				"description": "分类"
+			},
+			{
+				"name": "description",
+				"description": "描述"
+			}
+		],
+		"returns": "仿真模型 UUID",
+		"remarks": "ADD since EDA v3.2.167",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel.delete",
+		"description": "删除仿真模型",
+		"parameters": [
+			{
+				"name": "simulationModelUuid",
+				"description": "仿真模型 UUID"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			}
+		],
+		"returns": "操作是否成功",
+		"remarks": "ADD since EDA v3.2.167",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel.get",
+		"description": "获取仿真模型的所有属性",
+		"parameters": [
+			{
+				"name": "simulationModelUuid",
+				"description": "仿真模型 UUID"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			}
+		],
+		"returns": "仿真模型属性",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel.modify",
+		"description": "修改仿真模型",
+		"parameters": [
+			{
+				"name": "simulationModelUuid",
+				"description": "仿真模型 UUID"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			},
+			{
+				"name": "modelProps",
+				"description": "仿真模型属性"
+			},
+			{
+				"name": "classification",
+				"description": "分类"
+			},
+			{
+				"name": "description",
+				"description": "描述"
+			}
+		],
+		"returns": "操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_SimulationModel.search",
+		"description": "搜索仿真模型",
+		"parameters": [
+			{
+				"name": "key",
+				"description": "搜索关键字"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			},
+			{
+				"name": "classification",
+				"description": "分类，默认为全部"
+			},
+			{
+				"name": "simulationModelType",
+				"description": "仿真模型类型，默认为全部"
+			},
+			{
+				"name": "itemsOfPage",
+				"description": "一页搜索结果的数量"
+			},
+			{
+				"name": "page",
+				"description": "页数"
+			}
+		],
+		"returns": "搜索到的仿真模型属性列表",
+		"remarks": "ADD since EDA v3.2.167",
 		"tags": [
 			"beta"
 		],
@@ -14171,10 +17008,25 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
 			}
 		],
 		"returns": "符号属性",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.lib_Symbol.getRenderImage",
+		"description": "获取符号渲染图",
+		"parameters": [
+			{
+				"name": "symbol",
+				"description": "符号的索引"
+			}
+		],
+		"returns": "符号渲染图",
 		"tags": [
 			"beta"
 		],
@@ -14271,6 +17123,25 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.lib_Symbol.searchByProperties",
+		"description": "使用属性精确搜索符号",
+		"parameters": [
+			{
+				"name": "properties",
+				"description": "属性"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，默认为系统库，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+			}
+		],
+		"returns": "搜索到的符号属性的列表",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.lib_Symbol.updateDocumentSource",
 		"description": "更新符号的文档源码",
 		"parameters": [
@@ -14301,6 +17172,47 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.pcb_Document.autoLayout",
+		"description": "自动布局 (PCB)",
+		"parameters": [],
+		"returns": "自动布局结果",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Document.autoRouting",
+		"description": "自动布线 (PCB)",
+		"parameters": [
+			{
+				"name": "props",
+				"description": "自动布线参数"
+			}
+		],
+		"returns": "自动布线结果",
+		"remarks": "如不传入任何参数，将对所有未布线的网络进行自动布线",
+		"tags": [
+			"beta",
+			"example"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Document.clearRouting",
+		"description": "清除布线 (PCB)",
+		"parameters": [
+			{
+				"name": "type",
+				"description": "清除类型，如若需要指定清除类型，请提前选择指定图元"
+			}
+		],
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.pcb_Document.convertCanvasOriginToDataOrigin",
@@ -14359,6 +17271,16 @@ edcode = [
 		"returns": "画布原点相对于数据原点的偏移坐标",
 		"tags": [
 			"public"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Document.getCurrentFilterConfiguration",
+		"description": "获取当前画布过滤器配置 (PCB)",
+		"parameters": [],
+		"returns": "当前画布过滤器配置，`undefined` 为获取失败",
+		"tags": [
+			"beta"
 		],
 		"isAsync": true
 	},
@@ -14436,6 +17358,22 @@ edcode = [
 			{
 				"name": "autoRouteFile",
 				"description": "欲导入的 JSON 文件"
+			}
+		],
+		"returns": "导入操作是否成功",
+		"remarks": "可以使用 {@link SYS_FileSystem.openReadFileDialog} 读入文件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Document.importAutoRouteSesFile",
+		"description": "导入自动布线文件（SES） (PCB)",
+		"parameters": [
+			{
+				"name": "autoRouteFile",
+				"description": "欲导入的 SES 文件"
 			}
 		],
 		"returns": "导入操作是否成功",
@@ -14965,6 +17903,16 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Drc.getRealTimeDrcStatus",
+		"description": "获取实时 DRC 检查状态 (PCB)",
+		"parameters": [],
+		"returns": "实时 DRC 检查状态，实时 DRC 已停止、不处于 PCB 或获取失败均返回 `false`",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.pcb_Drc.getRegionRules",
 		"description": "获取区域规则 (PCB)",
 		"parameters": [],
@@ -15098,6 +18046,22 @@ edcode = [
 			}
 		],
 		"returns": "操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Drc.overwriteCurrentRuleConfiguration",
+		"description": "覆写当前设计规则配置 (PCB)",
+		"parameters": [
+			{
+				"name": "ruleConfiguration",
+				"description": "设计规则配置"
+			}
+		],
+		"returns": "覆写是否成功",
+		"remarks": "将会覆写 PCB 当前的设计规则配置，请注意数据丢失风险",
 		"tags": [
 			"beta"
 		],
@@ -15270,8 +18234,30 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Drc.startRealTimeDrc",
+		"description": "开始实时 DRC 检查 (PCB)",
+		"parameters": [],
+		"returns": "是否成功启用实时 DRC 检查",
+		"remarks": "本接口返回值为结果导向，调用本接口前已启用实时 DRC 检查也将返回 `true`",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_Drc.stopRealTimeDrc",
+		"description": "停止实时 DRC 检查 (PCB)",
+		"parameters": [],
+		"returns": "是否成功停用实时 DRC 检查",
+		"remarks": "本接口返回值为结果导向，调用本接口前已停用实时 DRC 检查也将返回 `true`",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.pcb_Event",
-		"description": "PCB & 封装 / 事件类 (PCB)",
+		"description": "PCB & ��装 / 事件类 (PCB)",
 		"parameters": [],
 		"remarks": "注册事件回调",
 		"tags": [
@@ -15299,14 +18285,15 @@ edcode = [
 				"description": "是否仅监听一次"
 			}
 		],
+		"remarks": "注意：本接口仅扩展有效，在独立脚本环境内调用将始终 `throw Error`",
 		"tags": [
-			"public"
+			"beta"
 		],
 		"isAsync": false
 	},
 	{
 		"methodPath": "eda.pcb_Event.isEventListenerAlreadyExist",
-		"description": "查询事件监听是否存在 (PCB)",
+		"description": "查询事件监听是否存在 (PCB) (PCB)",
 		"parameters": [
 			{
 				"name": "id",
@@ -15321,7 +18308,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.pcb_Event.removeEventListener",
-		"description": "移除事件监听 (PCB)",
+		"description": "移除事件监听 (PCB) (PCB)",
 		"parameters": [
 			{
 				"name": "id",
@@ -15353,12 +18340,102 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Layer.deletePhysicalStackingConfiguration",
+		"description": "删除物理叠层配置 (PCB)",
+		"parameters": [
+			{
+				"name": "configurationName",
+				"description": "配置名称"
+			}
+		],
+		"returns": "删除是否成功",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_Layer.getAllLayers",
 		"description": "获取所有图层的详细属性 (PCB)",
 		"parameters": [],
 		"returns": "所有图层的详细属性",
 		"tags": [
 			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getAllPhysicalStackingConfigurations",
+		"description": "获取所有物理叠层配置 (PCB)",
+		"parameters": [],
+		"returns": "所有物理叠层配置",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getCurrentLayer",
+		"description": "获取当前图层的详细属性 (PCB)",
+		"parameters": [],
+		"returns": "当前图层的详细属性",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getCurrentPhysicalStackingConfiguration",
+		"description": "获取当前物理叠层配置 (PCB)",
+		"parameters": [],
+		"returns": "当前物理叠层配置，`undefined` 为获取失败",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getCurrentPhysicalStackingConfigurationName",
+		"description": "获取当前物理叠层配置名称 (PCB)",
+		"parameters": [],
+		"returns": "当前物理叠层配置名称，`undefined` 为获取失败",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getDefaultPhysicalStackingConfigurationName",
+		"description": "获取新建 PCB 默认物理叠层配置的名称 (PCB)",
+		"parameters": [],
+		"returns": "默认物理叠层配置的名称，`undefined` 为获取失败",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getPhysicalStackingConfiguration",
+		"description": "获取指定物理叠层配置 (PCB)",
+		"parameters": [
+			{
+				"name": "configurationName",
+				"description": "配置名称"
+			}
+		],
+		"returns": "物理叠层配置，`undefined` 为不存在该物理叠层",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.getTheNumberOfCopperLayers",
+		"description": "获取铜箔层数 (PCB)",
+		"parameters": [],
+		"returns": "层数",
+		"tags": [
+			"alpha"
 		],
 		"isAsync": true
 	},
@@ -15398,6 +18475,22 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Layer.overwriteCurrentPhysicalStackingConfiguration",
+		"description": "覆写当前物理叠层配置 (PCB)",
+		"parameters": [
+			{
+				"name": "ruleConfiguration",
+				"description": "物理叠层配置"
+			}
+		],
+		"returns": "覆写是否成功",
+		"remarks": "将会覆写 PCB 当前的物理叠层配置，请注意数据丢失风险",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.pcb_Layer.removeLayer",
 		"description": "移除层 (PCB)",
 		"parameters": [
@@ -15414,6 +18507,48 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Layer.renamePhysicalStackingConfiguration",
+		"description": "重命名物理叠层配置 (PCB)",
+		"parameters": [
+			{
+				"name": "originalConfigurationName",
+				"description": "原物理叠层配置名称"
+			},
+			{
+				"name": "configurationName",
+				"description": "新物理叠层配置名称"
+			}
+		],
+		"returns": "重命名是否成功",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.savePhysicalStackingConfiguration",
+		"description": "保存物理叠层配置 (PCB)",
+		"parameters": [
+			{
+				"name": "physicalStackingConfiguration",
+				"description": "物理叠层配置"
+			},
+			{
+				"name": "configurationName",
+				"description": "配置名称"
+			},
+			{
+				"name": "allowOverwrite",
+				"description": "是否允许覆写同名物理叠层配置，`false` 则将在遇到同名物理叠层配置时返回 `false`，请注意可能的数据丢失风险"
+			}
+		],
+		"returns": "保存是否成功",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_Layer.selectLayer",
 		"description": "选中图层 (PCB)",
 		"parameters": [
@@ -15425,6 +18560,22 @@ edcode = [
 		"returns": "操作是否成功，不存在指定层将返回 `false`",
 		"tags": [
 			"public"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Layer.setAsDefaultPhysicalStackingConfiguration",
+		"description": "设置为新建 PCB 默认物理叠层配置 (PCB)",
+		"parameters": [
+			{
+				"name": "configurationName",
+				"description": "配置名称"
+			}
+		],
+		"returns": "设置是否成功",
+		"remarks": "返回值为结果导向，重复设置相同的物理叠层为默认物理叠层也将返回 `true`",
+		"tags": [
+			"alpha"
 		],
 		"isAsync": true
 	},
@@ -15577,7 +18728,8 @@ edcode = [
 		],
 		"returns": "操作是否成功",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15603,12 +18755,13 @@ edcode = [
 			},
 			{
 				"name": "autoGenerateModels",
-				"description": "是否为未绑定 3D 模型的元件自动生成 3D 模型（根据元件的“高度”属性）"
+				"description": "是否为未绑定 3D 模型的元件自动生成 3D 模型（根据元件的\"高度\"属性）"
 			}
 		],
 		"returns": "3D 模型文件数据",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15628,7 +18781,8 @@ edcode = [
 		"returns": "3D 外壳文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15644,7 +18798,8 @@ edcode = [
 		"returns": "Altium Designer 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15660,13 +18815,31 @@ edcode = [
 		"returns": "自动布局 JSON 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
 	{
 		"methodPath": "eda.pcb_ManufactureData.getAutoRouteJsonFile",
 		"description": "获取自动布线文件（JSON） (PCB)",
+		"parameters": [
+			{
+				"name": "fileName",
+				"description": "文件名"
+			}
+		],
+		"returns": "自动布线 JSON 文件数据",
+		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
+		"tags": [
+			"beta",
+			"example"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_ManufactureData.getAutoRouteJsonFileForJRouter",
+		"description": "获取 JRouter 专用自动布线文件（JSON） (PCB)",
 		"parameters": [
 			{
 				"name": "fileName",
@@ -15716,7 +18889,8 @@ edcode = [
 		"returns": "BOM 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15731,7 +18905,8 @@ edcode = [
 		],
 		"returns": "BOM 模板文件",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15741,7 +18916,8 @@ edcode = [
 		"parameters": [],
 		"returns": "BOM 模板列表",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15757,7 +18933,8 @@ edcode = [
 		"returns": "自动布线 DSN 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15796,7 +18973,8 @@ edcode = [
 		],
 		"returns": "飞针测试文件数据",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15836,6 +19014,51 @@ edcode = [
 		"returns": "PCB 制版文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
+			"beta",
+			"example"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_ManufactureData.getIdxFile",
+		"description": "获取 IDX 文件 (PCB)",
+		"parameters": [],
+		"returns": "IDX 文件",
+		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
+		"tags": [
+			"beta",
+			"example"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_ManufactureData.getInteractiveBomFile",
+		"description": "获取交互式 BOM 文件 (PCB)",
+		"parameters": [
+			{
+				"name": "fileName",
+				"description": "文件名"
+			}
+		],
+		"returns": "交互式 BOM 文件数据",
+		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
+		"tags": [
+			"internal"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_ManufactureData.getIpc2581CFile",
+		"description": "获取 IPC-2581C 文件 (PCB)",
+		"parameters": [
+			{
+				"name": "fileName",
+				"description": "文件名"
+			}
+		],
+		"returns": "IPC-2581C 文件数据",
+		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
+		"tags": [
 			"beta"
 		],
 		"isAsync": true
@@ -15851,6 +19074,17 @@ edcode = [
 		],
 		"returns": "IPC-D-356A 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
+		"tags": [
+			"beta",
+			"example"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_ManufactureData.getManufactureData",
+		"description": "导出制造文件 (PCB)",
+		"parameters": [],
+		"returns": "制造文件",
 		"tags": [
 			"beta"
 		],
@@ -15872,7 +19106,8 @@ edcode = [
 		"returns": "网表文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15904,7 +19139,8 @@ edcode = [
 		"returns": "ODB++ 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15920,7 +19156,8 @@ edcode = [
 		"returns": "PADS 文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15936,7 +19173,8 @@ edcode = [
 		"returns": "PCB 信息文件",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -15959,13 +19197,18 @@ edcode = [
 			{
 				"name": "watermark",
 				"description": "水印"
+			},
+			{
+				"name": "graphPageConfig",
+				"description": "图页配置"
 			}
 		],
 		"returns": "PDF 文件数据（或压缩包）",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
-		"isAsync": true
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.pcb_ManufactureData.getPickAndPlaceFile",
@@ -15987,7 +19230,8 @@ edcode = [
 		"returns": "坐标文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -16007,7 +19251,8 @@ edcode = [
 		"returns": "测试点报告文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -16024,7 +19269,8 @@ edcode = [
 				"description": "在非交互式检查时忽略警告"
 			}
 		],
-		"returns": "是否通过下单检查",
+		"returns": "是否通过下单检查；在入参开发完成前，返回值没有实际作用，不会等待执行结果",
+		"remarks": "本接口暂时只支持交互式检查，入参暂无作用，预留后续开发",
 		"tags": [
 			"beta"
 		],
@@ -16043,7 +19289,8 @@ edcode = [
 				"description": "在非交互式检查时忽略警告"
 			}
 		],
-		"returns": "是否通过下单检查",
+		"returns": "是否通过下单检查；在入参开发完成前，返回值没有实际作用，不会等待执行结果",
+		"remarks": "本接口暂时只支持交互式检查，入参暂无作用，预留后续开发",
 		"tags": [
 			"beta"
 		],
@@ -16062,7 +19309,8 @@ edcode = [
 				"description": "在非交互式检查时忽略警告"
 			}
 		],
-		"returns": "是否通过下单检查",
+		"returns": "是否通过下单检查；在入参开发完成前，返回值没有实际作用，不会等待执行结果",
+		"remarks": "本接口暂时只支持交互式检查，入参暂无作用，预留后续开发",
 		"tags": [
 			"beta"
 		],
@@ -16081,7 +19329,8 @@ edcode = [
 				"description": "在非交互式检查时忽略警告"
 			}
 		],
-		"returns": "是否通过下单检查",
+		"returns": "是否通过下单检查；在入参开发完成前，返回值没有实际作用，不会等待执行结果",
+		"remarks": "本接口暂时只支持交互式检查，入参暂无作用，预留后续开发",
 		"tags": [
 			"beta"
 		],
@@ -16102,7 +19351,8 @@ edcode = [
 		],
 		"returns": "BOM 模板名称",
 		"tags": [
-			"beta"
+			"beta",
+			"example"
 		],
 		"isAsync": true
 	},
@@ -16113,6 +19363,36 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.pcb_MathPolygon.calculateHeight",
+		"description": "计算复杂多边形 BBox 高度 (PCB)",
+		"parameters": [
+			{
+				"name": "complexPolygon",
+				"description": "复杂多边形"
+			}
+		],
+		"returns": "BBox 高度",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_MathPolygon.calculateWidth",
+		"description": "计算复杂多边形 BBox 宽度 (PCB)",
+		"parameters": [
+			{
+				"name": "complexPolygon",
+				"description": "复杂多边形"
+			}
+		],
+		"returns": "BBox 宽度",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.pcb_MathPolygon.convertImageToComplexPolygon",
@@ -16192,6 +19472,26 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.pcb_MathPolygon.discretize",
+		"description": "将单多边形离散化为点数据 (PCB)",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "单多边形对象"
+			},
+			{
+				"name": "options",
+				"description": "离散化选项"
+			}
+		],
+		"returns": "离散化点数据",
+		"remarks": "将单多边形的边界离散化为一系列点",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.pcb_MathPolygon.splitPolygon",
 		"description": "拆分单多边形 (PCB)",
 		"parameters": [
@@ -16226,6 +19526,16 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Net.getAllNets",
+		"description": "获取所有网络的详细信息 (PCB)",
+		"parameters": [],
+		"returns": "所有网络的详细信息",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_Net.getAllNetsName",
 		"description": "获取所有网络的网络名称 (PCB)",
 		"parameters": [],
@@ -16249,6 +19559,36 @@ edcode = [
 			}
 		],
 		"returns": "图元对象数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Net.getNet",
+		"description": "获取指定网络的详细信息 (PCB)",
+		"parameters": [
+			{
+				"name": "net",
+				"description": "网络名称"
+			}
+		],
+		"returns": "网络的详细信息, `undefined` 为不存在该网络",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Net.getNetColor",
+		"description": "获取指定网络的颜色 (PCB)",
+		"parameters": [
+			{
+				"name": "net",
+				"description": "网络名称"
+			}
+		],
+		"returns": "网络颜色，`undefined` 为不存在该网络",
 		"tags": [
 			"beta"
 		],
@@ -16316,6 +19656,25 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Net.setNetColor",
+		"description": "设置指定网络的颜色 (PCB)",
+		"parameters": [
+			{
+				"name": "net",
+				"description": "网络名称"
+			},
+			{
+				"name": "color",
+				"description": "网络颜色"
+			}
+		],
+		"returns": "是否设置成功, `false` 为不存在该网络",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_Net.setNetlist",
 		"description": "更新网表 (PCB)",
 		"parameters": [
@@ -16334,6 +19693,16 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_Net.unhighlightAllNets",
+		"description": "取消高亮所有网络 (PCB)",
+		"parameters": [],
+		"returns": "操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_Net.unhighlightNet",
 		"description": "取消高亮网络 (PCB)",
 		"parameters": [
@@ -16343,7 +19712,33 @@ edcode = [
 			}
 		],
 		"returns": "操作是否成功",
-		"remarks": "本接口的返回值为结果导向，��果该网络原先未高亮，也将返回 `true`",
+		"remarks": "本接口的返回值为结果导向，如果该网络原先未高亮，也将返回 `true`",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Net.unselectAllNets",
+		"description": "取消选中所有网络 (PCB)",
+		"parameters": [],
+		"returns": "操作是否成功",
+		"remarks": "如果希望取消选中所有图元，请使用 {@link PCB_SelectControl.clearSelected} 接口",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Net.unselectNet",
+		"description": "取消选中网络 (PCB)",
+		"parameters": [
+			{
+				"name": "net",
+				"description": "网络名称"
+			}
+		],
+		"returns": "操作是否成功",
 		"tags": [
 			"beta"
 		],
@@ -16359,6 +19754,40 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.pcb_Primitive.getPrimitiveBoardLine",
+		"description": "获取图元的边框线 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveId",
+				"description": "图元 ID"
+			},
+			{
+				"name": "layers",
+				"description": "需要计算的层，在计算器件、焊盘、过孔时能够精确计算指定多个层的边框线的并集"
+			}
+		],
+		"returns": "复杂多边形，如果图元 ID 未匹配或图元在指定层上不存在，则返回 `undefined`",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_Primitive.getPrimitiveByPrimitiveId",
+		"description": "获取指定 ID 的图元的所有属性 (PCB)",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "图元 ID"
+			}
+		],
+		"returns": "图元的所有属性",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_Primitive.getPrimitivesBBox",
 		"description": "获取图元的 BBox (PCB)",
 		"parameters": [
@@ -16370,6 +19799,36 @@ edcode = [
 		"returns": "图元的 BBox，如若图元不存在或没有 BBox，将会返回 `undefined` 的结果",
 		"tags": [
 			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Primitive.getPrimitivesByPrimitiveId",
+		"description": "获取指定所有 ID 的图元的所有属性 (PCB)",
+		"parameters": [
+			{
+				"name": "ids",
+				"description": "图元 ID 数组"
+			}
+		],
+		"returns": "所有图元的所有属性",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_Primitive.getPrimitiveTypeByPrimitiveId",
+		"description": "获取指定 ID 的图元的图元类型 (PCB)",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "图元 ID"
+			}
+		],
+		"returns": "图元类型",
+		"tags": [
+			"alpha"
 		],
 		"isAsync": true
 	},
@@ -16553,6 +20012,128 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.create",
+		"description": "创建属性 (PCB)",
+		"parameters": [],
+		"returns": "`undefined`",
+		"remarks": "属性图元不支持新建，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.delete",
+		"description": "删除属性 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "属性的图元 ID 或文本图元对象"
+			}
+		],
+		"returns": "删除操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.get",
+		"description": "获取属性 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "属性的图元 ID，可以为字符串或字符串数组，如若为数组���则返回的也是数组"
+			}
+		],
+		"returns": "属性图元对象，`undefined` 表示获取失败",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.get",
+		"description": "获取属性 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "属性的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "属性图元对象，空数组表示获取失败",
+		"remarks": "如若传入多个图元 ID，任意图元 ID 未匹��到不影响其它图元的返回，即可能返回少于传入的图元 ID 数量的图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.getAll",
+		"description": "获取所有属性 (PCB)",
+		"parameters": [
+			{
+				"name": "parentPrimitiveId",
+				"description": "关联的父图元 ID"
+			},
+			{
+				"name": "layer",
+				"description": "层"
+			},
+			{
+				"name": "primitiveLock",
+				"description": "是否锁定"
+			}
+		],
+		"returns": "属性图元对象数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.getAllPrimitiveId",
+		"description": "获取所有属性的图元 ID (PCB)",
+		"parameters": [
+			{
+				"name": "parentPrimitiveId",
+				"description": "关联的父图元 ID"
+			},
+			{
+				"name": "layer",
+				"description": "层"
+			},
+			{
+				"name": "primitiveLock",
+				"description": "是否锁定"
+			}
+		],
+		"returns": "属性的图元 ID 数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveAttribute.modify",
+		"description": "修改文本 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveId",
+				"description": "图元 ID"
+			},
+			{
+				"name": "property",
+				"description": "修改参数"
+			}
+		],
+		"returns": "文本图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_PrimitiveComponent",
 		"description": "PCB & 封装 / 器件图元类 (PCB)",
 		"parameters": [],
@@ -16695,6 +20276,16 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_PrimitiveComponent.getAllPropertyNames",
+		"description": "获取所有器件的所有属性名称集合 (PCB)",
+		"parameters": [],
+		"returns": "所有器件的所有属性名称集合",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_PrimitiveComponent.modify",
 		"description": "修改器件 (PCB)",
 		"parameters": [
@@ -16756,6 +20347,40 @@ edcode = [
 			}
 		],
 		"returns": "器件图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveComponent.placeComponentWithMouse",
+		"description": "使用鼠标放置器件 (PCB)",
+		"parameters": [
+			{
+				"name": "component",
+				"description": "关联库器件"
+			}
+		],
+		"returns": "是否找到器件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveComponent.placeFootprintWithMouse",
+		"description": "使用鼠标放置封装 (PCB)",
+		"parameters": [
+			{
+				"name": "footprint",
+				"description": "关联库封装"
+			},
+			{
+				"name": "properties",
+				"description": "器件属性"
+			}
+		],
+		"returns": "是否找到封装",
 		"tags": [
 			"beta"
 		],
@@ -16990,7 +20615,7 @@ edcode = [
 		"parameters": [
 			{
 				"name": "primitiveIds",
-				"description": "填充的图元 ID，可��为字符串或字符串数组，如若为数组，则返回的也是数组"
+				"description": "填充的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
 			}
 		],
 		"returns": "填充图元对象，空数组表示获取失败",
@@ -17584,7 +21209,7 @@ edcode = [
 			},
 			{
 				"name": "pad",
-				"description": "焊盘外形"
+				"description": "焊盘外形，在特殊焊盘外形实现前，该参数必传"
 			},
 			{
 				"name": "net",
@@ -17616,7 +21241,7 @@ edcode = [
 			},
 			{
 				"name": "specialPad",
-				"description": "特殊焊盘外形"
+				"description": "特殊焊盘外形，当前暂未实现，请勿使用"
 			},
 			{
 				"name": "solderMaskAndPasteMaskExpansion",
@@ -18073,6 +21698,94 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.pcb_PrimitivePoured.create",
+		"description": "创建覆铜填充 (PCB)",
+		"parameters": [],
+		"returns": "`undefined`",
+		"remarks": "覆铜填充图元不支持新建，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.pcb_PrimitivePoured.delete",
+		"description": "删除覆铜填充 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "覆铜填充的图元 ID 或覆铜填充图元对象"
+			}
+		],
+		"returns": "删除操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitivePoured.get",
+		"description": "获取覆铜填充 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "覆铜填充的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "覆铜填充图元对象，`undefined` 表示获取失败",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitivePoured.get",
+		"description": "获取覆铜填充 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "覆铜填充的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "覆铜填充图元对象，空数组表示获取失败",
+		"remarks": "如若传入多个图元 ID，任意图元 ID 未匹配到不影响其它图元的返回，即可能返回少于传入的图元 ID 数量的图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitivePoured.getAll",
+		"description": "获取所有覆铜填充图元 (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充图元对象数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitivePoured.getAllPrimitiveId",
+		"description": "获取所有覆铜填充的图元 ID (PCB)",
+		"parameters": [],
+		"returns": "覆铜填充的图元 ID 数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitivePoured.modify",
+		"description": "修改覆铜填充 (PCB)",
+		"parameters": [],
+		"returns": "`undefined`",
+		"remarks": "覆铜填充图元不支持修改，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.pcb_PrimitiveRegion",
 		"description": "PCB & 封装 / 禁止区域和约束区域图元类 (PCB)",
 		"parameters": [],
@@ -18235,6 +21948,172 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.pcb_PrimitiveString.create",
+		"description": "创建文本 (PCB)",
+		"parameters": [
+			{
+				"name": "layer",
+				"description": "层"
+			},
+			{
+				"name": "x",
+				"description": "坐标 X"
+			},
+			{
+				"name": "y",
+				"description": "坐标 Y"
+			},
+			{
+				"name": "text",
+				"description": "文本内容"
+			},
+			{
+				"name": "fontFamily",
+				"description": "字体，需要预先导入嘉立创 EDA"
+			},
+			{
+				"name": "fontSize",
+				"description": "字号"
+			},
+			{
+				"name": "lineWidth",
+				"description": "线宽"
+			},
+			{
+				"name": "alignMode",
+				"description": "对齐模式"
+			},
+			{
+				"name": "rotation",
+				"description": "旋转角度"
+			},
+			{
+				"name": "reverse",
+				"description": "是否反相"
+			},
+			{
+				"name": "expansion",
+				"description": "反相扩展"
+			},
+			{
+				"name": "mirror",
+				"description": "是否镜像"
+			},
+			{
+				"name": "primitiveLock",
+				"description": "是否锁定"
+			}
+		],
+		"returns": "文本图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveString.delete",
+		"description": "删除文本 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "文本的图元 ID 或文本图元对象"
+			}
+		],
+		"returns": "删除操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveString.get",
+		"description": "获取文本 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "文本的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "文本图元对象，`undefined` 表示获取失败",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveString.get",
+		"description": "获取文本 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "文本的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "文本图元对象，空数组表示获取失败",
+		"remarks": "如若传入多个图元 ID，任意图元 ID 未匹配到不影响其它图元的返回，即可能返回少于传入的图元 ID 数量的图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveString.getAll",
+		"description": "获取所有文本 (PCB)",
+		"parameters": [
+			{
+				"name": "layer",
+				"description": "层"
+			},
+			{
+				"name": "primitiveLock",
+				"description": "是否锁定"
+			}
+		],
+		"returns": "文本图元对象数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveString.getAllPrimitiveId",
+		"description": "获取所有文本的图元 ID (PCB)",
+		"parameters": [
+			{
+				"name": "layer",
+				"description": "层"
+			},
+			{
+				"name": "primitiveLock",
+				"description": "是否锁定"
+			}
+		],
+		"returns": "文本的图元 ID 数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_PrimitiveString.modify",
+		"description": "修改文本 (PCB)",
+		"parameters": [
+			{
+				"name": "primitiveId",
+				"description": "图元 ID"
+			},
+			{
+				"name": "property",
+				"description": "修改参数"
+			}
+		],
+		"returns": "文本图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_PrimitiveVia",
 		"description": "PCB & 封装 / 过孔图元类 (PCB)",
 		"parameters": [],
@@ -18393,6 +22272,71 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.pcb_RayTracerEngine",
+		"description": "PCB & 封装 / 光线追踪引擎类 (PCB)",
+		"parameters": [],
+		"remarks": "控制光线追踪引擎的对接和交互",
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.pcb_RayTracerEngine.dispose",
+		"description": "停止光线追踪引擎 (PCB)",
+		"parameters": [],
+		"remarks": "ADD since EDA v4",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_RayTracerEngine.getLightConfigurations",
+		"description": "获取光线追踪光源配置 (PCB)",
+		"parameters": [],
+		"returns": "光源配置",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_RayTracerEngine.getRenderConfigurations",
+		"description": "获取光线追踪渲染配置 (PCB)",
+		"parameters": [],
+		"returns": "渲染配置",
+		"remarks": "本接口配置定义还在进行中",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_RayTracerEngine.init",
+		"description": "初始化光线追踪引擎 (PCB)",
+		"parameters": [],
+		"remarks": "ADD since EDA v4",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_RayTracerEngine.setRenderConfigurations",
+		"description": "设置光线追踪渲染配置 (PCB)",
+		"parameters": [
+			{
+				"name": "configurations",
+				"description": "渲染配置"
+			}
+		],
+		"remarks": "本接口配置定义还在进行中",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.pcb_SelectControl",
 		"description": "PCB & 封装 / 选择控制类 (PCB)",
 		"parameters": [],
@@ -18434,10 +22378,36 @@ edcode = [
 			{
 				"name": "select",
 				"description": "操作是否成功"
+			},
+			{
+				"name": "canMove",
+				"description": "画布能否移动"
 			}
 		],
 		"tags": [
 			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.pcb_SelectControl.doCrossProbeSelectByObject",
+		"description": "进行交叉选择 (PCB)",
+		"parameters": [
+			{
+				"name": "components",
+				"description": "器件位号"
+			},
+			{
+				"name": "pins",
+				"description": "引脚"
+			},
+			{
+				"name": "nets",
+				"description": "网络"
+			}
+		],
+		"tags": [
+			"internal"
 		],
 		"isAsync": true
 	},
@@ -18480,7 +22450,7 @@ edcode = [
 		"methodPath": "eda.pcb_SelectControl.getCurrentMousePosition",
 		"description": "获取当前鼠标在画布上的位置 (PCB)",
 		"parameters": [],
-		"returns": "鼠标在画布上的位置，`undefined` 代表当前鼠标不���画布上",
+		"returns": "鼠标在画布上的位置，`undefined` 代表当前鼠标不在画布上",
 		"tags": [
 			"beta"
 		],
@@ -18526,12 +22496,147 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.sch_Document.autoLayout",
+		"description": "自动布局 (原理图)",
+		"parameters": [
+			{
+				"name": "props",
+				"description": "自动布局参数"
+			}
+		],
+		"returns": "自动布局结果",
+		"remarks": "如不传入任何参数，将对所有器件进行自动布局",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_Document.autoRouting",
+		"description": "自动布线 (原理图)",
+		"parameters": [
+			{
+				"name": "props",
+				"description": "自动布线参数"
+			}
+		],
+		"returns": "自动布线结果",
+		"remarks": "如不传入任何参数，将对所有未布线的网络进行自动布线",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_Document.getCurrentFilterConfiguration",
+		"description": "获取当前画布过滤器配置 (原理图)",
+		"parameters": [],
+		"returns": "当前画布过滤器配置，`undefined` 为获取失败",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Document.getPrimitiveAtPoint",
+		"description": "获取坐标点的图元 (原理图)",
+		"parameters": [
+			{
+				"name": "x",
+				"description": "坐标点 X"
+			},
+			{
+				"name": "y",
+				"description": "坐标点 Y"
+			}
+		],
+		"returns": "坐标点的图元，如若坐标点无法找到图元，将返回 `undefined`",
+		"remarks": "本操作和前端鼠标点击操作类似，将会获取指定坐标点上的图元",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_Document.getPrimitivesInRegion",
+		"description": "获取区域内所有图元 (原理图)",
+		"parameters": [
+			{
+				"name": "left",
+				"description": "矩形框第一 X 坐标"
+			},
+			{
+				"name": "right",
+				"description": "矩形框第二 X 坐标"
+			},
+			{
+				"name": "top",
+				"description": "矩形框第一 Y 坐标"
+			},
+			{
+				"name": "bottom",
+				"description": "矩形框第二 Y 坐标"
+			}
+		],
+		"returns": "区域内所有图元",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.sch_Document.importChanges",
 		"description": "从 PCB 导入变更 (原理图)",
 		"parameters": [],
 		"returns": "导入操作是否成功，导入失败或游离原理图返回 `false`",
 		"tags": [
 			"public"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Document.navigateToCoordinates",
+		"description": "定位到画布坐标 (原理图)",
+		"parameters": [
+			{
+				"name": "x",
+				"description": "坐标 X"
+			},
+			{
+				"name": "y",
+				"description": "坐标 Y"
+			}
+		],
+		"returns": "操作是否成功",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Document.navigateToRegion",
+		"description": "定位到画布区域 (原理图)",
+		"parameters": [
+			{
+				"name": "left",
+				"description": "矩形框第一 X 坐标"
+			},
+			{
+				"name": "right",
+				"description": "矩形框第二 X 坐标"
+			},
+			{
+				"name": "top",
+				"description": "矩形框第一 Y 坐标"
+			},
+			{
+				"name": "bottom",
+				"description": "矩形框第二 Y 坐标"
+			}
+		],
+		"returns": "操作是否成功",
+		"tags": [
+			"alpha"
 		],
 		"isAsync": true
 	},
@@ -18560,17 +22665,43 @@ edcode = [
 		"parameters": [
 			{
 				"name": "strict",
-				"description": "是否严格检查，严格检查时存在 Warning 将返回 `false`，否则返回 `true`"
+				"description": "是否严格检查，当前原理图统一为严格检查模式"
 			},
 			{
 				"name": "userInterface",
 				"description": "是否显示 UI（呼出底部 DRC 窗口）"
+			},
+			{
+				"name": "includeVerboseError",
+				"description": "是否在返回值中包含详细错误信息，如若为 `true`，则返回值将始终为数组"
 			}
 		],
-		"returns": "DRC 检查是否无错误",
-		"remarks": "如若检查结果存在 **错误** 或以上级别，将会始终呼出底部 DRC 窗口，无视 `userInterface` 参数",
+		"returns": "DRC 检查是否通过",
 		"tags": [
-			"public"
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Drc.check",
+		"description": "检查 DRC (原理图)",
+		"parameters": [
+			{
+				"name": "strict",
+				"description": "是否严格检查，当前原理图统一为严格检查模式"
+			},
+			{
+				"name": "userInterface",
+				"description": "是否显示 UI（呼出底部 DRC 窗口）"
+			},
+			{
+				"name": "includeVerboseError",
+				"description": "是否在返回值中包含详细错误信息，如若为 `true`，则返回值将始终为数组"
+			}
+		],
+		"returns": "DRC 检查的详细结果",
+		"tags": [
+			"beta"
 		],
 		"isAsync": true
 	},
@@ -18604,8 +22735,59 @@ edcode = [
 				"description": "是否仅监听一次"
 			}
 		],
+		"remarks": "注意：本接口仅扩展有效，在独立脚本环境内调用将始终 `throw Error`",
 		"tags": [
 			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_Event.addPrimitiveEventListener",
+		"description": "新增图元事件监听 (原理图)",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID，用以防止重复注册事件"
+			},
+			{
+				"name": "eventType",
+				"description": "事件类型"
+			},
+			{
+				"name": "callFn",
+				"description": "事件触发时的回调函数"
+			},
+			{
+				"name": "onlyOnce",
+				"description": "是否仅监听一次"
+			}
+		],
+		"remarks": "注意：本接口仅扩展有效，在独立脚本环境内调用将始终 `throw Error`",
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_Event.addSimulationEnginePullEventListener",
+		"description": "注册仿真引擎拉取事件监听 (原理图)",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID，用以防止重复注册事件"
+			},
+			{
+				"name": "eventType",
+				"description": "事件类型"
+			},
+			{
+				"name": "callFn",
+				"description": "事件触发时的回调函数"
+			}
+		],
+		"remarks": "注意：本接口仅扩展有效，在独立脚本环境内调用将始终 `throw Error`",
+		"tags": [
+			"beta"
 		],
 		"isAsync": false
 	},
@@ -18647,6 +22829,31 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.sch_ManufactureData.deleteBomTemplate",
+		"description": "删除 BOM 模板 (原理图)",
+		"parameters": [
+			{
+				"name": "template",
+				"description": "BOM 模板名称"
+			}
+		],
+		"returns": "操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_ManufactureData.getAssemblyVariantsConfigs",
+		"description": "获取装配体变量配置列表 (原理图)",
+		"parameters": [],
+		"returns": "装配体变量配置列表",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.sch_ManufactureData.getBomFile",
@@ -18693,6 +22900,62 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sch_ManufactureData.getBomTemplateFile",
+		"description": "获取 BOM 模板文件 (原理图)",
+		"parameters": [
+			{
+				"name": "template",
+				"description": "BOM 模板名称"
+			}
+		],
+		"returns": "BOM 模板文件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_ManufactureData.getBomTemplates",
+		"description": "获取 BOM 模板列表 (原理图)",
+		"parameters": [],
+		"returns": "BOM 模板列表",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_ManufactureData.getExportDocumentFile",
+		"description": "获取导出文档文件 (原理图)",
+		"parameters": [
+			{
+				"name": "fileName",
+				"description": "文件名"
+			},
+			{
+				"name": "fileType",
+				"description": "文件类型"
+			},
+			{
+				"name": "typeSpecificParams",
+				"description": "类型特定参数"
+			},
+			{
+				"name": "object",
+				"description": "对象"
+			},
+			{
+				"name": "objectSpecificParams",
+				"description": "对象特定参数"
+			}
+		],
+		"returns": "导出文档文件数据（或压缩包）",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sch_ManufactureData.getNetlistFile",
 		"description": "获取网表文件（Netlist） (原理图)",
 		"parameters": [
@@ -18706,6 +22969,26 @@ edcode = [
 			}
 		],
 		"returns": "网表文件数据",
+		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_ManufactureData.getSimulationNetlistFile",
+		"description": "获取仿真网表文件 (原理图)",
+		"parameters": [
+			{
+				"name": "fileName",
+				"description": "文件名"
+			},
+			{
+				"name": "netlistType",
+				"description": "网表类型"
+			}
+		],
+		"returns": "仿真网表文件数据",
 		"remarks": "可以使用 {@link SYS_FileSystem.saveFile} 接口将文件导出到本地文件系统",
 		"tags": [
 			"beta"
@@ -18751,6 +23034,78 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sch_ManufactureData.uploadBomTemplateFile",
+		"description": "上传 BOM 模板文件 (原理图)",
+		"parameters": [
+			{
+				"name": "templateFile",
+				"description": "BOM 模板文件"
+			},
+			{
+				"name": "template",
+				"description": "BOM 模板名称，如若为 `undefined` 则自动从 `templateFile` 中取值"
+			}
+		],
+		"returns": "BOM 模板名称",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Net",
+		"description": "原理图 & 符号 / 网络类 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.sch_Net.getAllNets",
+		"description": "获取所有网络的详细信息 (原理图)",
+		"parameters": [],
+		"returns": "所有网络的详细信息",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Net.getAllNetsName",
+		"description": "获取所有网络的网络名称 (原理图)",
+		"parameters": [],
+		"returns": "网络名称数组",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Net.getCurrentProjectAllNets",
+		"description": "获取当前工程下所有网络的详细信息 (原理图)",
+		"parameters": [],
+		"returns": "当前工程下所有网络的详细信息",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Net.getNet",
+		"description": "获取指定网络的详细信息 (原理图)",
+		"parameters": [
+			{
+				"name": "net",
+				"description": "网络名称"
+			}
+		],
+		"returns": "网络的详细信息, `undefined` 为不存在该网络",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sch_Netlist",
 		"description": "原理图 & 符号 / 网表类 (原理图)",
 		"parameters": [],
@@ -18770,7 +23125,8 @@ edcode = [
 		],
 		"returns": "网表数据",
 		"tags": [
-			"public"
+			"public",
+			"deprecated"
 		],
 		"isAsync": true
 	},
@@ -18828,6 +23184,21 @@ edcode = [
 		"returns": "图元的 BBox，如若图元不存在或没有 BBox，将会返回 `undefined` 的结果",
 		"tags": [
 			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_Primitive.getPrimitivesByPrimitiveId",
+		"description": "获取指定所有 ID 的图元的所有属性 (原理图)",
+		"parameters": [
+			{
+				"name": "ids",
+				"description": "图元 ID 数组"
+			}
+		],
+		"returns": "所有图元的所有属性",
+		"tags": [
+			"alpha"
 		],
 		"isAsync": true
 	},
@@ -18991,8 +23362,144 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sch_PrimitiveAttribute",
+		"description": "原理图 & 符号 / 属性图元类 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.create",
+		"description": "创建属性 (原理图)",
+		"parameters": [],
+		"returns": "`undefined`",
+		"remarks": "属性图元不支持新建，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.createNetLabel",
+		"description": "创建网络标签 (原理图)",
+		"parameters": [
+			{
+				"name": "x",
+				"description": "坐标 X"
+			},
+			{
+				"name": "y",
+				"description": "坐标 Y"
+			},
+			{
+				"name": "net",
+				"description": "网络名称"
+			}
+		],
+		"returns": "网络标签属性图元",
+		"remarks": "ADD since EDA v4",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.delete",
+		"description": "删除属性 (原理图)",
+		"parameters": [],
+		"returns": "`false`",
+		"remarks": "属性图元不支持删除，本接口调用将不会有任何效果",
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.get",
+		"description": "获取属性 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "属性的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "属性图元对象，`undefined` 表示获取失败",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.get",
+		"description": "获取属性 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "属性的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "属性图元对象，空数组表示获取失败",
+		"remarks": "如若传入多个图元 ID，任意图元 ID 未匹配到不影响其它图元的返回，即可能返回少于传入的图元 ID 数量的图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.getAll",
+		"description": "获取所有属性 (原理图)",
+		"parameters": [
+			{
+				"name": "parentPrimitiveId",
+				"description": "父图元 ID"
+			}
+		],
+		"returns": "属性图元对象数组",
+		"remarks": "不传递父图元 ID 将拿到图页中的所有属性图元",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.getAllPrimitiveId",
+		"description": "获取所有属性的图元 ID (原理图)",
+		"parameters": [
+			{
+				"name": "parentPrimitiveId",
+				"description": "父图元 ID"
+			}
+		],
+		"returns": "属性的图元 ID 数组",
+		"remarks": "不传递父图元 ID 将拿到图页中的所有属性图元",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveAttribute.modify",
+		"description": "修改属性 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveId",
+				"description": "图元 ID"
+			},
+			{
+				"name": "property",
+				"description": "修改参数"
+			}
+		],
+		"returns": "属性图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sch_PrimitiveBus",
-		"description": "原理图 & 符号 / 总线图元类 (原理图)",
+		"description": "原理�� & 符号 / 总线图元类 (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
@@ -19268,7 +23775,7 @@ edcode = [
 			},
 			{
 				"name": "subPartName",
-				"description": "子图块名称"
+				"description": "子部件名称"
 			},
 			{
 				"name": "x",
@@ -19296,6 +23803,37 @@ edcode = [
 			}
 		],
 		"returns": "器件图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveComponent.createCbbSymbol",
+		"description": "创建复用模块符号 (原理图)",
+		"parameters": [
+			{
+				"name": "cbbSymbol",
+				"description": "关联库复用模块符号，libraryUuid 是 CBB 工程所在库的 UUID，cbbUuid 是 CBB 工程的 UUID，uuid 是 CBB 工程内符号的 UUID，name 是符号的显示名称"
+			},
+			{
+				"name": "x",
+				"description": "坐标 X"
+			},
+			{
+				"name": "y",
+				"description": "坐标 Y"
+			},
+			{
+				"name": "rotation",
+				"description": "旋转角度"
+			},
+			{
+				"name": "mirror",
+				"description": "是否镜像"
+			}
+		],
+		"returns": "复用模块符号图元对象",
 		"tags": [
 			"beta"
 		],
@@ -19580,15 +24118,65 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sch_PrimitiveComponent.placeCbbSchematicPage",
+		"description": "放置复用模块原理图图页 (原理图)",
+		"parameters": [
+			{
+				"name": "cbbSchematicPage",
+				"description": "复用模块原理图图页"
+			},
+			{
+				"name": "x",
+				"description": "坐标 X"
+			},
+			{
+				"name": "y",
+				"description": "坐标 Y"
+			}
+		],
+		"returns": "放置操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sch_PrimitiveComponent.placeComponentWithMouse",
 		"description": "使用鼠标放置器件 (原理图)",
 		"parameters": [
 			{
 				"name": "component",
 				"description": "关联库器件"
+			},
+			{
+				"name": "subPartName",
+				"description": "子部件名称"
 			}
 		],
 		"returns": "是否找到器件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveComponent.placeSymbolWithMouse",
+		"description": "使用鼠标放置符号 (原理图)",
+		"parameters": [
+			{
+				"name": "symbol",
+				"description": "关联库符号"
+			},
+			{
+				"name": "subPartName",
+				"description": "子部件名称"
+			},
+			{
+				"name": "properties",
+				"description": "器件属性"
+			}
+		],
+		"returns": "是否找到符号",
 		"tags": [
 			"beta"
 		],
@@ -19701,7 +24289,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3",
-		"description": "原理图 & 符号 / 器件图元类 (原理图)",
+		"description": "原理图 & 符号 / 器件图元类 (原理图) (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
@@ -19709,7 +24297,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.create",
-		"description": "创建器件 (原理图)",
+		"description": "创建器件 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -19752,7 +24340,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.createNetFlag",
-		"description": "创建网络标识 (原理图)",
+		"description": "创建网络标识 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "identification",
@@ -19787,7 +24375,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.createNetPort",
-		"description": "创建网络端口 (原理图)",
+		"description": "创建网络端口 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "direction",
@@ -19822,7 +24410,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.createShortCircuitFlag",
-		"description": "创建短接标识 (原理图)",
+		"description": "创建短接标识 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "x",
@@ -19849,7 +24437,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.delete",
-		"description": "删除器件 (原理图)",
+		"description": "删除器件 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "primitiveIds",
@@ -19864,22 +24452,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.get",
-		"description": "获取器件 (原理图)",
-		"parameters": [
-			{
-				"name": "primitiveIds",
-				"description": "器件的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
-			}
-		],
-		"returns": "器件图元对象，`undefined` 表示获取失败",
-		"tags": [
-			"beta"
-		],
-		"isAsync": true
-	},
-	{
-		"methodPath": "eda.sch_PrimitiveComponent3.get",
-		"description": "获取器件 (原理图)",
+		"description": "获取器件 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "primitiveIds",
@@ -19895,7 +24468,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.getAll",
-		"description": "获取所有器件 (原理图)",
+		"description": "获取所有器件 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "componentType",
@@ -19914,7 +24487,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.getAllPinsByPrimitiveId",
-		"description": "获取器件关联的所有引脚 (原理图)",
+		"description": "获取器件关联的所有引脚 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "primitiveId",
@@ -19929,7 +24502,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.getAllPrimitiveId",
-		"description": "获取所有器件的图元 ID (原理图)",
+		"description": "获取所有器件的图元 ID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "componentType",
@@ -19948,7 +24521,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.modify",
-		"description": "修改器件 (原理图)",
+		"description": "修改器件 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "primitiveId",
@@ -20020,7 +24593,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.placeComponentWithMouse",
-		"description": "使用鼠标放置器件 (原理图)",
+		"description": "使用鼠标放置器件 (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20035,7 +24608,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetFlagComponentUuid_AnalogGround",
-		"description": "设置在扩展 API 中 AnalogGround 网络标��关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 AnalogGround 网络标��关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20050,7 +24623,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetFlagComponentUuid_Ground",
-		"description": "设置在扩展 API 中 Ground 网络标识关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 Ground 网络标识关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20065,7 +24638,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetFlagComponentUuid_Power",
-		"description": "设置在扩展 API 中 Power 网络标识关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 Power 网络标识关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20080,7 +24653,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetFlagComponentUuid_ProtectGround",
-		"description": "设置在扩展 API 中 ProtectGround 网络标识关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 ProtectGround 网络标识关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20095,7 +24668,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetPortComponentUuid_BI",
-		"description": "设置在扩展 API 中 BI 网络端口关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 BI 网络端口关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20110,7 +24683,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetPortComponentUuid_IN",
-		"description": "设置在扩展 API 中 IN 网络端口关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 IN 网络端口关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20125,7 +24698,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sch_PrimitiveComponent3.setNetPortComponentUuid_OUT",
-		"description": "设置在扩展 API 中 OUT 网络端口关联的器件 UUID (原理图)",
+		"description": "设置在扩展 API 中 OUT 网络端口关联的器件 UUID (原理图) (原理图)",
 		"parameters": [
 			{
 				"name": "component",
@@ -20133,6 +24706,142 @@ edcode = [
 			}
 		],
 		"returns": "操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject",
+		"description": "原理图 & 符号 / 二进制内嵌对象图元类 (原理图)",
+		"parameters": [],
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.create",
+		"description": "创建二进制内嵌对象 (原理图)",
+		"parameters": [
+			{
+				"name": "content",
+				"description": "对象内容"
+			},
+			{
+				"name": "startX",
+				"description": "起点坐标 X"
+			},
+			{
+				"name": "startY",
+				"description": "起点坐标 Y"
+			},
+			{
+				"name": "width",
+				"description": "宽"
+			},
+			{
+				"name": "height",
+				"description": "高"
+			},
+			{
+				"name": "rotation",
+				"description": "旋转角度"
+			},
+			{
+				"name": "mirror",
+				"description": "是否镜像"
+			},
+			{
+				"name": "fileName",
+				"description": "文件名称"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.delete",
+		"description": "删除二进制内嵌对象 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "二进制内嵌对象的图元 ID 或二进制内嵌对象图元对象"
+			}
+		],
+		"returns": "删除操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.get",
+		"description": "获取二进制内嵌对象 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "二进制内嵌对象的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象，`undefined` 表示获取失败",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.get",
+		"description": "获取二进制内嵌对象 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveIds",
+				"description": "二进制内嵌对象的图元 ID，可以为字符串或字符串数组，如若为数组，则返回的也是数组"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象，空数组表示获取失败",
+		"remarks": "如若传入多个图元 ID，任意图元 ID 未匹配到不影响其它图元的返回，即可能返回少于传入的图元 ID 数量的图元对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.getAll",
+		"description": "获取所有二进制内嵌对象 (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象图元对象数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.getAllPrimitiveId",
+		"description": "获取所有二进制内嵌对象的图元 ID (原理图)",
+		"parameters": [],
+		"returns": "二进制内嵌对象的图元 ID 数组",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sch_PrimitiveObject.modify",
+		"description": "修改二进制内嵌对象 (原理图)",
+		"parameters": [
+			{
+				"name": "primitiveId",
+				"description": "图元 ID"
+			},
+			{
+				"name": "property",
+				"description": "修改参数"
+			}
+		],
+		"returns": "二进制内嵌对象图元对象，`undefined` 表示修改失败",
 		"tags": [
 			"beta"
 		],
@@ -20605,7 +25314,7 @@ edcode = [
 			},
 			{
 				"name": "alignMode",
-				"description": "对齐模式，`0` 左顶，`1` 中顶，`2` 右顶，`3` 左中，`4` 中中，`5` 右中，`6` 左底，`7` 中底，`8` 右底"
+				"description": "对齐模式"
 			}
 		],
 		"returns": "文本图元对象",
@@ -20951,12 +25660,50 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sch_SimulationEngine",
+		"description": "原理图 & 符号 / 仿真引擎类 (原理图)",
+		"parameters": [],
+		"remarks": "控制仿真引擎的对接和交互",
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.sch_SimulationEngine.pushData",
+		"description": "向仿真内核发送数据 (原理图)",
+		"parameters": [
+			{
+				"name": "eventType",
+				"description": "事件类型"
+			},
+			{
+				"name": "props",
+				"description": "数据"
+			}
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.sch_Utils",
 		"description": "原理图 & 符号 / 工具类 (原理图)",
 		"parameters": [],
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.sch_Utils.splitLines",
+		"description": "拆分多段线 (原理图)",
+		"parameters": [
+			{
+				"name": "lines",
+				"description": "多段线坐标组，每段都是连续的一组 `[x1, y1, x2, y2, x3, y3]` 所描述的线"
+			}
+		],
+		"tags": [
+			"beta"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_ClientUrl",
@@ -21006,6 +25753,47 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.sys_Dialog.createReactComponentizationDialogInterface",
+		"description": "创建 React 组件化弹出窗口接口",
+		"parameters": [
+			{
+				"name": "React",
+				"description": "扩展的 React 实例"
+			},
+			{
+				"name": "Reconciler",
+				"description": "扩展的 react-reconciler 实例"
+			}
+		],
+		"returns": "包含 Components、LC_DESIGN_COMPONENTS_NAMES、WorkerPortal 类和 VirtualRender 类的对象",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_Dialog.insertScriptToDialog",
+		"description": "向指定原生弹窗注入函数",
+		"parameters": [
+			{
+				"name": "dialogId",
+				"description": "弹窗 ID"
+			},
+			{
+				"name": "scriptFunction",
+				"description": "注入函数"
+			},
+			{
+				"name": "args",
+				"description": "传入 `scriptFunction` 的参数"
+			}
+		],
+		"tags": [
+			"internal"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_Dialog.showConfirmationMessage",
@@ -21308,7 +26096,7 @@ edcode = [
 		],
 		"remarks": "Board、Schematic、PCB 均保持唯一",
 		"tags": [
-			"public"
+			"internal"
 		],
 		"isAsync": true
 	},
@@ -21321,6 +26109,36 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.sys_FileManager.extractLibInfo",
+		"description": "提取文件内的库配置信息",
+		"parameters": [
+			{
+				"name": "data",
+				"description": "库文件"
+			}
+		],
+		"returns": "库配置信息",
+		"tags": [
+			"public"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FileManager.extractProjectInfo",
+		"description": "提取文件内的工程配置信息",
+		"parameters": [
+			{
+				"name": "data",
+				"description": "工程文件"
+			}
+		],
+		"returns": "工程配置信息",
+		"tags": [
+			"public"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_FileManager.getCbbFileByCbbUuid",
 		"description": "使用复用模块 UUID 获取复用模块文件",
 		"parameters": [
@@ -21330,7 +26148,7 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取，如若不传入，则为系统库"
 			},
 			{
 				"name": "fileName",
@@ -21419,7 +26237,7 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取，如若不传入，则为系统库"
 			}
 		],
 		"returns": "封装文件数据，`undefined` 表示数据获取失败",
@@ -21438,7 +26256,7 @@ edcode = [
 			},
 			{
 				"name": "libraryUuid",
-				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取"
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取，如若不传入，则为系统库"
 			}
 		],
 		"returns": "面板库文件数据，`undefined` 表示数据获取失败",
@@ -21492,6 +26310,25 @@ edcode = [
 			}
 		],
 		"returns": "工程文件数据，`undefined` 表示当前未打开工程或数据获取失败",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FileManager.getSymbolFileBySymbolUuid",
+		"description": "使用符号 UUID 获取符号文件",
+		"parameters": [
+			{
+				"name": "symbolUuid",
+				"description": "符号 UUID 或符号 UUID 列表"
+			},
+			{
+				"name": "libraryUuid",
+				"description": "库 UUID，可以使用 {@link LIB_LibrariesList} 内的接口获取，如若不传入，则为系统库"
+			}
+		],
+		"returns": "符号文件数据，`undefined` 表示数据获取失败",
 		"tags": [
 			"beta"
 		],
@@ -21575,6 +26412,36 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.sys_FileSystem.createDirectoryInFileSystem",
+		"description": "在文件系统内创建文件夹",
+		"parameters": [
+			{
+				"name": "folderPath",
+				"description": "文件夹路径"
+			}
+		],
+		"returns": "创建操作是否成功",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FileSystem.createObjectURL",
+		"description": "创建 ObjectURL",
+		"parameters": [
+			{
+				"name": "blob",
+				"description": "Blob 或 File 对象"
+			}
+		],
+		"returns": "ObjectURL 字符串",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_FileSystem.deleteFileInFileSystem",
@@ -21708,6 +26575,17 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sys_FileSystem.openReadFolderDialog",
+		"description": "打开读入文件夹窗口",
+		"parameters": [],
+		"returns": "读取到的所有文件及其路径信息",
+		"remarks": "本接口的浏览器支持有限，具体请参考 {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/webkitdirectory | MDN}",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_FileSystem.readFileFromFileSystem",
 		"description": "从文件系统读取文件",
 		"parameters": [
@@ -21721,6 +26599,20 @@ edcode = [
 			"beta"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FileSystem.revokeObjectURL",
+		"description": "吊销 ObjectURL",
+		"parameters": [
+			{
+				"name": "url",
+				"description": "ObjectURL 字符串"
+			}
+		],
+		"tags": [
+			"public"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_FileSystem.saveFile",
@@ -21772,7 +26664,7 @@ edcode = [
 		"methodPath": "eda.sys_FontManager",
 		"description": "系统 / 字体管理类",
 		"parameters": [],
-		"remarks": "配置嘉立创 EDA 专业版允许调用的系统字体列表",
+		"remarks": "配置嘉立创 EDA 专���版允许调用的系统字体列表",
 		"tags": [
 			"public"
 		]
@@ -21818,6 +26710,75 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sys_FormatConversion",
+		"description": "系统 / 格式转换（Chameleon）类",
+		"parameters": [],
+		"remarks": "与其它板级 EDA 软件进行交叉文件格式转换",
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.sys_FormatConversion.convertAltiumDesignerLibrariesToEasyEDAMultiFiles",
+		"description": "转换 Altium Designer 库到多个嘉立创库文件（每个器件一个文件）",
+		"parameters": [
+			{
+				"name": "file",
+				"description": "Altium Designer 库文件"
+			}
+		],
+		"returns": "多个嘉立创库文件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FormatConversion.convertAltiumDesignerLibrariesToEasyEDASingleFile",
+		"description": "转换 Altium Designer 库到单个嘉立创库文件",
+		"parameters": [
+			{
+				"name": "file",
+				"description": "Altium Designer 库文件"
+			}
+		],
+		"returns": "嘉立创库文件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FormatConversion.convertDisaLibrariesToEasyEDAMultiFiles",
+		"description": "转换 T/DISA 4001 库到多个嘉立创库文件（每个器件一个文件）",
+		"parameters": [
+			{
+				"name": "file",
+				"description": "T/DISA 4001 库文件"
+			}
+		],
+		"returns": "多个嘉立创库文件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_FormatConversion.convertDisaLibrariesToEasyEDASingleFile",
+		"description": "转换 T/DISA 4001 库到单个嘉立创库文件",
+		"parameters": [
+			{
+				"name": "file",
+				"description": "T/DISA 4001 库文件"
+			}
+		],
+		"returns": "嘉立创库文件",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_HeaderMenu",
 		"description": "系统 / 顶部菜单类",
 		"parameters": [],
@@ -21840,6 +26801,44 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sys_HeaderMenu.insertSystemHeaderMenuItem",
+		"description": "在指定位置插入系统顶部菜单项",
+		"parameters": [
+			{
+				"name": "env",
+				"description": "环境"
+			},
+			{
+				"name": "id",
+				"description": "菜单项 ID 树，将会按照数组顺序按层级匹配菜单项，并将数组最后一位作为插入的菜单项的 ID"
+			},
+			{
+				"name": "props",
+				"description": "其它参数"
+			}
+		],
+		"returns": "顶部菜单项的 ID，分隔线是否插入并不会影响操作结果的返回值，不包含 menuItems 中的子项的 ID",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_HeaderMenu.insertSystemHeaderMenus",
+		"description": "导入系统顶部菜单 **暂不开发**",
+		"parameters": [
+			{
+				"name": "headerMenus",
+				"description": "顶部菜单数据"
+			}
+		],
+		"tags": [
+			"internal",
+			"example"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.sys_HeaderMenu.removeHeaderMenus",
 		"description": "移除顶部菜单数据",
 		"parameters": [],
@@ -21847,6 +26846,29 @@ edcode = [
 			"public"
 		],
 		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_HeaderMenu.removeSystemHeaderMenuItem",
+		"description": "移除系统顶部菜单项",
+		"parameters": [
+			{
+				"name": "env",
+				"description": "环境"
+			},
+			{
+				"name": "id",
+				"description": "菜单项 ID 树，将会按照数组顺序按层级匹配菜单项，并移除数组最后一位对应的菜单项；仅传递一个元素时移除对应的一级菜单"
+			},
+			{
+				"name": "props",
+				"description": "其它参数，是否移除菜单项之前、之后的分隔线（仅在移除子菜单项时生效）"
+			}
+		],
+		"returns": "移除操作是否成功，菜单已移除但分隔线未找到也会返回 `true` 的结果",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.sys_HeaderMenu.replaceHeaderMenus",
@@ -21871,6 +26893,24 @@ edcode = [
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.sys_I18n.addLanguageChangedEventListener",
+		"description": "新增语言切换事件监听",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID，用以防止重复注册事件"
+			},
+			{
+				"name": "callFn",
+				"description": "事件触发时的回调函数"
+			}
+		],
+		"tags": [
+			"public"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_I18n.getAllSupportedLanguages",
@@ -21956,6 +26996,21 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.sys_I18n.isEventListenerAlreadyExist",
+		"description": "查询事件监听是否存在",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID"
+			}
+		],
+		"returns": "事件监听是否存在",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
 		"methodPath": "eda.sys_I18n.isLanguageSupported",
 		"description": "检查语言是否受支持",
 		"parameters": [
@@ -21965,6 +27020,21 @@ edcode = [
 			}
 		],
 		"returns": "是否受支持",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_I18n.removeEventListener",
+		"description": "移除事件监听",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "事件 ID"
+			}
+		],
+		"returns": "是否移除指定事件监听",
 		"tags": [
 			"public"
 		],
@@ -22037,6 +27107,22 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sys_IFrame.isIFrameAlreadyExist",
+		"description": "内联框架是否已存在",
+		"parameters": [
+			{
+				"name": "id",
+				"description": "内联框架 ID"
+			}
+		],
+		"returns": "是否存在",
+		"remarks": "注意：本接口仅扩展有效，在独立脚本环境内调用将始终 `throw Error`",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_IFrame.openIFrame",
 		"description": "打开内联框架窗口",
 		"parameters": [
@@ -22065,7 +27151,7 @@ edcode = [
 		"tags": [
 			"beta"
 		],
-		"isAsync": true
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_IFrame.showIFrame",
@@ -22085,7 +27171,7 @@ edcode = [
 	},
 	{
 		"methodPath": "eda.sys_LoadingAndProgressBar",
-		"description": "系统 / 加载与进���条类",
+		"description": "系统 / 加载与进度条类",
 		"parameters": [],
 		"tags": [
 			"public"
@@ -22222,6 +27308,330 @@ edcode = [
 			"public"
 		],
 		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_Math",
+		"description": "系统 / 数学计算类",
+		"parameters": [],
+		"remarks": "提供多边形几何计算方法，支持离散点坐标和 {@link TPCB_PolygonSourceArray} 多边形数据",
+		"tags": [
+			"public"
+		]
+	},
+	{
+		"methodPath": "eda.sys_Math.bboxIntersects",
+		"description": "快速判断两个 BBox 是否相交",
+		"parameters": [
+			{
+				"name": "bbox1",
+				"description": "BBox 1"
+			},
+			{
+				"name": "bbox2",
+				"description": "BBox 2"
+			}
+		],
+		"returns": "是否相交",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.calculateArea",
+		"description": "计算多边形面积",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			}
+		],
+		"returns": "面积",
+		"remarks": "使用 Shoelace 公式计算，结果为绝对值",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.calculatePerimeter",
+		"description": "计算多边形周长",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			}
+		],
+		"returns": "周长",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.contains",
+		"description": "判断 polygon1 是否完全包含 polygon2",
+		"parameters": [
+			{
+				"name": "polygon1",
+				"description": "外部多边形"
+			},
+			{
+				"name": "polygon2",
+				"description": "内部多边形"
+			}
+		],
+		"returns": "polygon1 是否完全包含 polygon2",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.containsPoint",
+		"description": "判断点是否在多边形内部",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			},
+			{
+				"name": "point",
+				"description": "待判断的点"
+			}
+		],
+		"returns": "是否在多边形内部",
+		"remarks": "使用射线法（Ray Casting）判断点是否在多边形内部，边界上的点视为不在内部",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.distanceToPoint",
+		"description": "计算点到多边形边界的最短距离",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			},
+			{
+				"name": "point",
+				"description": "待计算的点"
+			}
+		],
+		"returns": "最短距离，如点在多边形内部则返回 `0`",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.getBBox",
+		"description": "获取多边形的最小外接矩形（BBox）",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			}
+		],
+		"returns": "BBox",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.getCentroid",
+		"description": "计算多边形质心",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			}
+		],
+		"returns": "质心坐标",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.intersection",
+		"description": "计算两个多边形的交集",
+		"parameters": [
+			{
+				"name": "polygon1",
+				"description": "多边形 1"
+			},
+			{
+				"name": "polygon2",
+				"description": "多边形 2"
+			}
+		],
+		"returns": "交集结果的离散点环数组，空数组表示无交集",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.intersects",
+		"description": "判断两个多边形是否相交",
+		"parameters": [
+			{
+				"name": "polygon1",
+				"description": "多边形 1"
+			},
+			{
+				"name": "polygon2",
+				"description": "多边形 2"
+			}
+		],
+		"returns": "是否相交",
+		"remarks": "判断两个多边形的区域是否有任何重叠（包括包含、部分相交、边界接触）",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.rotate",
+		"description": "旋转多边形",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			},
+			{
+				"name": "angle",
+				"description": "旋转角度（角度制，正值为逆时针）"
+			},
+			{
+				"name": "centerX",
+				"description": "旋转中心 X 坐标，默认为质心"
+			},
+			{
+				"name": "centerY",
+				"description": "旋转中心 Y 坐标，默认为质心"
+			}
+		],
+		"returns": "旋转后的离散点数组",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.scale",
+		"description": "缩放多边形",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			},
+			{
+				"name": "scaleX",
+				"description": "X 方向缩放比例"
+			},
+			{
+				"name": "scaleY",
+				"description": "Y 方向缩放比例，默认与 scaleX 相同"
+			},
+			{
+				"name": "centerX",
+				"description": "缩放中心 X 坐标，默认为质心"
+			},
+			{
+				"name": "centerY",
+				"description": "缩放中心 Y 坐标，默认为质心"
+			}
+		],
+		"returns": "缩放后的离散点数组",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.subtract",
+		"description": "计算两个多边形的差集（polygon1 - polygon2）",
+		"parameters": [
+			{
+				"name": "polygon1",
+				"description": "被减多边形"
+			},
+			{
+				"name": "polygon2",
+				"description": "减去的多边形"
+			}
+		],
+		"returns": "差集结果的离散点环数组",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.translate",
+		"description": "平移多边形",
+		"parameters": [
+			{
+				"name": "polygon",
+				"description": "多边形"
+			},
+			{
+				"name": "dx",
+				"description": "X 方向偏移量"
+			},
+			{
+				"name": "dy",
+				"description": "Y 方向偏移量"
+			}
+		],
+		"returns": "平移后的离散点数组",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.union",
+		"description": "计算两个多边形的并集",
+		"parameters": [
+			{
+				"name": "polygon1",
+				"description": "多边形 1"
+			},
+			{
+				"name": "polygon2",
+				"description": "多边形 2"
+			}
+		],
+		"returns": "并集结果的离散点环数组，每个环为一个独立的多边形",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Math.xor",
+		"description": "计算两个多边形的对称差集（异或）",
+		"parameters": [
+			{
+				"name": "polygon1",
+				"description": "多边形 1"
+			},
+			{
+				"name": "polygon2",
+				"description": "多边形 2"
+			}
+		],
+		"returns": "对称差集结果的离散点环数组",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
 	},
 	{
 		"methodPath": "eda.sys_Message",
@@ -22860,6 +28270,24 @@ edcode = [
 		]
 	},
 	{
+		"methodPath": "eda.sys_RightClickMenu.changeMenu",
+		"description": "修改右键菜单",
+		"parameters": [
+			{
+				"name": "menuId",
+				"description": "菜单 ID"
+			},
+			{
+				"name": "menuItems",
+				"description": "菜单项，`null` 代表分隔符"
+			}
+		],
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_Setting",
 		"description": "系统 / 设置类",
 		"parameters": [],
@@ -23190,11 +28618,11 @@ edcode = [
 		"parameters": [
 			{
 				"name": "netlist1",
-				"description": "网表 1，可以为当前工程内的 PCB 和原理图的 UUID、网表的文件数据"
+				"description": "网表 1，可以为：①当前工程内的原理图、PCB 的 UUID；②其它工程的工程 UUID 和原理图、PCB UUID；③原理图、PCB 文件数据"
 			},
 			{
 				"name": "netlist2",
-				"description": "网表 2，可以为当前工程内的 PCB 和原理图的 UUID、网表的文件数据"
+				"description": "网表 2，可以为：①当前工程内的原理图、PCB 的 UUID；②其它工程的工程 UUID 和原理图、PCB UUID；③原理图、PCB 文件数据"
 			}
 		],
 		"returns": "网表对比结果",
@@ -23204,13 +28632,62 @@ edcode = [
 		"isAsync": true
 	},
 	{
+		"methodPath": "eda.sys_Tool.pcbComparison",
+		"description": "PCB 对比",
+		"parameters": [
+			{
+				"name": "pcb1",
+				"description": "PCB 1，可以为：①当前工程内的 PCB 的 UUID；②其它工程的工程 UUID 和 PCB UUID；③PCB 文件数据"
+			},
+			{
+				"name": "pcb2",
+				"description": "PCB 2，可以为：①当前工程内的 PCB 的 UUID；②其它工程的工程 UUID 和 PCB UUID；③PCB 文件数据"
+			}
+		],
+		"returns": "PCB 对比结果",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_Tool.schematicComparison",
+		"description": "原理图对比",
+		"parameters": [
+			{
+				"name": "schematic1",
+				"description": "原理图 1，可以为：①当前工程内的原理图的 UUID；②其它工程的工程 UUID 和原理图 UUID；③原理图文件数据"
+			},
+			{
+				"name": "schematic2",
+				"description": "原理图 2，可以为：①当前工程内的原理图的 UUID；②其它工程的工程 UUID 和原理图 UUID；③原理图文件数据"
+			}
+		],
+		"returns": "原理图对比结果",
+		"tags": [
+			"alpha"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_Unit",
 		"description": "系统 / 单位类",
 		"parameters": [],
-		"remarks": "控制系统数据单位与单位转换基础函数，当前系统数据单位跨度等效为 `mil`",
+		"remarks": "控制系统数据单位与单位转换基础函数，当前原理图数据单位跨度等效为 `10mil` 或 `0.01inch`，PCB 数据单位跨度等效为 `mil`",
 		"tags": [
 			"public"
 		]
+	},
+	{
+		"methodPath": "eda.sys_Unit.getFrontendDataUnit",
+		"description": "获取 EDA 前端数据单位跨度",
+		"parameters": [],
+		"returns": "单位",
+		"remarks": "此处指的是前端用户可以切换的单位，需要同时兼容原理图和 PCB 画布",
+		"tags": [
+			"beta"
+		],
+		"isAsync": true
 	},
 	{
 		"methodPath": "eda.sys_Unit.getSystemDataUnit",
@@ -23495,6 +28972,42 @@ edcode = [
 		"isAsync": false
 	},
 	{
+		"methodPath": "eda.sys_Window.getViewportSize",
+		"description": "获取页面当前视口大小",
+		"parameters": [],
+		"returns": "视口宽高（单位：像素）",
+		"remarks": "ADD since EDA v3.2.162",
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Window.hideStartPageQuickStartItems",
+		"description": "隐藏开始页快速启动选项",
+		"parameters": [
+			{
+				"name": "items",
+				"description": "欲隐藏的快速启动项数组"
+			}
+		],
+		"returns": "是否全部隐藏成功（若存在未知项或已隐藏的项则返回 `false`）",
+		"tags": [
+			"public"
+		],
+		"isAsync": true
+	},
+	{
+		"methodPath": "eda.sys_Window.hideStartPageSupportFloatBarItems",
+		"description": "隐藏开始页支持信息悬浮组件",
+		"parameters": [],
+		"returns": "是否隐藏成功",
+		"tags": [
+			"public"
+		],
+		"isAsync": true
+	},
+	{
 		"methodPath": "eda.sys_Window.open",
 		"description": "打开资源窗口",
 		"parameters": [
@@ -23538,6 +29051,34 @@ edcode = [
 			{
 				"name": "removableObject",
 				"description": "窗口事件监听可移除对象"
+			}
+		],
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Window.urlPushState",
+		"description": "追加新的 URL 历史记录栈信息",
+		"parameters": [
+			{
+				"name": "url",
+				"description": "URL"
+			}
+		],
+		"tags": [
+			"public"
+		],
+		"isAsync": false
+	},
+	{
+		"methodPath": "eda.sys_Window.urlReplaceState",
+		"description": "修改当前的 URL 历史记录栈信息",
+		"parameters": [
+			{
+				"name": "url",
+				"description": "URL"
 			}
 		],
 		"tags": [
