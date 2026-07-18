@@ -925,7 +925,7 @@ define(
 									t.selectedNode &&
 									(a.removeCssClass(t.selectedNode, 'ace_selected'),
 									i.removeAttribute('aria-activedescendant'),
-									r.removeAttribute('aria-selected'),
+									r && r.removeAttribute('aria-selected'),
 									t.selectedNode.removeAttribute('id')),
 									(t.selectedNode = r);
 								if (r) {
