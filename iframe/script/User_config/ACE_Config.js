@@ -1755,7 +1755,7 @@ async function _traceWithProgress(methodPath) {
 	const info = _findMethodInfo(methodPath);
 	if (!info) return [];
 
-	_toast(`[1/3] Analyzing parameter dependencies of ${info.description || methodPath}...`, 'info', 2);
+	_toast(I18N.format('tcAnalyzingDeps', info.description || methodPath), 'info', 2);
 	await new Promise((r) => setTimeout(r, 300));
 
 	const rawDeps = _traceDependencies(methodPath);
@@ -1770,11 +1770,11 @@ async function _traceWithProgress(methodPath) {
 	}
 
 	if (uniqueDeps.length === 0) {
-		_toast(`[2/3] ${info.description} has no external dependencies, generating directly`, 'info', 2);
+		_toast(I18N.format('tcNoDeps', info.description), 'info', 2);
 	} else {
 		for (let i = 0; i < uniqueDeps.length; i++) {
 			const dep = uniqueDeps[i];
-			_toast(`[2/3] Tracing dependency (${i + 1}/${uniqueDeps.length}): ${dep.methodPath} — ${dep.description || ''}`, 'info', 2);
+			_toast(I18N.format('tcTracingDep', i + 1, uniqueDeps.length, dep.methodPath, dep.description || ''), 'info', 2);
 			await new Promise((r) => setTimeout(r, 400));
 		}
 	}
@@ -1862,11 +1862,11 @@ async function generateTestCase(editor, methodPath) {
 	// 第二阶段：构建 prompt 并调用 AI
 	const prompts = _buildTestCasePrompt(methodPath, dependencyChain);
 	if (!prompts) {
-		_toast(`${methodPath} not found in the method library`, 'error', 2);
+		_toast(I18N.format('tcMethodNotFound', methodPath), 'error', 2);
 		return;
 	}
 
-	_toast('[3/3] Generating code...', 'info', 3);
+	_toast(I18N.t('tcGenerating'), 'info', 3);
 
 	const messages = [
 		{ role: 'system', content: prompts.systemPrompt },
@@ -1901,15 +1901,25 @@ async function generateTestCase(editor, methodPath) {
 			.trim();
 
 		if (code) {
-			editor.setValue(code, -1);
-			editor.clearSelection();
-			_toast('Test case generated', 'success', 2);
+			let genMode = 'replace';
+			try { genMode = await eda.sys_Storage.getExtensionUserConfig('ai_testcase_mode') || 'replace'; } catch(e) {}
+			if (genMode === 'insert') {
+				const cursor = editor.getCursorPosition();
+				const marker = '// ---- ' + I18N.t('testCaseInsertComment') + ' ----';
+				editor.session.insert({ row: cursor.row + 1, column: 0 }, marker + '\n' + code + '\n');
+				editor.moveCursorTo(cursor.row + 2, 0);
+				editor.clearSelection();
+			} else {
+				editor.setValue(code, -1);
+				editor.clearSelection();
+			}
+			_toast(I18N.t('tcGenerated'), 'success', 2);
 		} else {
 			throw new Error('AI returned empty content');
 		}
 	} catch (error) {
 		console.error('Failed to generate test case:', error);
-		_toast(`Generation failed: ${error.message}`, 'error', 3);
+		_toast(I18N.format('tcGenFailed', error.message), 'error', 3);
 	}
 }
 

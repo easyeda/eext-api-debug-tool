@@ -634,20 +634,37 @@ if (settingsBtn) {
 
 // 快捷键绑定 - 使用配置系统
 (async function initKeyboardShortcuts() {
-	const shortcuts = await loadShortcuts();
+	let shortcuts = await loadShortcuts();
 	const platform = getPlatform();
 
 	editor.commands.removeCommand('gotoline');
 
-	const formatKey = shortcuts.format[platform].replace(/\+/g, '-');
-	editor.commands.addCommand({
-		name: 'formatCode',
-		bindKey: { win: shortcuts.format.win.replace(/\+/g, '-'), mac: shortcuts.format.mac.replace(/\+/g, '-') },
-		exec: function(editor) {
-			if (window.keyboardShortcutsModalOpen) return;
-			formatEditorCode(editor);
-		},
-	});
+	function registerShortcutCommands() {
+		editor.commands.removeCommand('formatCode');
+		editor.commands.addCommand({
+			name: 'formatCode',
+			bindKey: { win: shortcuts.format.win.replace(/\+/g, '-'), mac: shortcuts.format.mac.replace(/\+/g, '-') },
+			exec: function(editor) {
+				if (window.keyboardShortcutsModalOpen) return;
+				formatEditorCode(editor);
+			},
+		});
+		// 查找/替换：重新绑定 Ace 内置命令的键，保留原 exec（使自定义键生效）
+		[['find', shortcuts.find], ['replace', shortcuts.replace]].forEach(function(pair) {
+			var cmdName = pair[0], cfg = pair[1];
+			var orig = editor.commands.commands[cmdName];
+			if (!orig || typeof orig.exec !== 'function') return;
+			var origExec = orig.exec;
+			editor.commands.removeCommand(cmdName);
+			editor.commands.addCommand({
+				name: cmdName,
+				bindKey: { win: cfg.win.replace(/\+/g, '-'), mac: cfg.mac.replace(/\+/g, '-') },
+				exec: origExec,
+				readOnly: orig.readOnly,
+			});
+		});
+	}
+	registerShortcutCommands();
 
 	document.addEventListener('keydown', function(e) {
 		if (window.keyboardShortcutsModalOpen) return;
@@ -680,4 +697,10 @@ if (settingsBtn) {
 			ExtStore_SavePlugin(editor);
 		}
 	});
+
+	// 设置面板保存/重置快捷键后调用，使修改立即生效（无需重载 iframe）
+	window.reloadKeyboardShortcuts = async function() {
+		shortcuts = await loadShortcuts();
+		registerShortcutCommands();
+	};
 })();

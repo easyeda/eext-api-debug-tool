@@ -2,6 +2,10 @@
  * File Tree UI - 文件树界面管理（支持多级目录和多选）
  */
 
+// 文件夹图标：取自 EDA 的 icon-eda-project-fill（16×16 金色文件夹）
+const FOLDER_ICON_SVG =
+	'<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16"><path fill="#F9F2B1" d="M15,4V3c0-0.552-0.448-1-1-1H6.7L5.993,1.293C5.805,1.105,5.551,1,5.286,1H4.3H2C1.45,1,1,1.45,1,2v13c0,0.55,0.45,1,1,1h13c0.55,0,1-0.45,1-1V5C16,4.448,15.552,4,15,4z"/><path fill="#D6BF5E" d="M15,4V3c0-0.552-0.448-1-1-1H6.7L5.993,1.293C5.805,1.105,5.551,1,5.286,1H4.3H2C1.45,1,1,1.45,1,2v13c0,0.55,0.45,1,1,1h13c0.55,0,1-0.45,1-1V5C16,4.448,15.552,4,15,4z M14.01,2.99V4H8.7L7.69,2.99H14.01z M15,15H2V2h3.3l0.99,0.99l1.09,1.09l0.617,0.617C8.185,4.885,8.439,4.99,8.704,4.99H9.69h4.32H15V15z"/></svg>';
+
 class FileTreeUI {
 	constructor(containerId, editor) {
 		this.container = document.getElementById(containerId);
@@ -73,7 +77,7 @@ class FileTreeUI {
 				html += `
 				<div class="file-tree-folder ${isSelected ? 'selected' : ''}" data-path="${this.escapeHtml(folderPath)}" data-type="folder" style="padding-left: ${indent}px;">
 					<span class="folder-toggle">${isExpanded ? '▼' : '▶'}</span>
-					<span class="folder-icon">📁</span>
+					<span class="folder-icon">${FOLDER_ICON_SVG}</span>
 					<span class="folder-name">${this.escapeHtml(folderName)}</span>
 				</div>
 			`;

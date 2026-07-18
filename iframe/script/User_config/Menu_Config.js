@@ -749,41 +749,44 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			var shortcutsData = null;
 
+			function renderTable() {
+				tbody.innerHTML = '';
+				if (!shortcutsData) {
+					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">' + I18N.t('loadShortcutsFailed') + '</td></tr>';
+					return;
+				}
+				Object.entries(shortcutsData).forEach(function(entry) {
+					var key = entry[0];
+					var cfg = entry[1];
+					var currentShortcut = cfg[platform] || '';
+
+					var tr = document.createElement('tr');
+					tr.setAttribute('data-key', key);
+
+					var tdDesc = document.createElement('td');
+					tdDesc.textContent = cfg.description;
+
+					var tdKey = document.createElement('td');
+					tdKey.textContent = currentShortcut;
+
+					tr.appendChild(tdDesc);
+					tr.appendChild(tdKey);
+
+					tr.addEventListener('click', function() {
+						_showShortcutEditDialog(cfg.description, currentShortcut, platform, function(newShortcut) {
+							shortcutsData[key][platform] = newShortcut;
+							renderTable();
+						});
+					});
+
+					tbody.appendChild(tr);
+				});
+			}
 			async function renderShortcuts() {
 				tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">' + I18N.t('loading') + '</td></tr>';
 				try {
 					shortcutsData = typeof loadShortcuts === 'function' ? await loadShortcuts() : null;
-					if (!shortcutsData) {
-						tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-text-secondary);font-size:12px;padding:24px;">' + I18N.t('loadShortcutsFailed') + '</td></tr>';
-						return;
-					}
-					tbody.innerHTML = '';
-					Object.entries(shortcutsData).forEach(function(entry) {
-						var key = entry[0];
-						var cfg = entry[1];
-						var currentShortcut = cfg[platform] || '';
-
-						var tr = document.createElement('tr');
-						tr.setAttribute('data-key', key);
-
-						var tdDesc = document.createElement('td');
-						tdDesc.textContent = cfg.description;
-
-						var tdKey = document.createElement('td');
-						tdKey.textContent = currentShortcut;
-
-						tr.appendChild(tdDesc);
-						tr.appendChild(tdKey);
-
-						tr.addEventListener('click', function() {
-							_showShortcutEditDialog(cfg.description, currentShortcut, platform, function(newShortcut) {
-								shortcutsData[key][platform] = newShortcut;
-								renderShortcuts();
-							});
-						});
-
-						tbody.appendChild(tr);
-					});
+					renderTable();
 				} catch(e) {
 					tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--eext-error);font-size:12px;padding:24px;">' + I18N.format('loadFailedMsg', e.message) + '</td></tr>';
 				}
@@ -814,6 +817,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				await renderShortcuts();
 				var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
 				if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(I18N.t('shortcutsResetDone'), 'success', 1);
+				if (typeof window.reloadKeyboardShortcuts === 'function') await window.reloadKeyboardShortcuts();
 			};
 			btnRow.appendChild(resetBtn);
 
@@ -826,6 +830,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 					var eda = window.eda || (typeof eda !== 'undefined' ? eda : null);
 					if (success) {
 						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(I18N.t('shortcutsSaved'), 'success', 3);
+						if (typeof window.reloadKeyboardShortcuts === 'function') await window.reloadKeyboardShortcuts();
 					} else {
 						if (eda && eda.sys_Message) eda.sys_Message.showToastMessage(I18N.t('saveFailed'), 'error', 2);
 					}
@@ -1096,11 +1101,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			listWrap.appendChild(table);
 			contentPane.appendChild(listWrap);
 			async function loadCompleters() {
-				tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>Loading...</td></tr>';
+				tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>' + I18N.t('loading') + '</td></tr>';
 				try {
 					const items = await new Promise(function(r) { try { var x = indexedDB.open('UserCompleterStore', 1); x.onsuccess = function() { var t = x.result.transaction('completions','readonly'); var g = t.objectStore('completions').getAll(); g.onsuccess = function() { r(g.result || []); }; g.onerror = function() { r([]); }; }; x.onerror = function() { r([]); }; } catch(e) { r([]); } });
 					if (!items || items.length === 0) {
-						tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>No custom completer items.</td></tr>';
+						tbody.innerHTML = '<tr><td colspan=\'4\' style=\'padding:24px;text-align:center;color:var(--eext-text-secondary);font-size:12px;\'>' + I18N.t('noCustomCompleters') + '</td></tr>';
 						return;
 					}
 					tbody.innerHTML = '';
@@ -1134,6 +1139,30 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				modeRow.appendChild(lb);
 			});
 			contentPane.appendChild(modeRow);
+
+			// 测试用例生成行为
+			let currentGenMode;
+			try { currentGenMode = eda.sys_Storage.getExtensionUserConfig("ai_testcase_mode") || "replace"; } catch (e) { currentGenMode = "replace"; }
+			const genRow = document.createElement("div");
+			genRow.style.cssText = "display:flex;align-items:center;gap:16px;margin-top:12px;";
+			const genLabel = document.createElement("span");
+			genLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			genLabel.textContent = I18N.t("testCaseGenMode");
+			genRow.appendChild(genLabel);
+			[["replace", "testCaseReplace"], ["insert", "testCaseInsert"]].forEach(function(pair) {
+				const value = pair[0], labelKey = pair[1];
+				const lb = document.createElement("label");
+				lb.style.cssText = "display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);";
+				const r = document.createElement("input");
+				r.type = "radio"; r.name = "ai-testcase-mode"; r.value = value;
+				r.checked = (currentGenMode === value);
+				r.style.cssText = "margin:0;accent-color:var(--eext-brand);";
+				r.onchange = async function() { if (this.checked) { try { await eda.sys_Storage.setExtensionUserConfig("ai_testcase_mode", value); } catch(e) {} } };
+				lb.appendChild(r);
+				lb.appendChild(document.createTextNode(I18N.t(labelKey)));
+				genRow.appendChild(lb);
+			});
+			contentPane.appendChild(genRow);
 		}
 	}
 
@@ -1260,6 +1289,10 @@ function _showShortcutEditDialog(name, currentShortcut, platform, onSave) {
 	keyInput.addEventListener('keydown', function(e) {
 		e.preventDefault();
 		e.stopPropagation();
+		if (e.key === ' ') {
+			eda.sys_Message.showToastMessage(I18N.t('spaceShortcutUnsupported'), 'warn', 2);
+			return;
+		}
 		var keys = [];
 		if (e.ctrlKey) keys.push('Ctrl');
 		if (e.shiftKey) keys.push('Shift');
@@ -1355,21 +1388,21 @@ function _buildCompleterRow(rec, editor, reloadFn, rowIndex) {
 	const tdCaption = document.createElement("td");
 	tdCaption.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdCaption.textContent = rec.caption || I18N.t("unnamed");
-	bindTruncateTitle(tdCaption, "Name: " + (rec.caption || I18N.t("unnamed")));
+	bindTruncateTitle(tdCaption, I18N.t("namePrefix") + (rec.caption || I18N.t("unnamed")));
 	tr.appendChild(tdCaption);
 
 	/* 描述单元格 */
 	const tdDesc = document.createElement("td");
 	tdDesc.style.cssText = "padding:8px 12px;color:var(--eext-text-secondary);border-bottom:1px solid var(--eext-border);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdDesc.textContent = rec.description || "—";
-	bindTruncateTitle(tdDesc, rec.description ? "Description: " + rec.description : "");
+	bindTruncateTitle(tdDesc, rec.description ? I18N.t("descriptionPrefix") + rec.description : "");
 	tr.appendChild(tdDesc);
 
 	/* 补全值单元格 */
 	const tdValue = document.createElement("td");
 	tdValue.style.cssText = "padding:8px 12px;color:var(--eext-text-primary);border-bottom:1px solid var(--eext-border);font-family:Consolas,Monaco,'Courier New',monospace;font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
 	tdValue.textContent = rec.value || "";
-	bindTruncateTitle(tdValue, "Value: " + (rec.value || ""));
+	bindTruncateTitle(tdValue, I18N.t("valuePrefix") + (rec.value || ""));
 	tr.appendChild(tdValue);
 
 	/* 操作单元格 */
@@ -1452,7 +1485,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 	if (old) old.remove();
 
 	const isAdd = !rec || !rec.id;
-	const modeTitle = isAdd ? "New Completer Item" : "Edit Completer Item";
+	const modeTitle = isAdd ? I18N.t('newCompleterItem') : I18N.t('editCompleterItem');
 
 	const overlay = document.createElement("div");
 	overlay.id = "eext-cs-edit-overlay";
@@ -1503,11 +1536,11 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 		return input;
 	}
 
-	const captionInput = buildField("Name", I18N.t("enterName"), "eext-cs-edit-caption", "text");
-	const valueInput = buildField("Value", I18N.t("enterValue"), "eext-cs-edit-value", "text");
+	const captionInput = buildField(I18N.t("completerName"), I18N.t("enterName"), "eext-cs-edit-caption", "text");
+	const valueInput = buildField(I18N.t("completerValue"), I18N.t("enterValue"), "eext-cs-edit-value", "text");
 	valueInput.style.fontFamily = "Consolas,Monaco,'Courier New',monospace";
 	valueInput.style.fontSize = "12px";
-	const descInput = buildField("Description", I18N.t("enterDesc"), "eext-cs-edit-desc", "text");
+	const descInput = buildField(I18N.t("completerDesc"), I18N.t("enterDesc"), "eext-cs-edit-desc", "text");
 
 	captionInput.value = (rec && rec.caption) || "";
 	valueInput.value = (rec && rec.value) || "";
@@ -1519,14 +1552,14 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 	const footer = document.createElement("div");
 	footer.style.cssText = "padding:12px 20px;display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--eext-border);background:var(--eext-bg-item);";
 	const cancelBtn = document.createElement("button");
-	cancelBtn.textContent = "Cancel";
+	cancelBtn.textContent = I18N.t("cancel");
 	cancelBtn.style.cssText = "padding:8px 18px;border:1px solid var(--eext-border);border-radius:4px;background:transparent;color:var(--eext-text-primary);font-size:12px;cursor:pointer;transition:background 0.15s;";
 	cancelBtn.onmouseenter = function() { cancelBtn.style.background = "var(--eext-hover-bg)"; };
 	cancelBtn.onmouseleave = function() { cancelBtn.style.background = "transparent"; };
 	cancelBtn.onclick = function() { closeDialog(); };
 	footer.appendChild(cancelBtn);
 	const saveBtn = document.createElement("button");
-	saveBtn.textContent = "Save";
+	saveBtn.textContent = I18N.t("save");
 	saveBtn.style.cssText = "padding:8px 20px;border:none;border-radius:4px;background:var(--eext-brand);color:#fff;font-size:12px;cursor:pointer;font-weight:500;transition:opacity 0.15s;";
 	saveBtn.onmouseenter = function() { saveBtn.style.opacity = "0.85"; };
 	saveBtn.onmouseleave = function() { saveBtn.style.opacity = "1"; };
@@ -1588,7 +1621,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 				});
 				if (dupCheck) {
 					saveBtn.disabled = false;
-					saveBtn.textContent = "Save";
+					saveBtn.textContent = I18N.t("save");
 					cancelBtn.disabled = false;
 					captionInput.focus();
 					eda.sys_Message.showToastMessage(I18N.format("nameAlreadyExists", newCaption), "error", 1);
@@ -1656,7 +1689,7 @@ function _showCompleterEditDialog(rec, editor, reloadFn) {
 			eda.sys_Message.showToastMessage(I18N.format(isAdd ? "addedMsg" : "updatedMsg", newCaption), "success", 1);
 		} catch(err) {
 			saveBtn.disabled = false;
-			saveBtn.textContent = "Save";
+			saveBtn.textContent = I18N.t("save");
 			cancelBtn.disabled = false;
 			eda.sys_Message.showToastMessage(I18N.format(isAdd ? "addFailedMsg" : "updateFailedMsg", err.message), "error", 1);
 		}
