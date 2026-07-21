@@ -1785,7 +1785,7 @@ async function _traceWithProgress(methodPath) {
 /**
  * 构建发送给 AI 的完整 prompt（仅包含目标方法 + 已追溯的依赖链）
  */
-function _buildTestCasePrompt(methodPath, dependencyChain) {
+function _buildTestCasePrompt(methodPath, dependencyChain, commentsMode) {
 	const targetInfo = _findMethodInfo(methodPath);
 	if (!targetInfo) return null;
 
@@ -1800,14 +1800,9 @@ function _buildTestCasePrompt(methodPath, dependencyChain) {
 		});
 	}
 
-	const systemPrompt = `You are a test case generator for the EDA (EasyEDA Pro) extension API.
-
-Your task is to generate **directly runnable JavaScript test case code** for the specified API method.
-
-## Rules
-
-1. **Output format**: Output only a single block of pure JavaScript code. Do not include markdown code fences (no \`\`\`), and do not include any explanatory text.
-2. **JSDoc header**: The top of the code must contain a JSDoc comment block in the following format:
+	const withComments = commentsMode !== 'without';
+	const commentRule = withComments
+		? `2. **JSDoc header**: The top of the code must contain a JSDoc comment block in the following format:
    /**
     * <full method path>()
     * Method case: <method description>
@@ -1816,7 +1811,16 @@ Your task is to generate **directly runnable JavaScript test case code** for the
     * ... (if there are no parameters, write "This method has no input parameters and can be called directly")
     * @returns <return value description>
     * @remarks: <remarks; if none, write "None">
-    */
+    */`
+		: `2. **No comments**: Do not include any comments in the generated code (no JSDoc header, no inline comments). Output pure code only.`;
+	const systemPrompt = `You are a test case generator for the EDA (EasyEDA Pro) extension API.
+
+Your task is to generate **directly runnable JavaScript test case code** for the specified API method.
+
+## Rules
+
+1. **Output format**: Output only a single block of pure JavaScript code. Do not include markdown code fences (no \`\`\`), and do not include any explanatory text.
+${commentRule}
 3. **Dependency tracing**: The dependency methods provided below must be called in order first, and their return values passed as arguments to the target method.
 4. **Variable naming**: Use meaningful variable names for each API call result (e.g. libraryList, searchResult), and add a console.log after each call to print the result.
 5. **All API calls are asynchronous**: Use await for calls; code runs in top-level scope (no need to wrap in an async function).
@@ -1826,6 +1830,7 @@ Your task is to generate **directly runnable JavaScript test case code** for the
 	const userPrompt = `## Target method
 ${targetDoc}
 ${depsDocs}
+是否带注释: ${withComments ? '是' : '否'}
 Please generate test case code for ${methodPath}.`;
 
 	return { systemPrompt, userPrompt };
@@ -1860,7 +1865,9 @@ async function generateTestCase(editor, methodPath) {
 	const dependencyChain = await _traceWithProgress(methodPath);
 
 	// 第二阶段：构建 prompt 并调用 AI
-	const prompts = _buildTestCasePrompt(methodPath, dependencyChain);
+	let commentsMode = 'with';
+	try { commentsMode = await eda.sys_Storage.getExtensionUserConfig('ai_testcase_comments') || 'with'; } catch(e) {}
+	const prompts = _buildTestCasePrompt(methodPath, dependencyChain, commentsMode);
 	if (!prompts) {
 		_toast(I18N.format('tcMethodNotFound', methodPath), 'error', 2);
 		return;

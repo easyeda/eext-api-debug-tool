@@ -2,6 +2,8 @@
 	"About": "About",
 	"EasyEDA extension SDK v": "EasyEDA extension SDK v${1}",
 	"有未保存的文件，确定关闭窗口？": "There are unsaved files. Are you sure you want to close the window?",
+	"有未保存的设置，确定关闭窗口？": "There are unsaved settings. Are you sure you want to close the window?",
+	"有未保存的文件和设置，确定关闭窗口？": "There are unsaved files and settings. Are you sure you want to close the window?",
 	"关闭确认": "Close Confirmation",
 	"确定": "OK",
 	"取消": "Cancel",

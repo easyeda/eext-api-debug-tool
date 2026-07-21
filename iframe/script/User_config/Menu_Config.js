@@ -358,6 +358,174 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	let colors = C();
 	let activeMenu = 'general';
 
+	// ── Settings dirty-tracking state ──
+	var _settingsSnapshot = null;
+
+	function _captureSettingsSnapshot() {
+		var cs = {};
+		try { cs.theme = ThemeEngine.getCurrent(); } catch(e) { cs.theme = 'light'; }
+		var wEl = document.getElementById('ui-width-input'), hEl = document.getElementById('ui-height-input');
+		cs.ui_width = (wEl && wEl.value) ? wEl.value.trim() : String(window.innerWidth);
+		cs.ui_height = (hEl && hEl.value) ? hEl.value.trim() : String(window.innerHeight);
+		try { var v = eda.sys_Storage.getExtensionUserConfig('close_panel_on_render'); cs.close_panel_on_render = (v === true || v === 'true'); } catch(e) { cs.close_panel_on_render = true; }
+		try { var v = eda.sys_Storage.getExtensionUserConfig('builtin_separate_render'); cs.builtin_separate_render = (v === true || v === 'true'); } catch(e) { cs.builtin_separate_render = false; }
+		try { var v = eda.sys_Storage.getExtensionUserConfig('completion_with_comment'); cs.completion_with_comment = (v === true || v === 'true'); } catch(e) { cs.completion_with_comment = false; }
+		try { var v = eda.sys_Storage.getExtensionUserConfig('completion_random_var'); cs.completion_random_var = (v === true || v === 'true'); } catch(e) { cs.completion_random_var = false; }
+		try { var v = eda.sys_Storage.getExtensionUserConfig('completion_auto_await'); cs.completion_auto_await = (v === true || v === 'true'); } catch(e) { cs.completion_auto_await = false; }
+		try { var v = eda.sys_Storage.getExtensionUserConfig('new_file_with_comment'); cs.new_file_with_comment = (v === null || v === undefined) ? true : (v === true || v === 'true'); } catch(e) { cs.new_file_with_comment = true; }
+		try { cs.ai_panel_mode = eda.sys_Storage.getExtensionUserConfig('ai_panel_mode') || 'inline'; } catch(e) { cs.ai_panel_mode = 'inline'; }
+		try { cs.ai_testcase_mode = eda.sys_Storage.getExtensionUserConfig('ai_testcase_mode') || 'replace'; } catch(e) { cs.ai_testcase_mode = 'replace'; }
+		try { cs.ai_testcase_comments = eda.sys_Storage.getExtensionUserConfig('ai_testcase_comments') || 'with'; } catch(e) { cs.ai_testcase_comments = 'with'; }
+		cs.custom_colors = {};
+		['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'].forEach(function(k) {
+			cs.custom_colors[k] = _readCSSColor('--eext-' + k);
+		});
+		return cs;
+	}
+
+	function _getCurrentSettingsState() {
+		var cs = {};
+		try { cs.theme = ThemeEngine.getCurrent(); } catch(e) { cs.theme = ''; }
+		var wEl = document.getElementById('ui-width-input'), hEl = document.getElementById('ui-height-input');
+		cs.ui_width = (wEl && wEl.value) ? wEl.value.trim() : String(window.innerWidth);
+		cs.ui_height = (hEl && hEl.value) ? hEl.value.trim() : String(window.innerHeight);
+		// 从 DOM 读取，DOM 不存在时 fallback 到 storage，保证和 _captureSettingsSnapshot 一致
+		var cb = document.getElementById('close-panel-on-render-checkbox');
+		cs.close_panel_on_render = cb ? cb.checked : _readStorageBool('close_panel_on_render', true);
+		cb = document.getElementById('builtin-separate-render-checkbox');
+		cs.builtin_separate_render = cb ? cb.checked : _readStorageBool('builtin_separate_render', false);
+		cb = document.getElementById('completion-checkbox');
+		cs.completion_with_comment = cb ? cb.checked : _readStorageBool('completion_with_comment', false);
+		cb = document.getElementById('completion-random-var-checkbox');
+		cs.completion_random_var = cb ? cb.checked : _readStorageBool('completion_random_var', false);
+		cb = document.getElementById('completion-auto-await-checkbox');
+		cs.completion_auto_await = cb ? cb.checked : _readStorageBool('completion_auto_await', false);
+		cb = document.getElementById('new-file-comment-checkbox');
+		cs.new_file_with_comment = cb ? cb.checked : _readStorageBoolDefault('new_file_with_comment', true);
+		var modeRadio = document.querySelector('input[name="ai-panel-mode"]:checked');
+		cs.ai_panel_mode = modeRadio ? modeRadio.value : _readStorageStr('ai_panel_mode', 'inline');
+		var genRadio = document.querySelector('input[name="ai-testcase-mode"]:checked');
+		cs.ai_testcase_mode = genRadio ? genRadio.value : _readStorageStr('ai_testcase_mode', 'replace');
+		var commentsRadio = document.querySelector('input[name="ai-testcase-comments"]:checked');
+		cs.ai_testcase_comments = commentsRadio ? commentsRadio.value : _readStorageStr('ai_testcase_comments', 'with');
+		cs.custom_colors = {};
+		['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'].forEach(function(k) {
+			cs.custom_colors[k] = _readCSSColor('--eext-' + k);
+		});
+		return cs;
+	}
+
+	function _readStorageBool(key, defaultVal) {
+		try { var v = eda.sys_Storage.getExtensionUserConfig(key); return (v === true || v === 'true'); } catch(e) { return defaultVal; }
+	}
+	function _readStorageBoolDefault(key, defaultVal) {
+		try { var v = eda.sys_Storage.getExtensionUserConfig(key); return (v === null || v === undefined) ? defaultVal : (v === true || v === 'true'); } catch(e) { return defaultVal; }
+	}
+	function _readStorageStr(key, defaultVal) {
+		try { return eda.sys_Storage.getExtensionUserConfig(key) || defaultVal; } catch(e) { return defaultVal; }
+	}
+
+	function _isSettingsDirty() {
+		if (!_settingsSnapshot) return false;
+		var curr = _getCurrentSettingsState();
+		var simpleKeys = ['theme','ui_width','ui_height','close_panel_on_render','builtin_separate_render',
+			'completion_with_comment','completion_random_var','completion_auto_await','new_file_with_comment',
+			'ai_panel_mode','ai_testcase_mode','ai_testcase_comments'];
+		for (var i = 0; i < simpleKeys.length; i++) {
+			if (String(curr[simpleKeys[i]]) !== String(_settingsSnapshot[simpleKeys[i]])) return true;
+		}
+		var colorKeys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
+		for (var j = 0; j < colorKeys.length; j++) {
+			if (curr.custom_colors[colorKeys[j]] !== _settingsSnapshot.custom_colors[colorKeys[j]]) return true;
+		}
+		return false;
+	}
+
+	function _markSettingsDirty() {
+		try { eda.sys_Storage.setExtensionUserConfig('__settings_dirty', 'true'); } catch(e) {}
+	}
+
+	function _clearSettingsDirty() {
+		try { eda.sys_Storage.setExtensionUserConfig('__settings_dirty', 'false'); } catch(e) {}
+	}
+
+	async function _saveAllSettings() {
+		var curr = _getCurrentSettingsState();
+		if (curr.theme !== _settingsSnapshot.theme) {
+			try { ThemeEngine.apply(curr.theme); } catch(e) {}
+		}
+		try { await eda.sys_Storage.setExtensionUserConfig('UI_width', curr.ui_width); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('UI_height', curr.ui_height); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('close_panel_on_render', curr.close_panel_on_render); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('builtin_separate_render', curr.builtin_separate_render); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('completion_with_comment', curr.completion_with_comment); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('completion_random_var', curr.completion_random_var); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('completion_auto_await', curr.completion_auto_await); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('new_file_with_comment', curr.new_file_with_comment); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('ai_panel_mode', curr.ai_panel_mode); } catch(e) {}
+		if (curr.ai_panel_mode !== _settingsSnapshot.ai_panel_mode) {
+			try { await applyAiPanelMode(curr.ai_panel_mode); } catch(e) {}
+		}
+		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_mode', curr.ai_testcase_mode); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_comments', curr.ai_testcase_comments); } catch(e) {}
+		var colorChanged = false;
+		var colorKeys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
+		for (var i = 0; i < colorKeys.length; i++) {
+			if (curr.custom_colors[colorKeys[i]] !== _settingsSnapshot.custom_colors[colorKeys[i]]) { colorChanged = true; break; }
+		}
+		if (colorChanged) {
+			var nv = {};
+			colorKeys.forEach(function(k) { nv[k] = curr.custom_colors[k]; });
+			var cv = ThemeEngine.getCurrentVars();
+			try { await ThemeEngine.saveCustom('Custom', Object.assign({}, cv, nv), I18N.t('custom')); } catch(e) {}
+		}
+		_clearSettingsDirty();
+		_settingsSnapshot = curr;
+	}
+
+	async function _revertAndClose(overlay) {
+		if (!_settingsSnapshot) { overlay.remove(); return; }
+		try {
+			if (ThemeEngine.getCurrent() !== _settingsSnapshot.theme) {
+				ThemeEngine.apply(_settingsSnapshot.theme);
+			}
+		} catch(e) {}
+		['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'].forEach(function(k) {
+			if (_settingsSnapshot.custom_colors[k]) {
+				document.documentElement.style.setProperty('--eext-' + k, _settingsSnapshot.custom_colors[k]);
+			}
+		});
+		if (_settingsSnapshot.ai_panel_mode) {
+			try { await applyAiPanelMode(_settingsSnapshot.ai_panel_mode); } catch(e) {}
+		}
+		_clearSettingsDirty();
+		overlay.remove();
+	}
+
+	async function _confirmClose(overlay) {
+		var result = await Swal.fire({
+			title: I18N.t('unsavedSettingsTitle'),
+			html: I18N.t('unsavedSettingsMsg'),
+			icon: 'warning',
+			showCancelButton: true,
+			confirmButtonText: I18N.t('ok'),
+			cancelButtonText: I18N.t('cancel'),
+		});
+		if (result.isConfirmed) {
+			await _revertAndClose(overlay);
+		}
+	}
+
+	// Capture snapshot AFTER all UI controls are rendered (deferred)
+	var _snapshotCaptured = false;
+	function _ensureSnapshot() {
+		if (!_snapshotCaptured) {
+			_settingsSnapshot = _captureSettingsSnapshot();
+			_clearSettingsDirty();
+			_snapshotCaptured = true;
+		}
+	}
+
 	const overlay = document.createElement('div');
 	overlay.id = 'settings-modal-overlay';
 	overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:10000;display:flex;justify-content:center;align-items:center;';
@@ -398,11 +566,15 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	const cancelBtn = document.createElement('button');
 	cancelBtn.textContent = I18N.t('cancel');
 	cancelBtn.className = 'eext-modal-btn';
-	cancelBtn.onclick = () => overlay.remove();
+	cancelBtn.onclick = async () => { _ensureSnapshot(); if (_isSettingsDirty()) { await _confirmClose(overlay); } else { _clearSettingsDirty(); overlay.remove(); } };
 	const confirmBtn = document.createElement('button');
 	confirmBtn.textContent = I18N.t('ok');
 	confirmBtn.className = 'eext-modal-btn-primary';
 		confirmBtn.onclick = async () => {
+			_ensureSnapshot();
+			var oldWidth = _settingsSnapshot.ui_width;
+			var oldHeight = _settingsSnapshot.ui_height;
+			await _saveAllSettings();
 			var w = document.getElementById("ui-width-input"), h = document.getElementById("ui-height-input");
 			var newW = null, newH = null;
 			if (w && h) {
@@ -411,12 +583,10 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				if (parseInt(nw) >= 400 && parseInt(nh) >= 300) {
 					newW = parseInt(nw, 10);
 					newH = parseInt(nh, 10);
-					await eda.sys_Storage.setExtensionUserConfig("UI_width", nw);
-					await eda.sys_Storage.setExtensionUserConfig("UI_height", nh);
 				}
 			}
 			overlay.remove();
-			if (newW && newH) {
+			if (newW && newH && (newW !== parseInt(oldWidth) || newH !== parseInt(oldHeight))) {
 				await eda.sys_IFrame.closeIFrame("ScriptTool");
 				await eda.sys_IFrame.openIFrame("iframe/main/index.html", newW, newH, "ScriptTool", {
 					maximizeButton: true,
@@ -444,6 +614,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 	/* === Render right content === */
 	function renderContent() {
+		var _renderState = _snapshotCaptured ? _getCurrentSettingsState() : null;
 		contentPane.innerHTML = '';
 		colors = C();
 
@@ -456,9 +627,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				card.style.cssText = `display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:${active ? 'var(--eext-hover-bg)' : 'var(--eext-bg-item)'};border:1px solid ${active ? 'var(--eext-brand)' : 'transparent'};border-radius:2px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);`;
 				const swatch = t.id === 'dark' ? '#404040' : t.id === 'dark-editor' ? '#272822' : t.id === 'Custom' ? 'linear-gradient(135deg,#1890ff 50%,#f5f5f5 50%)' : t.id === 'system' ? 'linear-gradient(135deg,#f5f5f5 50%,#404040 50%)' : '#f5f5f5';
 				card.innerHTML = `<div style="width:12px;height:12px;border-radius:2px;border:1px solid var(--eext-border);background:${swatch};"></div><span>${t.name}</span>${active ? '<span style="margin-left:auto;color:var(--eext-brand);">✔</span>' : ''}`;
-				card.onclick = async () => {
+				card.onclick = () => {
+					_ensureSnapshot();
 					if (ThemeEngine.getCurrent() === t.id) return;
 					ThemeEngine.apply(t.id);
+					_markSettingsDirty();
 					renderContent();
 				};
 				contentPane.appendChild(card);
@@ -486,7 +659,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			};
 			const w = makeInput('W', 'ui-width-input', String(window.innerWidth));
 			const h = makeInput('H', 'ui-height-input', String(window.innerHeight));
-		(async function() { try { var sw = await eda.sys_Storage.getExtensionUserConfig("UI_width"); if (sw) w.inp.value = sw; var sh = await eda.sys_Storage.getExtensionUserConfig("UI_height"); if (sh) h.inp.value = sh; } catch(e) {} })();
+		(function() { if (_renderState) { w.inp.value = _renderState.ui_width; h.inp.value = _renderState.ui_height; } else { try { var sw = eda.sys_Storage.getExtensionUserConfig("UI_width"); if (sw) w.inp.value = sw; var sh = eda.sys_Storage.getExtensionUserConfig("UI_height"); if (sh) h.inp.value = sh; } catch(e) {} } })();
 			row.appendChild(w.span); row.appendChild(w.inp);
 			row.appendChild(h.span); row.appendChild(h.inp);
 			contentPane.appendChild(row);
@@ -507,14 +680,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				hi.setAttribute('data-key', k);
 					const apply = (v) => {
 						document.documentElement.style.setProperty('--eext-'+k, v);
-						if (!ThemeEngine._customThemes["Custom"]) {
-							var bv = ThemeEngine.getCurrentVars();
-							ThemeEngine.saveCustom("Custom", bv, undefined, undefined, I18N.t("custom"));
-							ThemeEngine.apply("Custom");
-							renderContent();
-							return;
-						}
-						_pt();
+						_ensureSnapshot();
+						_markSettingsDirty();
 					};
 				hi.oninput = () => { sw.value = hi.value; apply(hi.value); };
 				sw.oninput = () => { hi.value = sw.value; apply(sw.value); };
@@ -531,10 +698,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const cbPanel = document.createElement("input"); cbPanel.type = "checkbox"; cbPanel.id = "close-panel-on-render-checkbox";
 			cbPanel.style.cssText = "width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);";
 			cbPanel.onchange = function() {
-				try { eda.sys_Storage.setExtensionUserConfig("close_panel_on_render", cbPanel.checked); } catch(e) {}
+				_ensureSnapshot();
+				_markSettingsDirty();
 			};
 			try {
-				const saved = eda.sys_Storage.getExtensionUserConfig("close_panel_on_render");
+				const saved = _renderState ? _renderState.close_panel_on_render : eda.sys_Storage.getExtensionUserConfig("close_panel_on_render");
 				cbPanel.checked = (saved === true || saved === "true");
 			} catch(e) { cbPanel.checked = true; }
 			const cbLabel = document.createElement("span"); cbLabel.textContent = I18N.t("closePanelOnRender");
@@ -549,10 +717,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			const cbSep = document.createElement("input"); cbSep.type = "checkbox"; cbSep.id = "builtin-separate-render-checkbox";
 			cbSep.style.cssText = "width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);";
 			cbSep.onchange = function() {
-				try { eda.sys_Storage.setExtensionUserConfig("builtin_separate_render", cbSep.checked); } catch(e) {}
+				_ensureSnapshot();
+				_markSettingsDirty();
 			};
 			try {
-				const saved = eda.sys_Storage.getExtensionUserConfig("builtin_separate_render");
+				const saved = _renderState ? _renderState.builtin_separate_render : eda.sys_Storage.getExtensionUserConfig("builtin_separate_render");
 				cbSep.checked = (saved === true || saved === "true");
 			} catch(e) { cbSep.checked = false; }
 			const cbLabel2 = document.createElement("span"); cbLabel2.textContent = I18N.t("builtinSeparateRender");
@@ -570,10 +739,12 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			// 标准复选框样式
 			cb.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cb.onchange = () => {
-				eda.sys_Storage.setExtensionUserConfig('completion_with_comment', cb.checked);
+				_ensureSnapshot();
+				_markSettingsDirty();
+				_updateCompletionPreview();
 			};
 			try {
-				const saved = eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
+				const saved = _renderState ? _renderState.completion_with_comment : eda.sys_Storage.getExtensionUserConfig('completion_with_comment');
 				cb.checked = (saved === true || saved === 'true');
 			} catch(e) { cb.checked = false; }
 			const label = document.createElement('span'); label.textContent = I18N.t('completionWithComment');
@@ -588,14 +759,16 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var label2 = document.createElement("span"); label2.textContent = I18N.t("randomVarAssignment");
 			label2.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			label2.onclick = function() { cb2.checked = !cb2.checked; cb2.onchange(); };
-			var cb2 = document.createElement("input"); cb2.type = 'checkbox';
+			var cb2 = document.createElement("input"); cb2.type = 'checkbox'; cb2.id = 'completion-random-var-checkbox';
 			// 标准复选框样式
 			cb2.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cb2.onchange = function() {
-				eda.sys_Storage.setExtensionUserConfig("completion_random_var", cb2.checked);
+				_ensureSnapshot();
+				_markSettingsDirty();
+				_updateCompletionPreview();
 			};
 			try {
-				const saved = eda.sys_Storage.getExtensionUserConfig("completion_random_var");
+				const saved = _renderState ? _renderState.completion_random_var : eda.sys_Storage.getExtensionUserConfig("completion_random_var");
 				cb2.checked = (saved === true || saved === "true");
 			} catch(e) { cb2.checked = false; }
 			row2.appendChild(cb2); row2.appendChild(label2);
@@ -607,13 +780,15 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var labelAwait = document.createElement("span"); labelAwait.textContent = I18N.t("asyncCompletion");
 			labelAwait.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			labelAwait.onclick = function() { cbAwait.checked = !cbAwait.checked; cbAwait.onchange(); };
-			var cbAwait = document.createElement("input"); cbAwait.type = 'checkbox';
+			var cbAwait = document.createElement("input"); cbAwait.type = 'checkbox'; cbAwait.id = 'completion-auto-await-checkbox';
 			cbAwait.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cbAwait.onchange = function() {
-				eda.sys_Storage.setExtensionUserConfig("completion_auto_await", cbAwait.checked);
+				_ensureSnapshot();
+				_markSettingsDirty();
+				_updateCompletionPreview();
 			};
 			try {
-				const saved = eda.sys_Storage.getExtensionUserConfig("completion_auto_await");
+				const saved = _renderState ? _renderState.completion_auto_await : eda.sys_Storage.getExtensionUserConfig("completion_auto_await");
 				cbAwait.checked = (saved === true || saved === "true");
 			} catch(e) { cbAwait.checked = false; }
 			rowAwait.appendChild(cbAwait); rowAwait.appendChild(labelAwait);
@@ -625,13 +800,14 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			var label3 = document.createElement("span"); label3.textContent = I18N.t("newFileWithComment");
 			label3.style.cssText = "font-size:12px;color:var(--eext-text-primary);user-select:none;cursor:pointer;";
 			label3.onclick = function() { cb3.checked = !cb3.checked; cb3.onchange(); };
-			var cb3 = document.createElement("input"); cb3.type = 'checkbox';
+			var cb3 = document.createElement("input"); cb3.type = 'checkbox'; cb3.id = 'new-file-comment-checkbox';
 			cb3.style.cssText = 'width:16px;height:16px;cursor:pointer;accent-color:var(--eext-brand);';
 			cb3.onchange = function() {
-				eda.sys_Storage.setExtensionUserConfig("new_file_with_comment", cb3.checked);
+				_ensureSnapshot();
+				_markSettingsDirty();
 			};
 			try {
-				const saved = eda.sys_Storage.getExtensionUserConfig("new_file_with_comment");
+				const saved = _renderState ? _renderState.new_file_with_comment : eda.sys_Storage.getExtensionUserConfig("new_file_with_comment");
 				// 默认开启（保持原有行为）
 				cb3.checked = (saved === null || saved === undefined) ? true : (saved === true || saved === "true");
 			} catch(e) { cb3.checked = true; }
@@ -1119,11 +1295,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		} else if (activeMenu === "aiAssistant") {
 			section(I18N.t("aiAssistant"));
 			let currentMode;
-			try { currentMode = eda.sys_Storage.getExtensionUserConfig("ai_panel_mode") || "inline"; } catch (e) { currentMode = "inline"; }
+			try { currentMode = (_renderState ? _renderState.ai_panel_mode : null) || eda.sys_Storage.getExtensionUserConfig("ai_panel_mode") || "inline"; } catch (e) { currentMode = "inline"; }
 			const modeRow = document.createElement("div");
 			modeRow.style.cssText = "display:flex;align-items:center;gap:16px;";
 			const modeLabel = document.createElement("span");
-			modeLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			modeLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);min-width:108px;white-space:nowrap;";
 			modeLabel.textContent = I18N.t("panelDisplayMode");
 			modeRow.appendChild(modeLabel);
 			["inline", "popout"].forEach(function(value) {
@@ -1133,7 +1309,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				r.type = "radio"; r.name = "ai-panel-mode"; r.value = value;
 				r.checked = (currentMode === value);
 				r.style.cssText = "margin:0;accent-color:var(--eext-brand);";
-				r.onchange = async function() { if (this.checked) await applyAiPanelMode(value); };
+				r.onchange = function() { if (this.checked) { _ensureSnapshot(); _markSettingsDirty(); } };
 				lb.appendChild(r);
 				lb.appendChild(document.createTextNode(I18N.t(value === "inline" ? "inlineMode" : "popoutMode")));
 				modeRow.appendChild(lb);
@@ -1142,11 +1318,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 			// 测试用例生成行为
 			let currentGenMode;
-			try { currentGenMode = eda.sys_Storage.getExtensionUserConfig("ai_testcase_mode") || "replace"; } catch (e) { currentGenMode = "replace"; }
+			try { currentGenMode = (_renderState ? _renderState.ai_testcase_mode : null) || eda.sys_Storage.getExtensionUserConfig("ai_testcase_mode") || "replace"; } catch (e) { currentGenMode = "replace"; }
 			const genRow = document.createElement("div");
 			genRow.style.cssText = "display:flex;align-items:center;gap:16px;margin-top:12px;";
 			const genLabel = document.createElement("span");
-			genLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);";
+			genLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);min-width:108px;white-space:nowrap;";
 			genLabel.textContent = I18N.t("testCaseGenMode");
 			genRow.appendChild(genLabel);
 			[["replace", "testCaseReplace"], ["insert", "testCaseInsert"]].forEach(function(pair) {
@@ -1157,13 +1333,42 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				r.type = "radio"; r.name = "ai-testcase-mode"; r.value = value;
 				r.checked = (currentGenMode === value);
 				r.style.cssText = "margin:0;accent-color:var(--eext-brand);";
-				r.onchange = async function() { if (this.checked) { try { await eda.sys_Storage.setExtensionUserConfig("ai_testcase_mode", value); } catch(e) {} } };
+				r.onchange = function() { if (this.checked) { _ensureSnapshot(); _markSettingsDirty(); } };
 				lb.appendChild(r);
 				lb.appendChild(document.createTextNode(I18N.t(labelKey)));
 				genRow.appendChild(lb);
 			});
 			contentPane.appendChild(genRow);
-		}
+
+				// 测试用例生成内容
+				let currentCommentsMode;
+				try { currentCommentsMode = (_renderState ? _renderState.ai_testcase_comments : null) || eda.sys_Storage.getExtensionUserConfig("ai_testcase_comments") || "with"; } catch (e) { currentCommentsMode = "with"; }
+				const commentsRow = document.createElement("div");
+				commentsRow.style.cssText = "display:flex;align-items:center;gap:16px;margin-top:12px;";
+				const commentsLabel = document.createElement("span");
+				commentsLabel.style.cssText = "font-size:12px;color:var(--eext-text-primary);min-width:108px;white-space:nowrap;";
+				commentsLabel.textContent = I18N.t("testCaseContentMode");
+				commentsRow.appendChild(commentsLabel);
+				[["with", "testCaseWithComments"], ["without", "testCaseWithoutComments"]].forEach(function(pair) {
+					const value = pair[0], labelKey = pair[1];
+					const lb = document.createElement("label");
+					lb.style.cssText = "display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);";
+					const r = document.createElement("input");
+					r.type = "radio"; r.name = "ai-testcase-comments"; r.value = value;
+					r.checked = (currentCommentsMode === value);
+					r.style.cssText = "margin:0;accent-color:var(--eext-brand);";
+					r.onchange = function() { if (this.checked) { _ensureSnapshot(); _markSettingsDirty(); } };
+					lb.appendChild(r);
+					lb.appendChild(document.createTextNode(I18N.t(labelKey)));
+					commentsRow.appendChild(lb);
+				});
+				contentPane.appendChild(commentsRow);
+			}
+	}
+
+
+	function _updateCompletionPreview() {
+		// Preview will refresh next time the editor tab is rendered
 	}
 
 	function section(title) {
@@ -1175,18 +1380,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		return div;
 	}
 
-	/* Persist timer for color changes */
-	let _ptimer = null;
-	function _pt() {
-		clearTimeout(_ptimer);
-		_ptimer = setTimeout(() => {
-			const nv = {};
-			contentPane.querySelectorAll('input[type=color]').forEach(el => nv[el.getAttribute('data-key')] = el.value);
-			if (Object.keys(nv).length === 0) return;
-			const nm = I18N.t('custom');
-			var cv = ThemeEngine.getCurrentVars(); ThemeEngine.saveCustom('Custom', {...cv, ...nv}, nm).then(function(n) { if (n) ThemeEngine.apply(n); });
-		}, 500);
-	}
+	/* _pt() removed — color changes now tracked via dirty flag and saved on OK */
 
 	/* Assemble */
 	modal.appendChild(header);
@@ -1201,12 +1395,20 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	document.addEventListener('keydown', function escH(e) {
 		if (e.key !== 'Escape') return;
 		if (document.getElementById('eext-cs-edit-overlay')) return;
-		overlay.remove();
-		document.removeEventListener('keydown', escH);
+		_ensureSnapshot();
+		if (_isSettingsDirty()) {
+			_confirmClose(overlay).then(function() {
+				document.removeEventListener('keydown', escH);
+			});
+		} else {
+			_clearSettingsDirty();
+			overlay.remove();
+			document.removeEventListener('keydown', escH);
+		}
 	});
 
 	/* Close button */
-	header.querySelector('#settings-modal-close').onclick = () => overlay.remove();
+	header.querySelector('#settings-modal-close').onclick = async () => { _ensureSnapshot(); if (_isSettingsDirty()) { await _confirmClose(overlay); } else { _clearSettingsDirty(); overlay.remove(); } };
 
 	/* Initial render */
 	renderMenu();

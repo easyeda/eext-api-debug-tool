@@ -61,8 +61,19 @@ export async function openScriptTool(): void {
 			setTimeout(() => {
 				try {
 					const hasDirty = eda.sys_Storage.getExtensionUserConfig('__has_dirty');
-					if (hasDirty === 'true') {
-						eda.sys_Dialog.showConfirmationMessage(eda.sys_I18n.text('有未保存的文件，确定关闭窗口？'), eda.sys_I18n.text('关闭确认'), eda.sys_I18n.text('确定'), eda.sys_I18n.text('取消'), (confirmed: boolean) => {
+					const settingsDirty = eda.sys_Storage.getExtensionUserConfig('__settings_dirty');
+					const hasFileDirty = hasDirty === 'true';
+					const hasSettingsDirty = settingsDirty === 'true';
+					if (hasFileDirty || hasSettingsDirty) {
+						let msgKey: string;
+						if (hasFileDirty && hasSettingsDirty) {
+							msgKey = '有未保存的文件和设置，确定关闭窗口？';
+						} else if (hasFileDirty) {
+							msgKey = '有未保存的文件，确定关闭窗口？';
+						} else {
+							msgKey = '有未保存的设置，确定关闭窗口？';
+						}
+						eda.sys_Dialog.showConfirmationMessage(eda.sys_I18n.text(msgKey), eda.sys_I18n.text('关闭确认'), eda.sys_I18n.text('确定'), eda.sys_I18n.text('取消'), (confirmed: boolean) => {
 							if (confirmed) {
 								_closing = true;
 								try { eda.sys_IFrame.closeIFrame('popout-all-projects'); } catch (e) {}
