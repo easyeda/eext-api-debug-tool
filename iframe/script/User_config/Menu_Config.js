@@ -550,7 +550,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			row.style.cssText = `padding:6px 16px;cursor:pointer;font-size:12px;color:${active && !isDark() ? 'var(--eext-brand)' : 'var(--eext-text-primary)'};background:${active ? 'var(--eext-hover-bg)' : 'transparent'};border-right:${active ? '2px solid var(--eext-brand)' : '2px solid transparent'};transition:background 0.15s;`;
 			row.onmouseenter = () => { if (!active) row.style.background = 'var(--eext-hover-bg)'; };
 			row.onmouseleave = () => { if (!active) row.style.background = 'transparent'; };
-			row.onclick = () => { activeMenu = item.id; renderMenu(); renderContent(); };
+			row.onclick = () => { if (activeMenu === item.id) return; activeMenu = item.id; renderMenu(); renderContent(); };
 			menuPane.appendChild(row);
 		});
 	}
