@@ -108,7 +108,6 @@ const THEME_PRESETS = {
 
 const ThemeEngine = {
 	_currentTheme: 'dark',
-	_customThemes: {},
 
 	/** 初始化：从 storage 读取并应用主题 */
 	async init() {
@@ -120,28 +119,18 @@ const ThemeEngine = {
 			configs = {};
 		}
 		this._currentTheme = configs['theme-name'] || 'dark';
-		try {
-			const saved = configs['custom-themes'];
-			if (saved && typeof saved === 'string') this._customThemes = JSON.parse(saved);
-			else if (saved) this._customThemes = saved;
-		} catch (e) {
-			this._customThemes = {};
-		}
 		this.apply(this._currentTheme);
 	},
 
 	/** 获取主题变量（预设或自定义） */
 	getVars(name) {
 		if (THEME_PRESETS[name]) return THEME_PRESETS[name].vars;
-		if (this._customThemes[name]) return this._customThemes[name].vars;
 		return THEME_PRESETS['dark'].vars;
 	},
 
 /** 应用主题到 DOM */
 	apply(name, opts) {
-		const preset = THEME_PRESETS[name];
-		const custom = this._customThemes[name];
-		const config = preset || custom;
+		const config = THEME_PRESETS[name];
 		if (!config) {
 			// 主题不存在，回退到 dark
 			return this.apply('dark', opts);
@@ -188,48 +177,11 @@ const ThemeEngine = {
 		return this._currentTheme;
 	},
 
-	/** 获取当前 vars（用于 JS 内联样式） */
-	getCurrentVars() {
-		return this.getVars(this._currentTheme);
-	},
-
 	/** 获取所有可用主题列表 */
 	listThemes() {
-		const presets = Object.entries(THEME_PRESETS).map(([id, cfg]) => ({
+		return Object.entries(THEME_PRESETS).map(([id, cfg]) => ({
 			id, name: { light: '亮色', dark: '暗色', 'dark-editor': '黑底白图' }[id] || cfg.name, preset: true, readonly: true,
 		}));
-		const customTheme = this._customThemes["Custom"];
-		const customs = customTheme ? [{ id: "Custom", name: I18N.t('custom'), preset: false, readonly: false }] : [];
-		return [...presets, ...customs];
-	},
-
-	/** 判断是否为预设（只读） */
-	isPreset(name) {
-		return !!THEME_PRESETS[name];
-	},
-
-	/** 保存自定义主题 */
-	async saveCustom(name, vars, label) {
-		const safeName = 'Custom';
-		// 根据编辑器背景亮度自动选择 Ace 主题
-		const editorBg = vars['editor-bg'] || '#fff';
-		const isEditorDark = parseInt(editorBg.replace('#',''), 16) < 0x888888;
-		const aceTheme = isEditorDark ? 'ace/theme/monokai' : 'ace/theme/github';
-		const bodyClass = isEditorDark ? 'dark-theme' : 'light-theme';
-		this._customThemes[safeName] = { name: label || name, vars, aceTheme, bodyClass };
-		await eda.sys_Storage.setExtensionUserConfig('custom-themes', JSON.stringify(this._customThemes));
-		return safeName;
-	},
-
-	/** 删除自定义主题 */
-	async deleteCustom(name) {
-		if (THEME_PRESETS[name]) return false;
-		delete this._customThemes[name];
-		if (this._currentTheme === name) {
-			await this.apply('dark');
-		}
-		await eda.sys_Storage.setExtensionUserConfig('custom-themes', JSON.stringify(this._customThemes));
-		return true;
 	},
 };
 

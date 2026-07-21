@@ -262,35 +262,6 @@ function showNewScriptDialog(editor) {
    设置模态框 — EDA 系统设置风格
    左侧菜单 + 右侧内容 + 底部按钮
    ============================================ */
-/**
- * 从 CSS 变量读取实际渲染颜色，转换为 #rrggbb 格式
- */
-function _readCSSColor(varName) {
-	var val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-	if (!val) {
-		val = document.documentElement.style.getPropertyValue(varName).trim();
-	}
-	if (!val || val === 'transparent' || val === 'none') return '#000';
-	if (val.startsWith('#')) {
-		if (val.length === 7) return val;
-		if (val.length === 4) {
-			return '#' + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
-		}
-		return val;
-	}
-	var m = val.match(/[\d.]+/g);
-	if (m && m.length >= 3) {
-		var r = parseInt(m[0]), g = parseInt(m[1]), b = parseInt(m[2]);
-		if (m.length === 4) {
-			var a = parseFloat(m[3]);
-			if (a < 1) { r = Math.round(r * a + 255 * (1 - a)); g = Math.round(g * a + 255 * (1 - a)); b = Math.round(b * a + 255 * (1 - a)); }
-		}
-		return '#' + [r, g, b].map(function(x) {
-			return Math.max(0, Math.min(255, x)).toString(16).padStart(2, '0');
-		}).join('');
-	}
-	return '#000';
-}
 
 // --- AI panel helpers (global, used by Ai_Chat.js) ---
 
@@ -376,10 +347,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		try { cs.ai_panel_mode = eda.sys_Storage.getExtensionUserConfig('ai_panel_mode') || 'inline'; } catch(e) { cs.ai_panel_mode = 'inline'; }
 		try { cs.ai_testcase_mode = eda.sys_Storage.getExtensionUserConfig('ai_testcase_mode') || 'replace'; } catch(e) { cs.ai_testcase_mode = 'replace'; }
 		try { cs.ai_testcase_comments = eda.sys_Storage.getExtensionUserConfig('ai_testcase_comments') || 'with'; } catch(e) { cs.ai_testcase_comments = 'with'; }
-		cs.custom_colors = {};
-		['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'].forEach(function(k) {
-			cs.custom_colors[k] = _readCSSColor('--eext-' + k);
-		});
 		return cs;
 	}
 
@@ -408,10 +375,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		cs.ai_testcase_mode = genRadio ? genRadio.value : _readStorageStr('ai_testcase_mode', 'replace');
 		var commentsRadio = document.querySelector('input[name="ai-testcase-comments"]:checked');
 		cs.ai_testcase_comments = commentsRadio ? commentsRadio.value : _readStorageStr('ai_testcase_comments', 'with');
-		cs.custom_colors = {};
-		['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'].forEach(function(k) {
-			cs.custom_colors[k] = _readCSSColor('--eext-' + k);
-		});
 		return cs;
 	}
 
@@ -433,10 +396,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			'ai_panel_mode','ai_testcase_mode','ai_testcase_comments'];
 		for (var i = 0; i < simpleKeys.length; i++) {
 			if (String(curr[simpleKeys[i]]) !== String(_settingsSnapshot[simpleKeys[i]])) return true;
-		}
-		var colorKeys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
-		for (var j = 0; j < colorKeys.length; j++) {
-			if (curr.custom_colors[colorKeys[j]] !== _settingsSnapshot.custom_colors[colorKeys[j]]) return true;
 		}
 		return false;
 	}
@@ -468,17 +427,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		}
 		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_mode', curr.ai_testcase_mode); } catch(e) {}
 		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_comments', curr.ai_testcase_comments); } catch(e) {}
-		var colorChanged = false;
-		var colorKeys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
-		for (var i = 0; i < colorKeys.length; i++) {
-			if (curr.custom_colors[colorKeys[i]] !== _settingsSnapshot.custom_colors[colorKeys[i]]) { colorChanged = true; break; }
-		}
-		if (colorChanged) {
-			var nv = {};
-			colorKeys.forEach(function(k) { nv[k] = curr.custom_colors[k]; });
-			var cv = ThemeEngine.getCurrentVars();
-			try { await ThemeEngine.saveCustom('Custom', Object.assign({}, cv, nv), I18N.t('custom')); } catch(e) {}
-		}
 		_clearSettingsDirty();
 		_settingsSnapshot = curr;
 	}
@@ -490,11 +438,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				ThemeEngine.apply(_settingsSnapshot.theme);
 			}
 		} catch(e) {}
-		['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'].forEach(function(k) {
-			if (_settingsSnapshot.custom_colors[k]) {
-				document.documentElement.style.setProperty('--eext-' + k, _settingsSnapshot.custom_colors[k]);
-			}
-		});
 		if (_settingsSnapshot.ai_panel_mode) {
 			try { await applyAiPanelMode(_settingsSnapshot.ai_panel_mode); } catch(e) {}
 		}
@@ -625,7 +568,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				const active = ThemeEngine.getCurrent() === t.id;
 				const card = document.createElement('div');
 				card.style.cssText = `display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:${active ? 'var(--eext-hover-bg)' : 'var(--eext-bg-item)'};border:1px solid ${active ? 'var(--eext-brand)' : 'transparent'};border-radius:2px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);`;
-				const swatch = t.id === 'dark' ? '#404040' : t.id === 'dark-editor' ? '#272822' : t.id === 'Custom' ? 'linear-gradient(135deg,#1890ff 50%,#f5f5f5 50%)' : t.id === 'system' ? 'linear-gradient(135deg,#f5f5f5 50%,#404040 50%)' : '#f5f5f5';
+				const swatch = t.id === 'dark' ? '#404040' : t.id === 'dark-editor' ? '#272822' : '#f5f5f5';
 				card.innerHTML = `<div style="width:12px;height:12px;border-radius:2px;border:1px solid var(--eext-border);background:${swatch};"></div><span>${t.name}</span>${active ? '<span style="margin-left:auto;color:var(--eext-brand);">✔</span>' : ''}`;
 				card.onclick = () => {
 					_ensureSnapshot();
@@ -636,16 +579,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				};
 				contentPane.appendChild(card);
 			});
-			if (!ThemeEngine._customThemes["Custom"]) {
-				const cc = document.createElement("div");
-				cc.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 10px;margin-bottom:4px;background:var(--eext-bg-item);border:1px solid transparent;border-radius:2px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);";
-				cc.innerHTML = '<div style="width:12px;height:12px;border-radius:2px;border:1px solid var(--eext-border);background:linear-gradient(135deg,#1890ff 50%,#f5f5f5 50%);"></div><span>' + I18N.t("custom") + '</span>';
-				cc.onclick = function() {
-					var vv = ThemeEngine.getCurrentVars();
-					ThemeEngine.saveCustom("Custom", vv, undefined, undefined, I18N.t("custom")).then(function(n) { if (n) { ThemeEngine.apply("Custom"); renderContent(); } });
-				};
-				contentPane.appendChild(cc);
-			}
 
 			/* Window size */
 			const sec2 = section(I18N.t('windowSize'));
@@ -663,33 +596,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			row.appendChild(w.span); row.appendChild(w.inp);
 			row.appendChild(h.span); row.appendChild(h.inp);
 			contentPane.appendChild(row);
-
-			/* Color customization */
-			const sec3 = section(I18N.t('elementColors'));
-			const keys = ['bg-toolbar','bg-panel','bg-input','editor-bg','editor-line-bg','text-primary','border'];
-			const labels = {'bg-toolbar':I18N.t('topMenu'),'bg-panel':I18N.t('leftPanelBg'),'bg-input':I18N.t('inputBox'),'editor-bg':I18N.t('editorBg'),'editor-line-bg':I18N.t('editorSelLine'),'text-primary':I18N.t('leftPanelText'),'border':I18N.t('border')};
-			keys.forEach(k => {
-				const cr = document.createElement('div');
-				cr.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
-				var domVal = _readCSSColor('--eext-'+k);
-				const sw = document.createElement('input'); sw.type = 'color'; sw.value = domVal || '#000';
-				sw.style.cssText = 'width:24px;height:24px;border:1px solid var(--eext-border);border-radius:2px;padding:0;cursor:pointer;';
-				sw.setAttribute('data-key', k);
-				const hi = document.createElement('input'); hi.type = 'text'; hi.value = domVal || '';
-				hi.style.cssText = 'width:78px;height:24px;padding:0 4px;border:1px solid var(--eext-border);border-radius:2px;font-size:11px;font-family:monospace;color:var(--eext-text-primary);background:var(--eext-bg-input);';
-				hi.setAttribute('data-key', k);
-					const apply = (v) => {
-						document.documentElement.style.setProperty('--eext-'+k, v);
-						_ensureSnapshot();
-						_markSettingsDirty();
-					};
-				hi.oninput = () => { sw.value = hi.value; apply(hi.value); };
-				sw.oninput = () => { hi.value = sw.value; apply(sw.value); };
-				const lb = document.createElement('span'); lb.textContent = labels[k];
-				lb.style.cssText = 'font-size:12px;color:var(--eext-text-secondary);flex:1;';
-				cr.appendChild(sw); cr.appendChild(hi); cr.appendChild(lb);
-				contentPane.appendChild(cr);
-			});
 
 			/* Close panel on render */
 			const sec4 = section(I18N.t("renderBehavior"));
@@ -1380,7 +1286,6 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		return div;
 	}
 
-	/* _pt() removed — color changes now tracked via dirty flag and saved on OK */
 
 	/* Assemble */
 	modal.appendChild(header);
@@ -1413,6 +1318,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	/* Initial render */
 	renderMenu();
 	renderContent();
+	// Eagerly capture snapshot AFTER UI is fully built so it records the true pre-change state
+	_ensureSnapshot();
 }
 
 /**
