@@ -1912,9 +1912,11 @@ async function generateTestCase(editor, methodPath) {
 			try { genMode = await eda.sys_Storage.getExtensionUserConfig('ai_testcase_mode') || 'replace'; } catch(e) {}
 			if (genMode === 'insert') {
 				const cursor = editor.getCursorPosition();
+				// 删除当前行（被测试的那行），用生成的测试用例替换
+				editor.session.remove({ start: { row: cursor.row, column: 0 }, end: { row: cursor.row + 1, column: 0 } });
 				const marker = '// ---- ' + I18N.t('testCaseInsertComment') + ' ----';
-				editor.session.insert({ row: cursor.row + 1, column: 0 }, marker + '\n' + code + '\n');
-				editor.moveCursorTo(cursor.row + 2, 0);
+				editor.session.insert({ row: cursor.row, column: 0 }, marker + '\n' + code + '\n');
+				editor.moveCursorTo(cursor.row + 1, 0);
 				editor.clearSelection();
 			} else {
 				editor.setValue(code, -1);

@@ -389,18 +389,11 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 	}
 
 	function _isSettingsDirty() {
-		if (!_settingsSnapshot) return false;
-		var curr = _getCurrentSettingsState();
-		var simpleKeys = ['theme','ui_width','ui_height','close_panel_on_render','builtin_separate_render',
-			'completion_with_comment','completion_random_var','completion_auto_await','new_file_with_comment',
-			'ai_panel_mode','ai_testcase_mode','ai_testcase_comments'];
-		for (var i = 0; i < simpleKeys.length; i++) {
-			if (String(curr[simpleKeys[i]]) !== String(_settingsSnapshot[simpleKeys[i]])) return true;
-		}
-		return false;
+		return _hasChanges;
 	}
 
 	function _markSettingsDirty() {
+		_hasChanges = true;
 		try { eda.sys_Storage.setExtensionUserConfig('__settings_dirty', 'true'); } catch(e) {}
 	}
 
@@ -428,6 +421,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_mode', curr.ai_testcase_mode); } catch(e) {}
 		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_comments', curr.ai_testcase_comments); } catch(e) {}
 		_clearSettingsDirty();
+		_hasChanges = false;
 		_settingsSnapshot = curr;
 	}
 
@@ -442,6 +436,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 			try { await applyAiPanelMode(_settingsSnapshot.ai_panel_mode); } catch(e) {}
 		}
 		_clearSettingsDirty();
+		_hasChanges = false;
 		overlay.remove();
 	}
 
@@ -461,6 +456,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 
 	// Capture snapshot AFTER all UI controls are rendered (deferred)
 	var _snapshotCaptured = false;
+	var _hasChanges = false;
 	function _ensureSnapshot() {
 		if (!_snapshotCaptured) {
 			_settingsSnapshot = _captureSettingsSnapshot();
