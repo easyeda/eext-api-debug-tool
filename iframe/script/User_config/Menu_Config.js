@@ -347,6 +347,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		try { cs.ai_panel_mode = eda.sys_Storage.getExtensionUserConfig('ai_panel_mode') || 'inline'; } catch(e) { cs.ai_panel_mode = 'inline'; }
 		try { cs.ai_testcase_mode = eda.sys_Storage.getExtensionUserConfig('ai_testcase_mode') || 'replace'; } catch(e) { cs.ai_testcase_mode = 'replace'; }
 		try { cs.ai_testcase_comments = eda.sys_Storage.getExtensionUserConfig('ai_testcase_comments') || 'with'; } catch(e) { cs.ai_testcase_comments = 'with'; }
+		try { cs.comment_gen_mode = eda.sys_Storage.getExtensionUserConfig('comment_gen_mode') || 'detailed'; } catch(e) { cs.comment_gen_mode = 'detailed'; }
 		return cs;
 	}
 
@@ -375,6 +376,8 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		cs.ai_testcase_mode = genRadio ? genRadio.value : _readStorageStr('ai_testcase_mode', 'replace');
 		var commentsRadio = document.querySelector('input[name="ai-testcase-comments"]:checked');
 		cs.ai_testcase_comments = commentsRadio ? commentsRadio.value : _readStorageStr('ai_testcase_comments', 'with');
+		var commentGenRadio = document.querySelector('input[name="comment-gen-mode"]:checked');
+		cs.comment_gen_mode = commentGenRadio ? commentGenRadio.value : _readStorageStr('comment_gen_mode', 'detailed');
 		return cs;
 	}
 
@@ -420,6 +423,7 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 		}
 		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_mode', curr.ai_testcase_mode); } catch(e) {}
 		try { await eda.sys_Storage.setExtensionUserConfig('ai_testcase_comments', curr.ai_testcase_comments); } catch(e) {}
+		try { await eda.sys_Storage.setExtensionUserConfig('comment_gen_mode', curr.comment_gen_mode); } catch(e) {}
 		_clearSettingsDirty();
 		_hasChanges = false;
 		_settingsSnapshot = curr;
@@ -811,7 +815,48 @@ function showSettingsModal(editor, light_theme, dark_theme) {
 				};
 			});
 			renderCompletionPreview();
-		} else if (activeMenu === 'shortcuts') {
+
+				// ── 注释生成程度 ──
+				let currentCommentGenMode;
+				try { currentCommentGenMode = _renderState ? _renderState.comment_gen_mode : (eda.sys_Storage.getExtensionUserConfig('comment_gen_mode') || 'detailed'); } catch (e) { currentCommentGenMode = 'detailed'; }
+				const commentGenSec = section(I18N.t('commentGenMode'));
+				const commentGenRow = document.createElement('div');
+				commentGenRow.style.cssText = 'display:flex;align-items:center;gap:16px;';
+				[['brief', 'commentGenBrief'], ['detailed', 'commentGenDetailed']].forEach(function(pair) {
+					const value = pair[0], labelKey = pair[1];
+					const lb = document.createElement('label');
+					lb.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:var(--eext-text-primary);';
+					const r = document.createElement('input');
+					r.type = 'radio'; r.name = 'comment-gen-mode'; r.value = value;
+					r.checked = (currentCommentGenMode === value);
+					r.style.cssText = 'margin:0;accent-color:var(--eext-brand);';
+					r.onchange = function() { if (this.checked) { _ensureSnapshot(); _markSettingsDirty(); renderCommentGenPreview(); } };
+					lb.appendChild(r);
+					lb.appendChild(document.createTextNode(I18N.t(labelKey)));
+					commentGenRow.appendChild(lb);
+				});
+				contentPane.appendChild(commentGenRow);
+				const commentGenPreviewEl = document.createElement('pre');
+				commentGenPreviewEl.style.cssText = 'margin:8px 0 0 0;padding:8px 10px;font-family:Consolas,Monaco,"Courier New",monospace;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-all;color:var(--eext-text-primary);background:var(--eext-bg-input);border:1px solid var(--eext-border);border-radius:2px;';
+				function renderCommentGenPreview() {
+					var mode = document.querySelector('input[name="comment-gen-mode"]:checked');
+					var brief = mode && mode.value === 'brief';
+					var lines = ['/**'];
+					if (brief) {
+						lines.push(' * 创建新的原理图页面');
+					} else {
+						lines.push(' * 创建新的原理图页面');
+						lines.push(' *');
+						lines.push(' * @param {string} projectId - 项目ID');
+						lines.push(' * @param {string} name - 页面名称');
+						lines.push(' * @returns 创建的sheet对象');
+					}
+					lines.push(' */');
+					commentGenPreviewEl.textContent = lines.join('\n');
+				}
+				contentPane.appendChild(commentGenPreviewEl);
+				renderCommentGenPreview();
+			} else if (activeMenu === 'shortcuts') {
 			section(I18N.t('shortcuts'));
 			var platform = typeof getPlatform === 'function' ? getPlatform() : 'windows';
 

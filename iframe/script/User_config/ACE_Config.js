@@ -1629,7 +1629,17 @@ function injectContextMenuJumpToDocs(editor, fullMethodPaths) {
 			}),
 		);
 
-		// 3. 添加到补全
+		// 3. 生成注释
+		menu.appendChild(
+			createMenuItem(I18N.t('generateComment'), !!matchedMethod, () => {
+				const comment = _generateMethodComment(matchedMethod);
+				if (comment) {
+					editor.session.insert({ row: pos.row, column: 0 }, comment + '\n');
+				}
+			}),
+		);
+
+		// 4. 添加到补全
 		menu.appendChild(
 			createMenuItem(I18N.t('addToCompletions'), true, () => {
 				UserCompleter_Add(editor, lineText);
@@ -1685,6 +1695,56 @@ function _formatMethodDoc(info) {
 }
 
 /**
+ * 为指定方法生成 JSDoc 注释文本
+ * @param {string} methodPath - 完整方法路径
+ * @returns {string} JSDoc 注释块
+ */
+function _generateMethodComment(methodPath) {
+	const info = _findMethodInfo(methodPath);
+	if (!info) return null;
+
+	// 读取注释生成程度设置
+	var brief = false;
+	try { brief = eda.sys_Storage.getExtensionUserConfig('comment_gen_mode') === 'brief'; } catch(e) {}
+
+	var lines = [];
+	lines.push('/**');
+
+	if (brief) {
+		// 简略模式：只输出 API 的中文名称
+		if (info.description) {
+			lines.push(' * ' + info.description);
+		}
+	} else {
+		// 详细模式：完整 JSDoc
+		if (info.description) {
+			lines.push(' * ' + info.description);
+		}
+		if (info.parameters && info.parameters.length > 0) {
+			lines.push(' *');
+			info.parameters.forEach(function(p) {
+				var typeHint = '';
+				var desc = (p.description || '').toLowerCase();
+				if (desc.indexOf('uuid') !== -1) typeHint = ' {string}';
+				else if (desc.indexOf('列表') !== -1 || desc.indexOf('list') !== -1) typeHint = ' {object}';
+				else if (desc.indexOf('名称') !== -1 || desc.indexOf('name') !== -1) typeHint = ' {string}';
+				lines.push(' * @param' + typeHint + ' ' + p.name + ' - ' + (p.description || ''));
+			});
+		} else {
+			lines.push(' * @param -');
+		}
+		if (info.returns) {
+			lines.push(' * @returns ' + info.returns);
+		}
+		if (info.remarks) {
+			lines.push(' * @remarks ' + info.remarks);
+		}
+	}
+	lines.push(' */');
+	return lines.join('\n');
+}
+
+/**
  * 显示 toast（封装，兼容 eda 不存在的情况）
  */
 function _toast(msg, type, duration) {
@@ -1694,10 +1754,30 @@ function _toast(msg, type, duration) {
 }
 
 /**
+ * 从当前行代码中解析已填写的参数值
+ * @param {string} lineText - 光标所在行文本
+ * @param {string} methodPath - 完整方法路径，如 eda.sch.createSheet
+ * @returns {string[]} 参数值数组，空位为空字符串
+ */
+function _parseFilledParams(lineText, methodPath) {
+	if (!lineText || !methodPath) return [];
+	var escaped = methodPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	var regex = new RegExp(escaped + '\\s*\\(([^)]*)\\)');
+	var match = lineText.match(regex);
+	if (!match || match[1] === undefined) return [];
+	var raw = match[1].trim();
+	if (!raw) return [];
+	return raw.split(',').map(function(s) { return s.trim(); });
+}
+
+/**
  * 本地依赖分析：扫描参数描述中的类名引用和关键词，匹配已知方法
  * 返回按依赖顺序排列的方法信息数组（叶子节点在前）
+ * @param {string} methodPath
+ * @param {Set} visited
+ * @param {string[]} filledParams - 已填写的参数值，已填写的位置跳过追溯
  */
-function _traceDependencies(methodPath, visited) {
+function _traceDependencies(methodPath, visited, filledParams) {
 	if (!visited) visited = new Set();
 	if (visited.has(methodPath)) return [];
 	visited.add(methodPath);
@@ -1737,7 +1817,7 @@ function _traceDependencies(methodPath, visited) {
 			}
 
 			if (matched && !visited.has(candidate.methodPath)) {
-				const subDeps = _traceDependencies(candidate.methodPath, visited);
+				const subDeps = _traceDependencies(candidate.methodPath, visited, null);
 				deps.push(...subDeps, candidate);
 				break; // 每个参数只匹配一个依赖
 			}
@@ -1751,14 +1831,14 @@ function _traceDependencies(methodPath, visited) {
  * 执行依赖追溯并逐步显示 toast 进度
  * 返回去重后的有序依赖链（叶子在前）
  */
-async function _traceWithProgress(methodPath) {
+async function _traceWithProgress(methodPath, filledParams) {
 	const info = _findMethodInfo(methodPath);
 	if (!info) return [];
 
 	_toast(I18N.format('tcAnalyzingDeps', info.description || methodPath), 'info', 2);
 	await new Promise((r) => setTimeout(r, 300));
 
-	const rawDeps = _traceDependencies(methodPath);
+	const rawDeps = _traceDependencies(methodPath, null, filledParams);
 
 	const seen = new Set();
 	const uniqueDeps = [];
@@ -1785,11 +1865,25 @@ async function _traceWithProgress(methodPath) {
 /**
  * 构建发送给 AI 的完整 prompt（仅包含目标方法 + 已追溯的依赖链）
  */
-function _buildTestCasePrompt(methodPath, dependencyChain, commentsMode) {
+function _buildTestCasePrompt(methodPath, dependencyChain, commentsMode, filledParams) {
 	const targetInfo = _findMethodInfo(methodPath);
 	if (!targetInfo) return null;
 
 	const targetDoc = _formatMethodDoc(targetInfo);
+
+	// 构建已填写参数的提示信息
+	let filledParamsDoc = '';
+	if (filledParams && filledParams.length > 0) {
+		var filledList = [];
+		for (var fi = 0; fi < filledParams.length; fi++) {
+			if (filledParams[fi] && filledParams[fi].trim()) {
+				filledList.push('  - param[' + fi + ']: value on current line is `' + filledParams[fi] + '`, prefer using it directly if it is a meaningful expression; otherwise fall back to the traced dependency');
+			}
+		}
+		if (filledList.length > 0) {
+			filledParamsDoc = '\n## Pre-filled parameters (DO NOT trace dependencies for these)\n' + filledList.join('\n') + '\n';
+		}
+	}
 
 	let depsDocs = '';
 	if (dependencyChain.length > 0) {
@@ -1829,7 +1923,7 @@ ${commentRule}
 
 	const userPrompt = `## Target method
 ${targetDoc}
-${depsDocs}
+${filledParamsDoc}${depsDocs}
 是否带注释: ${withComments ? '是' : '否'}
 Please generate test case code for ${methodPath}.`;
 
@@ -1861,13 +1955,16 @@ async function generateTestCase(editor, methodPath) {
 		return;
 	}
 
-	// 第一阶段：本地依赖追溯（带逐步 toast）
-	const dependencyChain = await _traceWithProgress(methodPath);
+	// 第一阶段：本地依赖追溯（带逐步 toast），跳过已填写的参数
+	const cursor = editor.getCursorPosition();
+	const lineText = editor.session.getLine(cursor.row);
+	const filledParams = _parseFilledParams(lineText, methodPath);
+	const dependencyChain = await _traceWithProgress(methodPath, filledParams);
 
 	// 第二阶段：构建 prompt 并调用 AI
 	let commentsMode = 'with';
 	try { commentsMode = await eda.sys_Storage.getExtensionUserConfig('ai_testcase_comments') || 'with'; } catch(e) {}
-	const prompts = _buildTestCasePrompt(methodPath, dependencyChain, commentsMode);
+	const prompts = _buildTestCasePrompt(methodPath, dependencyChain, commentsMode, filledParams);
 	if (!prompts) {
 		_toast(I18N.format('tcMethodNotFound', methodPath), 'error', 2);
 		return;
@@ -1911,7 +2008,6 @@ async function generateTestCase(editor, methodPath) {
 			let genMode = 'replace';
 			try { genMode = await eda.sys_Storage.getExtensionUserConfig('ai_testcase_mode') || 'replace'; } catch(e) {}
 			if (genMode === 'insert') {
-				const cursor = editor.getCursorPosition();
 				// 删除当前行（被测试的那行），用生成的测试用例替换
 				editor.session.remove({ start: { row: cursor.row, column: 0 }, end: { row: cursor.row + 1, column: 0 } });
 				const marker = '// ---- ' + I18N.t('testCaseInsertComment') + ' ----';
