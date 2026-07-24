@@ -62,26 +62,8 @@ function parseJSDocLines(lines, startIndex) {
 	return { jsdoc: { description, remarks, params, returns, tags }, endIndex: j };
 }
 
-// === 读取已有 EDA_Codes.js 用于增量合并 ===
-let existingMap = new Map();
-if (fs.existsSync(outputPath)) {
-	try {
-		const existingContent = fs.readFileSync(outputPath, 'utf8');
-		const match = existingContent.match(/edcode\s*=\s*(\[.*?\]);/s);
-		if (match) {
-			const parsed = new Function('return ' + match[1])();
-			for (const item of parsed) {
-				if (item && typeof item.methodPath === 'string') existingMap.set(item.methodPath, item);
-			}
-		}
-	} catch (e) {
-		console.warn('无法解析已有的 EDA_Codes.js，将重新生成全部内容。', e.message);
-		existingMap = new Map();
-	}
-}
-
 // ============================================================
-// 主解析：行级扫描
+// 主解析：行级扫描（每次全量重新生成，不做增量合并）
 // 实际文件结构：declare global { enum/class/interface ... }
 // class 和 enum 均无 declare 前缀，直接裸写在 declare global 块内
 // ============================================================
@@ -168,30 +150,30 @@ for (let i = 0; i < lines.length; i++) {
 		const methodMatch = line.match(/^(?:async\s+)?(\w+)\s*\(/);
 		if (methodMatch && pendingJsdoc && pendingJsdoc.description) {
 			// 收集完整签名（可能跨多行），检测返回类型是否为 Promise
-				let sigText = line;
-				if (!line.trimEnd().endsWith(';')) {
-					// 跟踪括号嵌套深度，避免参数对象内的 ; 导致提前终止
-					let depth = 0;
-					for (const ch of line) {
+			let sigText = line;
+			if (!line.trimEnd().endsWith(';')) {
+				// 跟踪括号嵌套深度，避免参数对象内的 ; 导致提前终止
+				let depth = 0;
+				for (const ch of line) {
+					if (ch === '{' || ch === '(') depth++;
+					if (ch === '}' || ch === ')') depth--;
+				}
+				let k = i + 1;
+				while (k < lines.length && k < i + 20) {
+					sigText += '\n' + lines[k];
+					const trimmed = lines[k].trimEnd();
+					for (const ch of trimmed) {
 						if (ch === '{' || ch === '(') depth++;
 						if (ch === '}' || ch === ')') depth--;
 					}
-					let k = i + 1;
-					while (k < lines.length && k < i + 20) {
-						sigText += '\n' + lines[k];
-						const trimmed = lines[k].trimEnd();
-						for (const ch of trimmed) {
-							if (ch === '{' || ch === '(') depth++;
-							if (ch === '}' || ch === ')') depth--;
-						}
-						if (depth <= 0 && trimmed.endsWith(';')) break;
-						k++;
-					}
+					if (depth <= 0 && trimmed.endsWith(';')) break;
+					k++;
 				}
-				const returnIdx = sigText.lastIndexOf('):');
-				const isAsync =
-					returnIdx !== -1 &&
-					sigText.substring(returnIdx).trimStart().startsWith('): Promise');
+			}
+			const returnIdx = sigText.lastIndexOf('):');
+			const isAsync =
+				returnIdx !== -1 &&
+				sigText.substring(returnIdx).trimStart().startsWith('): Promise');
 
 			const item = {
 				methodPath: `eda.${formatClassName(currentClass)}.${methodMatch[1]}`,
@@ -241,17 +223,8 @@ for (let i = 0; i < lines.length; i++) {
 	}
 }
 
-// === 增量合并：新条目 + 未被覆盖的旧条目 ===
-const newMap = new Map();
-for (const item of newResults) newMap.set(item.methodPath, item);
-
-const merged = [
-	...newResults,
-	...Array.from(existingMap.entries())
-		.filter(([key]) => !newMap.has(key))
-		.map(([, item]) => item),
-];
-merged.sort((a, b) => a.methodPath.localeCompare(b.methodPath));
+// === 排序 ===
+newResults.sort((a, b) => a.methodPath.localeCompare(b.methodPath));
 
 // === 辅助函数：根据 methodPath 判断类型并返回后缀 ===
 function getSuffix(methodPath) {
@@ -264,16 +237,14 @@ function getSuffix(methodPath) {
 	return '';
 }
 
-// === 安全输出 ===
-const outputObject = merged.map((item) => {
-	// 获取后缀
+// === 输出（每次全量重新生成） ===
+const outputObject = newResults.map((item) => {
 	const suffix = getSuffix(item.methodPath);
-	// 将后缀追加到描述后面
 	const description = item.description + (suffix ? ` ${suffix}` : '');
 
 	const obj = {
 		methodPath: item.methodPath,
-		description: description, // 使用修改后的描述
+		description: description,
 		parameters: (item.parameters || []).map((p) => ({ name: p.name, description: p.description })),
 	};
 	if (item.returns) obj.returns = item.returns;
@@ -289,5 +260,4 @@ const outputObject = merged.map((item) => {
 });
 
 fs.writeFileSync(outputPath, 'edcode = ' + JSON.stringify(outputObject, null, '\t') + ';\n', 'utf8');
-console.log(`生成 ${newResults.length} 个新条目`);
-console.log(`共 ${merged.length} 项`);
+console.log(`全部重新生成 ${newResults.length} 条 API 补全数据`);
